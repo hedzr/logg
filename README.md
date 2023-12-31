@@ -1,26 +1,43 @@
 # hedzr/logg
 
+![Go](https://github.com/hedzr/logg/workflows/Go/badge.svg)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/hedzr/logg.svg?label=release)](https://github.com/hedzr/logg/releases)
+[![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg)<!--
+[![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/logg)](https://goreportcard.com/report/github.com/hedzr/logg)
+[![Coverage Status](https://coveralls.io/repos/github/hedzr/logg/badge.svg?branch=master&.9)](https://coveralls.io/github/hedzr/logg?branch=master) -->
+
 A golang app logging library, to provide colorful output for console.
 
 ## Features
 
-- fast enough - performance is not our unique aim.
-- colorful console output by default. switch to logfmt or json anytime.
+It is pre-releasing currently. Some abilities are:
+
+- fast enough: performance is not our unique aim, and this one is enough quick.
+- colorful console output by default.
+- switch to logfmt or json dynamically.
 - interfaces and abilities similar with log/slog.
-- adapt into log/slog to enable color logging.
+- adapted into log/slog to enable color logging, so some our predicated (such as Fatal, Panic) cannot work directly.
 - cascade child logger and dump attrs of parent recursively (need enable `LattrsR` to avoid taking more cpu usages).
-- very lite child logger.
+- very lite child loggers.
 - user-defined levels, writer, and value stringer.
-- privacy enough: harden filepath, shorten package name, and implement `LogObjectMarshaller` or `LogArrayMarshaller` to security sensitive fields.
+- privacy enough: harden filepath, shorten package name (by `Lprivacypath` and `Lprivacypathregexp`); and implement `LogObjectMarshaller` or `LogArrayMarshaller` to security sensitive fields.
 - Multiline and better colorful outputs.
 
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
+
+## Motivation
+
+As an opt-in copy of `log/slog`, we provide an out-of-box colored text outputting logger.
+
+And an auto-optimized Verb: `Verbose(msg, args...)`
+will print logging contents only if build tag `verbose` defined.
+The point is it will be optimized completely in a default build.
 
 ## Guide
 
 ### Basics
 
-logg/slog provides package-level functions for logging, `Info`, `Error`, and so on They will be mapped to the builtin default logger.
+`logg/slog` provides package-level functions for logging, `Info`, `Error`, and so on They will be mapped to the builtin default logger.
 
 `Default()` returns the default logger and `SetDefult()` replaces it.
 
@@ -81,7 +98,7 @@ slog.InfoContext(context.TODO(), "info msg", args...)
 slog.LogAttrs(context.TODO(), slog.Debug, "debug msg", args...)
 ```
 
-The sub-loggers are supported, see [SubLogger](#sublogger).
+The sub-loggers are also supported, see [SubLogger](#sublogger).
 
 #### Println
 
