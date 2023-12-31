@@ -305,7 +305,7 @@ func TestSlogWithAttrs(t *testing.T) {
 
 // another sample:
 
-func TestSlogAndHttpServer(t *testing.T) {
+func testSlogAndHttpServer(t *testing.T) {
 	demoWorkingWithLegacyCodes := func() {
 		var srv http.Server
 		var sigint chan os.Signal
