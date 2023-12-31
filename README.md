@@ -2,12 +2,9 @@
 
 ![Go](https://github.com/hedzr/logg/workflows/Go/badge.svg)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/hedzr/logg.svg?label=release)](https://github.com/hedzr/logg/releases)
-[![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg)<!--
+[![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg) <!--
 [![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/logg)](https://goreportcard.com/report/github.com/hedzr/logg)
-[![Coverage Status](https://coveralls.io/repos/github/hedzr/logg/badge.svg?branch=master&.9)](https://coveralls.io/github/hedzr/logg?branch=master) 
-
-https://deps.dev/go/github.com%2Fhedzr%2Flogg
-
+[![Coverage Status](https://coveralls.io/repos/github/hedzr/logg/badge.svg?branch=master&.9)](https://coveralls.io/github/hedzr/logg?branch=master)
 -->
 
 A golang app logging library, to provide colorful output for console.
@@ -20,7 +17,7 @@ It is pre-releasing currently. Some abilities are:
 - colorful console output by default.
 - switch to logfmt or json dynamically.
 - interfaces and abilities similar with log/slog.
-- adapted into log/slog to enable color logging, so some our predicated (such as Fatal, Panic) cannot work directly.
+- adapted into log/slog to enable color logging, so some our verbs (such as Fatal, Panic) cannot work directly.
 - cascade child logger and dump attrs of parent recursively (need enable `LattrsR` to avoid taking more cpu usages).
 - very lite child loggers.
 - user-defined levels, writer, and value stringer.
