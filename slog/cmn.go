@@ -1,26 +1,15 @@
 package slog
 
 import (
-	"errors"
-	"os"
 	"regexp"
 	"sync"
 
-	"github.com/hedzr/is"
 	"github.com/hedzr/is/term/color"
-	"github.com/hedzr/logg/slog/internal/strings"
 )
 
-func A() int        { return severity() }
-func severity() int { return 2 }
-
-type X struct {
-	IsAllBitsSet bool `json:"is-all-bits-set,omitempty"`
-	BattleEnd    int  `json:"battle-end,omitempty"`
-}
-
 // AddCodeHostingProviders appends more provider, repl pair to reduce the caller text width.
-// The builtin providers includes:
+//
+// The builtin providers could be:
 //   - "github.com" -> "GH"
 //   - "gitlab.com" -> "GL"
 //   - "gitee.com" -> "GT"
@@ -28,10 +17,11 @@ type X struct {
 //   - ...
 func AddCodeHostingProviders(provider, repl string) { codeHostingProvidersMap[provider] = repl }
 
-// AddKnownPathMapping appends more pathname, repl pair to reduce the caller filepath width.
+// AddKnownPathMapping appends more (pathname, repl) pair to reduce the caller filepath width.
+//
 // Such as:
 //   - "$HOME" -> "~"
-//   - pwd -> "." (current directory -> '.', that means any abspath will be converted to relpath)
+//   - pwd -> "." (current directory -> '.', that means any abs-path will be converted to rel-path)
 func AddKnownPathMapping(pathname, repl string) { knownPathMap[pathname] = repl }
 
 // AddKnownPathRegexpMapping adds regexp pattern, repl pair to reduce the called filepath width.
@@ -42,6 +32,20 @@ func AddKnownPathRegexpMapping(pathnameRegexpExpr, repl string) {
 	})
 }
 
+// SetLevelOutputWidth sets how many characters of level string should
+// be formatted and output to logging lines.
+//
+// While you are customizing your level, a 1..5 characters array is
+// required for formatting purpose.
+//
+// For example:
+//
+//	const NoticeLevel = slog.Level(17) // A custom level must have a value greater than slog.MaxLevel
+//	slog.RegisterLevel(NoticeLevel, "NOTICE",
+//	    slog.RegWithShortTags([6]string{"", "N", "NT", "NTC", "NOTC", "NOTIC"}),
+//	    slog.RegWithColor(color.FgWhite, color.BgUnderline),
+//	    slog.RegWithTreatedAsLevel(slog.InfoLevel),
+//	))
 func SetLevelOutputWidth(width int) {
 	if width >= 0 && width <= 5 {
 		levelOutputWidth = width
@@ -59,13 +63,13 @@ func SetMessageMinimalWidth(w int) {
 	}
 }
 
-func GetFlags() Flags           { return flags }
-func SetFlags(f Flags)          { flags = f }
-func AddFlags(f Flags)          { flags |= f }
-func RemoveFlags(f Flags)       { flags &= ^f }
-func ResetFlags()               { flags = LstdFlags }
-func IsAnyBitsSet(f Flags) bool { return flags&f != 0 }
-func IsAllBitsSet(f Flags) bool { return flags&f == f }
+func GetFlags() Flags           { return flags }        // returns logg/slog Flags
+func SetFlags(f Flags)          { flags = f }           // sets logg/slog Flags
+func AddFlags(f Flags)          { flags |= f }          // adds some Flags (bitwise Or operation)
+func RemoveFlags(f Flags)       { flags &= ^f }         // removes some Flags (bitwise And negative operation)
+func ResetFlags()               { flags = LstdFlags }   // resets logg/slog Flags to factory settings
+func IsAnyBitsSet(f Flags) bool { return flags&f != 0 } // detects if any of some Flags are set
+func IsAllBitsSet(f Flags) bool { return flags&f == f } // detects if all of given Flags are both set
 
 // SaveFlagsAndMod saves old flags, modify it, and restore the old at defer time
 func SaveFlagsAndMod(addingFlags Flags, removingFlags ...Flags) (deferFn func()) {
@@ -89,13 +93,14 @@ func SaveFlagsAndMod(addingFlags Flags, removingFlags ...Flags) (deferFn func())
 // 	}
 // }
 
+// Reset clear user settings and restore Default to default.
 func Reset() {
 	ResetLevel()
 	ResetFlags()
 }
 
-func SetDefault(l Logger) { defaultLog = l }
-func Default() Logger     { return defaultLog }
+func SetDefault(l Logger) { defaultLog = l }    // sets user-defined logger as Default
+func Default() Logger     { return defaultLog } // return native default logger
 
 var (
 	defaultWriter *dualWriter
@@ -103,10 +108,10 @@ var (
 	onceInit      sync.Once
 )
 
-const (
-	STDLOG = "std"
-	GOLOG  = "go/log"
-)
+// const (
+// 	STDLOG = "std"
+// 	GOLOG  = "go/log"
+// )
 
 var (
 	lvlCurrent          Level
@@ -141,50 +146,4 @@ const (
 	messageFieldName   = "msg"
 )
 
-var (
-	codeHostingProvidersMap map[string]string
-
-	knownPathMap map[string]string
-
-	knownPathRegexpMap []regRepl
-)
-
-type regRepl struct {
-	expr *regexp.Regexp
-	repl string
-}
-
-var homeDir, currDir string
-
-var errNotReady = errors.New("not ready") // here we just need a very simple error message object
-
-func init() {
-	onceInit.Do(func() {
-		lvlCurrent = WarnLevel
-
-		codeHostingProvidersMap = map[string]string{
-			"github.com":    "GH",
-			"gitlab.com":    "GL",
-			"gitee.com":     "GT",
-			"bitbucket.com": "BB",
-		}
-
-		homeDir, _ = os.UserHomeDir()
-		currDir, _ = os.Getwd()
-		knownPathMap = map[string]string{
-			homeDir: "~",
-			currDir: ".",
-		}
-		knownPathRegexpMap = append(knownPathRegexpMap, regRepl{
-			expr: regexp.MustCompile(`/Volumes/[^/]+/`),
-			repl: `~`,
-		})
-
-		if is.InDebugging() || is.InTesting() || strings.StringToBool(os.Getenv("DEBUG")) {
-			lvlCurrent = DebugLevel
-		}
-
-		defaultWriter = newDualWriter()
-		defaultLog = newDetachedLogger()
-	})
-}
+// var errNotReady = errors.New("not ready") // here we just need a very simple error message object

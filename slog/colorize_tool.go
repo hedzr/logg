@@ -8,6 +8,7 @@ import (
 	"github.com/hedzr/is/term/color"
 )
 
+// ct is colorizing tool that wraps [github.com/hedzr/is/term/color.Translator]
 var ct colorizeToolS
 
 type colorizeToolS struct{}

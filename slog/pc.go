@@ -37,6 +37,7 @@ func newPrintCtx() *PrintCtx {
 	}
 }
 
+// PrintCtx when formatting logging line in text logger
 type PrintCtx struct {
 	buf      []byte // contents are the bytes buf[off : len(buf)]
 	off      int    // read at &buf[off], write at &buf[len(buf)]

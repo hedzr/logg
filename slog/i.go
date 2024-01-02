@@ -7,34 +7,41 @@ import (
 )
 
 type (
+	// Logger interface can be used for others logging kits or apps.
 	Logger interface {
 		Entry
 	}
 
+	// Entry is a small and efficient tiny logger, which is the entity of real logger.
 	Entry interface {
 		BasicLogger
 
-		Close()
+		Close() // Closeable interface
 
-		String() string
+		String() string // Stringer interface
 
-		Parent() Entry
-		Root() Entry
+		Parent() Entry // parent logger of a sub-logger
+		Root() Entry   // root logger (always is Default) of a sub-logger
+
 		// Children() Entries
 
-		Level() Level
+		Level() Level // logging level associated with this logger
 
 		// writeInternal(ctx context.Context, lvl Level, pc uintptr, buf []byte) (n int, err error)
 		// logContext(ctx context.Context, lvl Level, pc uintptr, msg string, args ...any)
 	}
 
+	// LogLoggerAware for external adapters
 	LogLoggerAware interface {
 		WriteInternal(ctx context.Context, lvl Level, pc uintptr, buf []byte) (n int, err error)
 	}
+
+	// LogSlogAware for external adapters
 	LogSlogAware interface {
 		WriteThru(ctx context.Context, lvl Level, timestamp time.Time, pc uintptr, msg string, attrs Attrs)
 	}
 
+	// BasicLogger supplies basic logging apis.
 	BasicLogger interface {
 		Printer
 		PrinterWithContext
@@ -65,6 +72,7 @@ type (
 		Name() string // this logger's name
 	}
 
+	// Printer supplies the printable apis
 	Printer interface {
 		Panic(msg string, args ...any)   // error and panic
 		Fatal(msg string, args ...any)   // error and os.Exit(-3)
@@ -81,6 +89,7 @@ type (
 		Fail(msg string, args ...any)    // identify a wrong occurs, default to stderr device
 	}
 
+	// PrinterWithContext supplies the printable apis with context.Context
 	PrinterWithContext interface {
 		PanicContext(ctx context.Context, msg string, args ...any)   // error and panic
 		FatalContext(ctx context.Context, msg string, args ...any)   // error and os.Exit(-3)
@@ -97,6 +106,7 @@ type (
 		FailContext(ctx context.Context, msg string, args ...any)    // identify a wrong occurs, default to stderr device
 	}
 
+	// Builder is used for building a new logger
 	Builder interface {
 		New(args ...any) BasicLogger // 1st of args is name, the rest are k, v pairs
 
@@ -126,18 +136,22 @@ type (
 		WithValueStringer(vs ValueStringer) Entry
 	}
 
+	// Entries collects many entry objects as a map
 	Entries map[string]Entry
 )
 
+// LogWriter for external adapters
 type LogWriter interface {
 	io.Writer
 	io.Closer
 }
 
+// LogWriters for external adapters
 type LogWriters interface {
 }
 
 type (
+	// Attr for external adapters
 	Attr interface {
 		Key() string
 		Value() any
@@ -146,6 +160,7 @@ type (
 )
 
 type (
+	// LogValuer for external adapters
 	LogValuer interface {
 		Value() Attr
 	}

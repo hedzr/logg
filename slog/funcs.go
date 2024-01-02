@@ -19,7 +19,10 @@ func IsTty(w io.Writer) bool { return is.Tty(w) }
 func IsColoredTty(w io.Writer) bool { return is.ColoredTty(w) }
 
 // IsTtyEscaped detects a string if it contains ansi color escaped sequences
-func IsTtyEscaped(s string) bool { return is.TtyEscaped(s) }
+func IsTtyEscaped(s string) bool { return is.AnsiEscaped(s) }
+
+// IsAnsiEscaped detects a string if it contains ansi color escaped sequences
+func IsAnsiEscaped(s string) bool { return is.AnsiEscaped(s) }
 
 // StripEscapes removes any ansi color escaped sequences from a string
 func StripEscapes(str string) (strCleaned string) { return is.StripEscapes(str) }
@@ -162,28 +165,44 @@ func FailContext(ctx context.Context, msg string, args ...any) {
 
 //
 
+// String constructs a key-value pair with string value like log/slog.
+//
+// The different is we have not optimized these functions (String, Int, ...) for
+// performance and memory allocations. So they are just compatible with log/slog.
+//
+// For performance, using With(attrs...) / WithAttrs(...) to get prefer effects.
 func String(key string, val string) Attr          { return &kvp{key, val} }
-func Bool(key string, val bool) Attr              { return &kvp{key, val} }
-func Int(key string, val int) Attr                { return &kvp{key, val} }
-func Int8(key string, val int8) Attr              { return &kvp{key, val} }
-func Int16(key string, val int16) Attr            { return &kvp{key, val} }
-func Int32(key string, val int32) Attr            { return &kvp{key, val} }
-func Int64(key string, val int64) Attr            { return &kvp{key, val} }
-func Uint(key string, val uint) Attr              { return &kvp{key, val} }
-func Uint8(key string, val uint8) Attr            { return &kvp{key, val} }
-func Uint16(key string, val uint16) Attr          { return &kvp{key, val} }
-func Uint32(key string, val uint32) Attr          { return &kvp{key, val} }
-func Uint64(key string, val uint64) Attr          { return &kvp{key, val} }
-func Float32(key string, val float32) Attr        { return &kvp{key, val} }
-func Float64(key string, val float64) Attr        { return &kvp{key, val} }
-func Complex64(key string, val complex64) Attr    { return &kvp{key, val} }
-func Complex128(key string, val complex128) Attr  { return &kvp{key, val} }
-func Time(key string, val time.Time) Attr         { return &kvp{key, val} }
-func Duration(key string, val time.Duration) Attr { return &kvp{key, val} }
-func Any(key string, val any) Attr                { return &kvp{key, val} }
+func Bool(key string, val bool) Attr              { return &kvp{key, val} } // constructs boolean k-v pair. see String for performance tip.
+func Int(key string, val int) Attr                { return &kvp{key, val} } // constructs Int k-v pair. see String for performance tip.
+func Int8(key string, val int8) Attr              { return &kvp{key, val} } // constructs Int8 k-v pair. see String for performance tip.
+func Int16(key string, val int16) Attr            { return &kvp{key, val} } // constructs Int16 k-v pair. see String for performance tip.
+func Int32(key string, val int32) Attr            { return &kvp{key, val} } // constructs Int32 k-v pair. see String for performance tip.
+func Int64(key string, val int64) Attr            { return &kvp{key, val} } // constructs Int64 k-v pair. see String for performance tip.
+func Uint(key string, val uint) Attr              { return &kvp{key, val} } // constructs Uint k-v pair. see String for performance tip.
+func Uint8(key string, val uint8) Attr            { return &kvp{key, val} } // constructs Uint8 k-v pair. see String for performance tip.
+func Uint16(key string, val uint16) Attr          { return &kvp{key, val} } // constructs Uint16 k-v pair. see String for performance tip.
+func Uint32(key string, val uint32) Attr          { return &kvp{key, val} } // constructs Uint32 k-v pair. see String for performance tip.
+func Uint64(key string, val uint64) Attr          { return &kvp{key, val} } // constructs Uint64 k-v pair. see String for performance tip.
+func Float32(key string, val float32) Attr        { return &kvp{key, val} } // constructs Float32 k-v pair. see String for performance tip.
+func Float64(key string, val float64) Attr        { return &kvp{key, val} } // constructs Float64 k-v pair. see String for performance tip.
+func Complex64(key string, val complex64) Attr    { return &kvp{key, val} } // constructs Complex64 k-v pair. see String for performance tip.
+func Complex128(key string, val complex128) Attr  { return &kvp{key, val} } // constructs Complex128 k-v pair. see String for performance tip.
+func Time(key string, val time.Time) Attr         { return &kvp{key, val} } // constructs Time k-v pair. see String for performance tip.
+func Duration(key string, val time.Duration) Attr { return &kvp{key, val} } // constructs Duration k-v pair. see String for performance tip.
+func Any(key string, val any) Attr                { return &kvp{key, val} } // constructs Any k-v pair. see String for performance tip.
 
-func Numeric[T Numerics](key string, val T) Attr { return &kvp{key, val} }
+func Numeric[T Numerics](key string, val T) Attr { return &kvp{key, val} } // constructs Numeric k-v pair. see String for performance tip.
 
+// Group constructs grouped k-v pair container, which can hold a set of normal attrs.
+//
+// See String for performance tip.
+//
+// For example:
+//
+//	g := Group("source",
+//	   String("file", filename),
+//	   Int("line", lineno),
+//	)
 func Group(key string, args ...any) Attr {
 	var g = &gkvp{key: key, items: argsToAttrs(nil, args...)}
 	return g
@@ -311,6 +330,6 @@ func (s *handlerWriter) Write(buf []byte) (n int, err error) {
 	return
 }
 
-var errUnmatchedPair = errors.New("unmatched (key,value) pair.")
+var errUnmatchedPair = errors.New("unmatched (key,value) pair")
 
 // var err // "args must be key and value pair, key should be a string"

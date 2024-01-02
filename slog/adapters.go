@@ -5,6 +5,7 @@ import (
 	logslog "log/slog"
 )
 
+// NewSlogHandler makes a log/slog Handler to adapt into std slog.
 func NewSlogHandler(logger Logger, config *HandlerOptions) logslog.Handler {
 	if config == nil {
 		config = &HandlerOptions{}
@@ -22,6 +23,7 @@ func NewSlogHandler(logger Logger, config *HandlerOptions) logslog.Handler {
 	return &handler4LogSlog{logger.WithColorMode(!config.NoColor).WithJSONMode(config.JSON)}
 }
 
+// HandlerOptions is used for our log/slog Handler
 type HandlerOptions struct {
 	NoColor  bool  // is colorful outputting?
 	NoSource bool  // has caller info?

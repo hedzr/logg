@@ -10,7 +10,7 @@ import (
 	"github.com/hedzr/is/term/color"
 )
 
-type Level int
+type Level int // logging level
 
 // SaveLevelAndSet sets Default logger's level and default logger level.
 //
@@ -105,12 +105,14 @@ type regPack struct {
 
 type RegOpt func(pack *regPack) // used by RegisterLevel
 
+// RegWithShortTags associates short tag with the new level
 func RegWithShortTags(shortTags [MaxLengthShortTag]string) RegOpt {
 	return func(pack *regPack) {
 		pack.shortTags = shortTags
 	}
 }
 
+// RegWithColor associates terminal color with the new level
 func RegWithColor(clr color.Color, bgColor ...color.Color) RegOpt {
 	return func(pack *regPack) {
 		pack.clr = clr
@@ -120,12 +122,38 @@ func RegWithColor(clr color.Color, bgColor ...color.Color) RegOpt {
 	}
 }
 
+// RegWithTreatedAsLevel associates the underlying level with the new level.
+//
+// It means the new level acts as treatAs level.
+//
+// For instance, see RegWithPrintToErrorDevice.
+// After registered,
+//
+//	slog.Log(ctx, SwellLevel, "xxx")
+//
+// will redirect the logging line to stderr device just like ErrorLevel.
 func RegWithTreatedAsLevel(treatAs Level) RegOpt {
 	return func(pack *regPack) {
 		pack.treatAs = treatAs
 	}
 }
 
+// RegWithPrintToErrorDevice declares the logging text should be
+// redirected to stderr device.
+//
+// For instance, you're declaring Swell Level, which should be
+// treated as ErrorLevel, so the corresponding codes are:
+//
+//	const SwellLevel  = slog.Level(12) // Sometimes, you may use the value equal with slog.MaxLevel
+//	slog.RegisterLevel(SwellLevel, "SWELL",
+//	    slog.RegWithShortTags([6]string{"", "S", "SW", "SWL", "SWEL", "SWEEL"}),
+//	    slog.RegWithColor(color.FgRed, color.BgBoldOrBright),
+//	    slog.RegWithTreatedAsLevel(slog.ErrorLevel),
+//	    slog.RegWithPrintToErrorDevice(),
+//	)
+//
+// After registered, slog.Log(ctx, SwellLevel, "xxx") will redirect the logging
+// line to stderr device just like ErrorLevel.
 func RegWithPrintToErrorDevice(b ...bool) RegOpt {
 	return func(pack *regPack) {
 		for _, v := range b {
@@ -310,7 +338,7 @@ var shortTagMap = map[int]map[Level]string{
 	5: {PanicLevel: "PANIC", FatalLevel: "FATAL", ErrorLevel: "ERROR", WarnLevel: "WARNI", InfoLevel: "INFOR", DebugLevel: "DEBUG", TraceLevel: "TRACE", OffLevel: "     ", AlwaysLevel: "  A  ", OKLevel: "  OK ", SuccessLevel: "SUCCS", FailLevel: " FAIL"},
 }
 
-const MaxLengthShortTag = 6
+const MaxLengthShortTag = 6 // Level string length while formatting and printing
 
 var stringToLevel = map[string]Level{
 	"fail":     FailLevel,
@@ -411,9 +439,9 @@ const (
 	// AlwaysLevel level. Used for Print, Printf, Println, OK, Success and Fail (use ErrorLevel).
 	AlwaysLevel
 
-	OKLevel
-	SuccessLevel
-	FailLevel
+	OKLevel      // OKLevel for operation okay.
+	SuccessLevel // SuccessLevel for operation successfully.
+	FailLevel    // FailLevel for operation failed.
 
-	MaxLevel
+	MaxLevel // maximal level value for algorithm usage
 )

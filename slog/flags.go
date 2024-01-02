@@ -18,8 +18,8 @@ const (
 	l3
 	l4
 
-	Lprivacypath       //
-	Lprivacypathregexp //
+	Lprivacypath       // Privacy hardening flag. A string slice will be used for hiding disk pathname.
+	Lprivacypathregexp // Privacy hardening flag. A regexp pattern slice will be used.
 
 	l5
 	l6
@@ -31,11 +31,11 @@ const (
 	LnoInterrupt     // don't interrupt app running when Fatal or Panic
 	Linterruptalways // raise panic or os.Exit always even if in testing mode
 
-	LstdFlags = Ltime | Lmicroseconds | LlocalTime | Llineno | Lcaller | Lattrs
+	LstdFlags = Ltime | Lmicroseconds | LlocalTime | Llineno | Lcaller | Lattrs // the default flags when unboxed
 
-	Ldatetimeflags = Ldate | Ltime | Lmicroseconds
+	Ldatetimeflags = Ldate | Ltime | Lmicroseconds // for timestamp formatting
 
-	Lempty Flags = 0
+	Lempty Flags = 0 // for algor
 )
 
 // 	Lprettyprint                         // pretty print the object with ValueStringer.

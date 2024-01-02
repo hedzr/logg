@@ -12,6 +12,7 @@ func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(ni
 func NewGroupedAttr(key string, as ...Attr) Attr    { return &gkvp{key, as} }                            // similar with Group
 func NewGroupedAttrEasy(key string, as ...any) Attr { return &gkvp{key: key, items: buildAttrs(as...)} } // synonym to Group
 
+// kvp is a tiny key-value pair
 type kvp struct {
 	key string
 	val any
@@ -30,8 +31,9 @@ func (s *kvp) SerializeValueTo(pc *PrintCtx) {
 	pc.appendValue(s.val)
 }
 
-type Attrs []Attr
+type Attrs []Attr // slice of Attr
 
+// gkvp is a grouped kvp
 type gkvp struct {
 	key   string
 	items Attrs
@@ -174,14 +176,17 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) {
 // 	MarshalSlogArray(enc *SB) error
 // }
 
+// ObjectSerializer to allow your object serialized by our PrintCtx
 type ObjectSerializer interface {
 	SerializeValueTo(pc *PrintCtx)
 }
 
+// ObjectMarshaller to allow your object serialized by our PrintCtx
 type ObjectMarshaller interface {
 	MarshalSlogObject(enc *PrintCtx) error
 }
 
+// ArrayMarshaller to allow your slice or array object serialized by our PrintCtx
 type ArrayMarshaller interface {
 	MarshalSlogArray(enc *PrintCtx) error
 }

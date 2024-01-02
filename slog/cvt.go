@@ -8,11 +8,11 @@ import (
 // type objwr struct{ SB }
 
 const (
-	TimeNoNano      = "15:04:05Z07:00"
-	TimeNano        = "15:04:05.000000Z07:00"
-	DateTime        = "2006-01-0215:04:05Z07:00"
-	RFC3339Nano     = "2006-01-02T15:04:05.000000Z07:00"
-	RFC3339NanoOrig = "2006-01-02T15:04:05.999999999Z07:00"
+	TimeNoNano      = "15:04:05Z07:00"                      // text-logging timestamp format: time only, without nano second part
+	TimeNano        = "15:04:05.000000Z07:00"               // text-logging timestamp format: time only
+	DateTime        = "2006-01-0215:04:05Z07:00"            // text-logging timestamp format: date and time, with timezone
+	RFC3339Nano     = "2006-01-02T15:04:05.000000Z07:00"    // text-logging timestamp format: RFC3339Nano
+	RFC3339NanoOrig = "2006-01-02T15:04:05.999999999Z07:00" // text-logging timestamp format: RFC3339Nano with 9 bits nano seconds
 )
 
 var defaultLayouts = map[Flags]string{
@@ -182,41 +182,46 @@ func durationSliceToString(val []time.Duration) string {
 
 //
 
+// Stringer is a synonym to fmt.Stringer
 type Stringer interface {
 	String() string
 }
 
+// ToString interface for some object
 type ToString interface {
 	ToString(args ...any) string
 }
 
+// Integers declares signed integers generic type
 type Integers interface {
 	int | int8 | int16 | int32 | int64
 }
 
+// Uintegers declares unsigned integers generic type
 type Uintegers interface {
 	uint | uint8 | uint16 | uint32 | uint64
 }
 
+// Floats declares float number generic type
 type Floats interface {
 	float32 | float64
 }
 
+// Complexes declares complex number generic type
 type Complexes interface {
 	complex64 | complex128
 }
 
+// Numerics declares numeric generic type
 type Numerics interface {
 	Integers | Uintegers | Floats | Complexes
 }
 
-type IntSlice[T Integers] []T
-type UintSlice[T Uintegers] []T
-type FloatSlice[T Floats] []T
-type ComplexSlice[T Complexes] []T
-type StringSlice[T string] []T
-type BoolSlice[T bool] []T
+type IntSlice[T Integers] []T      // IntSlice declares slice of signed integers generic type
+type UintSlice[T Uintegers] []T    // UintSlice declares slice of unsigned integers generic type
+type FloatSlice[T Floats] []T      // FloatSlice declares slice of float number generic type
+type ComplexSlice[T Complexes] []T // ComplexSlice declares slice of complex number generic type
+type StringSlice[T string] []T     // StringSlice declares slice of string generic type
+type BoolSlice[T bool] []T         // BoolSlice declares slice of boolean generic type
 
-type Slice[T Integers | Uintegers | Floats] []T
-
-//
+type Slice[T Integers | Uintegers | Floats] []T // Slice declares slice of numeric generic type
