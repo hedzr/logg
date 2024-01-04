@@ -5,9 +5,9 @@
 [![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg) <!--
 [![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/logg)](https://goreportcard.com/report/github.com/hedzr/logg)
 [![Coverage Status](https://coveralls.io/repos/github/hedzr/logg/badge.svg?branch=master&.9)](https://coveralls.io/github/hedzr/logg?branch=master)
--->
+--> [![deps.dev](https://img.shields.io/badge/deps-dev-green)](https://deps.dev/go/github.com%2Fhedzr%2Flogg)
 
-A golang app logging library, to provide colorful output for console.
+A golang logging library, to provide colorful output at terminal.
 
 ## Features
 
@@ -15,23 +15,23 @@ It is pre-releasing currently. Some abilities are:
 
 - fast enough: performance is not our unique aim, and this one is enough quick.
 - colorful console output by default.
-- switch to logfmt or json dynamically.
+- switch to logfmt or json format dynamically.
 - interfaces and abilities similar with log/slog.
-- adapted into log/slog to enable color logging, so some our verbs (such as Fatal, Panic) cannot work directly.
+- adapted into log/slog to enable color logging, here some our verbs (such as Fatal, Panic) cannot work directly.
 - cascade child logger and dump attrs of parent recursively (need enable `LattrsR` to avoid taking more cpu usages).
 - very lite child loggers.
 - user-defined levels, writer, and value stringer.
 - privacy enough: harden filepath, shorten package name (by `Lprivacypath` and `Lprivacypathregexp`); and implement `LogObjectMarshaller` or `LogArrayMarshaller` to security sensitive fields.
-- Multiline and better colorful outputs.
+- better multiline outputs.
 
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
 
 ## Motivation
 
-As an opt-in copy of `log/slog`, we provide an out-of-box colored text outputting logger.
+As an opt-in copy of `log/slog`, we provide an out-of-box colored text outputting logger with more verbs.
 
 And an auto-optimized Verb: `Verbose(msg, args...)`
-will print logging contents only if build tag `verbose` defined.
+would print logging contents only if build tag `verbose` defined.
 The point is it will be optimized completely in a default build.
 
 ## Guide
@@ -552,7 +552,7 @@ In logg/slog, using your own logging level is enough simple:
 
 ```go
 const (
-	NoticeLevel = slog.Level(17) // A custom level must have a value larger than slog.MaxLevel
+	NoticeLevel = slog.Level(17) // A custom level must have a value greater than slog.MaxLevel
 	HintLevel   = slog.Level(-8) // Or use a negative number
 	SwellLevel  = slog.Level(12) // Sometimes, you may use the value equal with slog.MaxLevel
 )
