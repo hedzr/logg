@@ -26,6 +26,8 @@ It is pre-releasing currently. Some abilities are:
 
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
 
+See also [CHANGELOG](CHANGELOG).
+
 ## Motivation
 
 As an opt-in copy of `log/slog`, we provide an out-of-box colored text outputting logger with more verbs.
