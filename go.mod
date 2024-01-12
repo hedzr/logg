@@ -10,11 +10,11 @@ go 1.21
 
 // replace github.com/hedzr/go-utils/v2 => ./
 
-require github.com/hedzr/is v0.5.10
+require github.com/hedzr/is v0.5.11
 
 require (
-	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/term v0.16.0 // indirect
 )
