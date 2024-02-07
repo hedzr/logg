@@ -65,13 +65,44 @@ func SetMessageMinimalWidth(w int) {
 
 func GetFlags() Flags           { return flags }        // returns logg/slog Flags
 func SetFlags(f Flags)          { flags = f }           // sets logg/slog Flags
-func AddFlags(f Flags)          { flags |= f }          // adds some Flags (bitwise Or operation)
-func RemoveFlags(f Flags)       { flags &= ^f }         // removes some Flags (bitwise And negative operation)
 func ResetFlags()               { flags = LstdFlags }   // resets logg/slog Flags to factory settings
 func IsAnyBitsSet(f Flags) bool { return flags&f != 0 } // detects if any of some Flags are set
 func IsAllBitsSet(f Flags) bool { return flags&f == f } // detects if all of given Flags are both set
 
-// SaveFlagsAndMod saves old flags, modify it, and restore the old at defer time
+// AddFlags adds some Flags (bitwise Or operation).
+//
+// These ways can merge flags into internal settings:
+//
+//	AddFlags(Lprivacypathregexp | Lprivacypath)
+//	AddFlags(Lprivacypathregexp, Lprivacypath)
+func AddFlags(flagsToAdd ...Flags) {
+	for _, f := range flagsToAdd {
+		flags |= f
+	}
+}
+
+// RemoveFlags removes some Flags (bitwise And negative operation).
+//
+// These ways can strip flags off from internal settings:
+//
+//	RemoveFlags(Lprivacypathregexp | Lprivacypath)
+//	RemoveFlags(Lprivacypathregexp, Lprivacypath)
+func RemoveFlags(flagsToRemove ...Flags) {
+	for _, f := range flagsToRemove {
+		flags &= ^f
+	}
+}
+
+// SaveFlagsAndMod saves old flags, modify it, and restore the old at defer time.
+//
+// A typical usage might be:
+//
+//	// Inside a test case, you wanna add date part to timestamp output,
+//	// and disable panic (by Panic or Fatal) breaking the testing flow.
+//	// So this line will make those temporary modifications:
+//	defer SaveFlagsAndMod(Ldate | LnoInterrupt)()
+//	// ...
+//	// concrete testing codes here
 func SaveFlagsAndMod(addingFlags Flags, removingFlags ...Flags) (deferFn func()) {
 	save := flags
 	AddFlags(addingFlags)
