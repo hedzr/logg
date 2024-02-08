@@ -577,6 +577,10 @@ func NewPrintCtxString(s string) *PrintCtx {
 // 	s.pcAppendQuotedStringValue(value)
 // }
 
+func (s *PrintCtx) AddRune(r rune) {
+	s.pcAppendRune(r)
+}
+
 func (s *PrintCtx) AddInt64(name string, value int64) {
 	// s.Grow(len(name)*3 + 1 + 10)
 	s.pcAppendStringKey(name)
@@ -767,11 +771,11 @@ func (s *PrintCtx) preCheck() {
 	// }
 }
 
-func (s *PrintCtx) postCheck() {
-	// if s.jsonMode {
-	// 	s.WriteRune('}')
-	// }
-}
+// func (s *PrintCtx) postCheck() {
+// 	// if s.jsonMode {
+// 	// 	s.WriteRune('}')
+// 	// }
+// }
 
 //
 

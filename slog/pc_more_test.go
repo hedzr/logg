@@ -9,6 +9,32 @@ import (
 	"github.com/hedzr/logg/slog/internal/times"
 )
 
+func TestPrintCtx_TruncateIlegal(t *testing.T) {
+	defer func() {
+		if e := recover(); e != nil {
+			t.Log("OK")
+			return
+		}
+		t.Fatal("expect Truncate(-1) raised a panic but it was absent")
+	}()
+
+	var pc PrintCtx
+	pc.Truncate(-1)
+}
+
+func TestPrintCtx_GrowIllegal(t *testing.T) {
+	defer func() {
+		if e := recover(); e != nil {
+			t.Log("OK")
+			return
+		}
+		t.Fatal("expect Grow(-1) raised a panic but it was absent")
+	}()
+
+	var pc PrintCtx
+	pc.Grow(-1)
+}
+
 func TestPrintCtx_pcAppendString(t *testing.T) {
 	var pc PrintCtx
 
@@ -34,6 +60,8 @@ func TestPrintCtx_pcAppendString(t *testing.T) {
 	if str := pc.String(); str != "()[]=:" {
 		t.Fatalf("pc is %q now, but expecting '()[]=:'", str)
 	}
+
+	t.Logf("Available bytes: %d", pc.Available())
 }
 
 func TestPrintCtx_pcTryQuoteValue(t *testing.T) {
@@ -328,6 +356,66 @@ func TestBtoaS(t *testing.T) {
 func TestEnvTest(t *testing.T) {
 	info, _ := debug.ReadBuildInfo()
 	fmt.Println(info)
+}
+
+func TestAddXXX(t *testing.T) {
+	var pc PrintCtx
+
+	pc.AddInt64("int64", int64(-101))
+	pc.AddRune(',')
+	pc.AddInt32("int32", int32(-32))
+	pc.AddRune(',')
+	pc.AddInt16("int16", int16(-16))
+	pc.AddRune(',')
+	pc.AddInt8("int8", int8(-8))
+	pc.AddRune(',')
+
+	pc.AddUint64("uint64", uint64(101))
+	pc.AddRune(',')
+	pc.AddUint32("uint32", uint32(32))
+	pc.AddRune(',')
+	pc.AddUint16("uint16", uint16(16))
+	pc.AddRune(',')
+	pc.AddUint8("uint8", uint8(8))
+	pc.AddRune(',')
+	pc.AddUint("uint", uint(65536))
+	pc.AddRune(',')
+
+	pc.AddFloat32("float32", float32(65536.32768))
+	pc.AddRune(',')
+	pc.AddFloat64("float64", float64(3.13))
+	pc.AddRune(',')
+	pc.AddFloat64("float64", float64(65536.32768))
+	pc.AddRune(',')
+
+	pc.AddComplex64("complex64", 65536.32768+2.718i)
+	pc.AddRune(',')
+	pc.AddComplex128("complex128", 3.13-2.718i)
+	pc.AddRune(',')
+	pc.AddComplex128("complex128", 65536.32768+2.718i)
+	pc.AddRune(',')
+
+	pc.AddBool("bool", false)
+	pc.AddRune(',')
+
+	pc.AddString("ending-string", "modified")
+	pc.AddRune(',')
+
+	t.Logf("pc: %v", pc.String())
+}
+
+func TestAppendXXX(t *testing.T) {
+	var pc PrintCtx
+
+	pc.AppendByte('^')
+	pc.AppendRune(',')
+
+	pc.AppendBytes([]byte("yes"))
+	pc.AppendRune(',')
+	pc.AppendRunes([]rune("no"))
+	pc.AppendRune('$')
+
+	t.Logf("pc: %v", pc.String())
 }
 
 func BenchmarkPrintCtx_appendValue(b *testing.B) {
