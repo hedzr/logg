@@ -9,7 +9,7 @@ import (
 
 // AddCodeHostingProviders appends more provider, repl pair to reduce the caller text width.
 //
-// The builtin providers could be:
+// The builtin providers are:
 //   - "github.com" -> "GH"
 //   - "gitlab.com" -> "GL"
 //   - "gitee.com" -> "GT"
