@@ -1,5 +1,5 @@
 package slog
 
 const (
-	Version = "v0.5.6" // new Version of logg/slog
+	Version = "v0.5.7" // new Version of logg/slog
 )
