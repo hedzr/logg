@@ -13,7 +13,9 @@ type dualWriter struct {
 }
 
 func newDualWriter() *dualWriter {
-	return (&dualWriter{}).Reset()
+	s := &dualWriter{}
+	s.Reset()
+	return s
 }
 
 func (s *dualWriter) Close() (err error) {
@@ -151,12 +153,16 @@ func (s *dualWriter) RemoveLevelWriter(lvl Level, w io.Writer) {
 }
 
 func (s *dualWriter) ResetLevelWriter(lvl Level) {
-	if s.leveled == nil {
-		s.leveled = make(map[Level]LWs)
+	if s.leveled != nil {
+		delete(s.leveled, lvl)
 	}
-	if _, ok := s.leveled[lvl]; ok {
-		s.leveled[lvl] = nil
-	}
+
+	// if s.leveled == nil {
+	// 	s.leveled = make(map[Level]LWs)
+	// }
+	// if _, ok := s.leveled[lvl]; ok {
+	// 	s.leveled[lvl] = nil
+	// }
 }
 
 func (s *dualWriter) ResetLevelWriters() {
