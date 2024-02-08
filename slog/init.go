@@ -40,11 +40,11 @@ func init() {
 }
 
 var (
-	codeHostingProvidersMap map[string]string
+	codeHostingProvidersMap map[string]string // eg: "github.com" -> "GH"
 
-	knownPathMap map[string]string
+	knownPathMap map[string]string // eg: "$HOME" -> "~"
 
-	knownPathRegexpMap []regRepl
+	knownPathRegexpMap []regRepl // eg: "/Volumes/(.+)" -> "~$1"
 
 	homeDir, currDir string
 )
