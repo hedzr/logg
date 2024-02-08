@@ -31,7 +31,8 @@ const (
 	LnoInterrupt     // don't interrupt app running when Fatal or Panic
 	Linterruptalways // raise panic or os.Exit always even if in testing mode
 
-	LstdFlags = Ltime | Lmicroseconds | LlocalTime | Llineno | Lcaller | Lattrs // the default flags when unboxed
+	LstdFlags = Ltime | Lmicroseconds | LlocalTime | Llineno | Lcaller | Lattrs | // the default flags when unboxed
+		Lprivacypath | Lprivacypathregexp
 
 	Ldatetimeflags = Ldate | Ltime | Lmicroseconds // for timestamp formatting
 
