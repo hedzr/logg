@@ -9,13 +9,13 @@ import (
 	"github.com/hedzr/logg/slog/internal/times"
 )
 
-func TestPrintCtx_TruncateIlegal(t *testing.T) {
+func TestPrintCtx_TruncateIllegal(t *testing.T) {
 	defer func() {
 		if e := recover(); e != nil {
 			t.Log("OK")
-			return
+		} else {
+			t.Fatal("expect Truncate(-1) raised a panic but it was absent")
 		}
-		t.Fatal("expect Truncate(-1) raised a panic but it was absent")
 	}()
 
 	var pc PrintCtx
@@ -26,9 +26,9 @@ func TestPrintCtx_GrowIllegal(t *testing.T) {
 	defer func() {
 		if e := recover(); e != nil {
 			t.Log("OK")
-			return
+		} else {
+			t.Fatal("expect Grow(-1) raised a panic but it was absent")
 		}
-		t.Fatal("expect Grow(-1) raised a panic but it was absent")
 	}()
 
 	var pc PrintCtx

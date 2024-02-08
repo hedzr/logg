@@ -17,9 +17,9 @@ import (
 	"github.com/hedzr/logg/slog"
 )
 
-func init() {
-	slog.AddFlags(slog.Lprivacypath)
-}
+// func init() {
+// 	slog.AddFlags(slog.Lprivacypath)
+// }
 
 func TestSlogBasic(t *testing.T) {
 	slog.Debug("Debug message") // should be disabled
