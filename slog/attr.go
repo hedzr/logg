@@ -48,8 +48,10 @@ func (s *gkvp) Value() any  { return s.items }
 func (s *gkvp) SetValue(v any) {
 	if v1, ok := v.(Attrs); ok {
 		s.items = v1
-	} else if v1, ok := v.([]Attr); ok {
+	} else if v1, ok = v.([]Attr); ok {
 		s.items = v1
+	} else if v2, ok := v.(Attr); ok {
+		s.items = append(s.items, v2)
 	} else {
 		panic(fmt.Sprintf("unexpected value was set: %+v", v))
 	}
