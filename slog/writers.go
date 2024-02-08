@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"testing"
 )
 
 type dualWriter struct {
@@ -192,6 +193,17 @@ type LWs []LogWriter
 func (s LWs) Close() (err error) {
 	for _, w := range s {
 		if w != nil {
+			if testing.CoverMode() != "" {
+				if xf, ok := w.(*filewr); ok {
+					if c := xf.File; c == os.Stdout || c == os.Stderr {
+						println("ignore close | ", c)
+						continue
+						// we found os.Stdout.Close() causes a coverage testing
+						// producing FAIL state report but all test cases are
+						// both ok.
+					}
+				}
+			}
 			if e := w.Close(); e != nil {
 				err = errors.Join(err, e)
 			}
