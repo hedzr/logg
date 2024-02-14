@@ -1,7 +1,10 @@
 # HISTORY / CHANGELOG
 
+- v0.5.8
+  - security patch (from hedzr/is)
+
 - v0.5.7
-  - NOTED: logg/slog enables privacy hardening flags by default now
+  - [NOTED] logg/slog enables privacy hardening flags by default now
   - added more tests
   - updated deps
 
