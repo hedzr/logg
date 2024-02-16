@@ -13,18 +13,18 @@ const (
 	Lcaller                              // do print Caller information (function)
 	Lcallerpackagename                   // do print the package name of caller, such as: GH/hedzr/logg/slog_test.TestSlogLogfmt
 
-	l1
-	l2
-	l3
-	l4
+	l1 //nolint:unused
+	l2 //nolint:unused
+	l3 //nolint:unused
+	l4 //nolint:unused
 
 	Lprivacypath       // Privacy hardening flag. A string slice will be used for hiding disk pathname.
 	Lprivacypathregexp // Privacy hardening flag. A regexp pattern slice will be used.
 
-	l5
-	l6
-	l7
-	l8
+	l5 //nolint:unused
+	l6 //nolint:unused
+	l7 //nolint:unused
+	l8 //nolint:unused
 
 	LsmartJSONMode // enable JSON mode if the current output device is not terminal/tty
 

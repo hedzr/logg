@@ -13,10 +13,10 @@ var ct colorizeToolS
 
 type colorizeToolS struct{}
 
-func (colorizeToolS) wrapRuneTo(sb *strings.Builder, text string, pre, post rune) {
-	sb.WriteRune(pre)
-	sb.WriteString(text)
-	sb.WriteRune(post)
+func (colorizeToolS) wrapRuneTo(sb *strings.Builder, text string, pre, post rune) { //nolint:unused
+	_, _ = sb.WriteRune(pre)
+	_, _ = sb.WriteString(text)
+	_, _ = sb.WriteRune(post)
 }
 
 func (colorizeToolS) wrapColorTo(w io.Writer, clr color.Color, text string) {
@@ -31,12 +31,12 @@ func (colorizeToolS) wrapDimColorTo(w io.Writer, text string) {
 	color.WrapDimToLite(w, text)
 }
 
-func (colorizeToolS) wrapHighlightColorTo(w io.Writer, text string) {
+func (colorizeToolS) wrapHighlightColorTo(w io.Writer, text string) { //nolint:unused
 	color.WrapHighlightTo(w, text)
 }
 
 func (colorizeToolS) wrapRune(text string, pre, post rune) string {
-	var buf = make([]rune, 0, len(text)+2)
+	buf := make([]rune, 0, len(text)+2)
 	buf = append(buf, pre)
 	buf = append(buf, []rune(text)...)
 	buf = append(buf, post)
@@ -48,7 +48,7 @@ func (colorizeToolS) wrapRune(text string, pre, post rune) string {
 	// return sb.String()
 }
 
-func (colorizeToolS) wrapColor(text string, clr color.Color) string {
+func (colorizeToolS) wrapColor(text string, clr color.Color) string { //nolint:unused
 	// return color.ToColor(clr, text)
 
 	var sb strings.Builder
@@ -67,7 +67,7 @@ func (s colorizeToolS) wrapColorAndBg(text string, clr, bg color.Color) string {
 	return sb.String()
 }
 
-func (colorizeToolS) wrapDimColor(text string) string {
+func (colorizeToolS) wrapDimColor(text string) string { //nolint:unused
 	// return color.ToDim(text)
 
 	var sb strings.Builder
@@ -75,7 +75,7 @@ func (colorizeToolS) wrapDimColor(text string) string {
 	return sb.String()
 }
 
-func (colorizeToolS) wrapHighlightColor(text string) string {
+func (colorizeToolS) wrapHighlightColor(text string) string { //nolint:unused
 	// return color.ToHighlight(text)
 
 	var sb strings.Builder
@@ -125,14 +125,14 @@ func (colorizeToolS) echoResetColor(out io.Writer) { //nolint:unused //no
 //
 
 func (colorizeToolS) translate(str string, initialColor ...color.Color) string {
-	var clr = color.FgDefault
+	clr := color.FgDefault
 	for _, c := range initialColor {
 		clr = c
 	}
 	return color.GetCPT().Translate(str, clr)
 }
 
-func (colorizeToolS) rightPad(str string, padChar string, minw int) string {
+func (colorizeToolS) rightPad(str, padChar string, minw int) string { //nolint:unused
 	l := minw - len(str)
 	if l > 0 {
 		return str + strings.Repeat(padChar, l)
@@ -140,7 +140,7 @@ func (colorizeToolS) rightPad(str string, padChar string, minw int) string {
 	return str
 }
 
-func (colorizeToolS) pad(str string, padChar string, count int) string {
+func (colorizeToolS) pad(str, padChar string, count int) string { //nolint:unused
 	lead := strings.Repeat(padChar, count)
 	if strings.Contains(str, "\n") {
 		lines := strings.Split(str, "\n")
@@ -152,7 +152,7 @@ func (colorizeToolS) pad(str string, padChar string, count int) string {
 	return lead + str
 }
 
-func (colorizeToolS) padFunc(str string, padChar string, count int, fn func(i int, line string) string) string {
+func (colorizeToolS) padFunc(str, padChar string, count int, fn func(i int, line string) string) string { //nolint:unused
 	lead := strings.Repeat(padChar, count)
 	if strings.Contains(str, "\n") {
 		lines := strings.Split(str, "\n")
@@ -164,16 +164,16 @@ func (colorizeToolS) padFunc(str string, padChar string, count int, fn func(i in
 	return lead + str
 }
 
-func (colorizeToolS) firstLine(str string) string {
+func (colorizeToolS) firstLine(str string) string { //nolint:unused
 	a := strings.Split(str, "\n")
 	return a[0]
 }
 
-func (colorizeToolS) restLines(str string) (ret string, eol bool) {
+func (colorizeToolS) restLines(str string) (ret string, eol bool) { //nolint:unused
 	if len(str) > 0 {
 		eol = str[len(str)-1] == '\n'
 		if eol {
-			str = strings.TrimRight(str, "\n\r")
+			str = strings.TrimRight(str, "\n\r") //nolint:revive
 		}
 		a := strings.Split(str, "\n")
 		if len(a) > 1 {
@@ -187,7 +187,7 @@ func (colorizeToolS) splitFirstAndRestLines(str string) (firstLine, restLines st
 	if len(str) > 0 {
 		eol = str[len(str)-1] == '\n'
 		if eol {
-			str = strings.TrimRight(str, "\n\r")
+			str = strings.TrimRight(str, "\n\r") //nolint:revive
 		}
 		ix := strings.IndexRune(str, '\n')
 		if ix >= 0 {

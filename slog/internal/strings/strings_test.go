@@ -38,17 +38,17 @@ func TestAddPrefix(t *testing.T) {
 
 func TestStringToBool(t *testing.T) {
 	v := StringToBool("1", false, false)
-	if v != true {
+	if v != true { //nolint:revive
 		t.Fatalf("wrong, expect true")
 	}
 
 	v = StringToBool("off", true, false)
-	if v != false {
+	if v != false { //nolint:revive
 		t.Fatalf("wrong, expect false")
 	}
 
 	v = StringToBool("", true, false)
-	if v != false {
+	if v != false { //nolint:revive
 		t.Fatalf("wrong, expect false")
 	}
 }

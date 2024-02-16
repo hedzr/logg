@@ -10,8 +10,8 @@ package slog
 // and more similar cases are ignored by default.
 //
 // But you can trace these error by build with tags 'hint'
-func hintInternal(err error, msg string) {
+func hintInternal(err error, msg string) { //nolint:revive,unparam
 	// this function will be removed completely when building a release copy
 }
 
-func raiseerror(msg string) {}
+func raiseerror(msg string) {} //nolint:revive,unparam,unused

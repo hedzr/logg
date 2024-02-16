@@ -8,7 +8,7 @@ import (
 )
 
 func NewAttr(key string, val any) Attr              { return &kvp{key, val} }                            // create an attribute
-func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(nil, args...) }            // freeform args here, used by WithAttrs1. See also New or With for the usage.
+func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(nil, args...) }            //nolint:revive,lll // freeform args here, used by WithAttrs1. See also New or With for the usage.
 func NewGroupedAttr(key string, as ...Attr) Attr    { return &gkvp{key, as} }                            // similar with Group
 func NewGroupedAttrEasy(key string, as ...any) Attr { return &gkvp{key: key, items: buildAttrs(as...)} } // synonym to Group
 
@@ -97,7 +97,7 @@ func (s Attrs) SerializeValueTo(pc *PrintCtx) {
 	serializeAttrs(pc, s)
 }
 
-func serializeAttrs(pc *PrintCtx, kvps Attrs) {
+func serializeAttrs(pc *PrintCtx, kvps Attrs) { //nolint:revive
 	prefix := pc.prefix
 	for _, v := range kvps {
 		if pc.noColor {
@@ -112,7 +112,7 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) {
 			_, inGroupedMode = v.(groupedValue)
 		}
 
-		var key = v.Key()
+		key := v.Key()
 		if inGroupedMode && !pc.jsonMode && pc.valueStringer == nil {
 			key = strings.DotPrefix(key, prefix)
 		} else {

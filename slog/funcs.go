@@ -62,7 +62,7 @@ func Println(args ...any) {
 		return
 	}
 	var msg string
-	msg, args = args[0].(string), args[1:]
+	msg, args = args[0].(string), args[1:] //nolint:errcheck,revive
 	logctx(AlwaysLevel, msg, args...)
 }
 
@@ -171,7 +171,7 @@ func FailContext(ctx context.Context, msg string, args ...any) {
 // performance and memory allocations. So they are just compatible with log/slog.
 //
 // For performance, using With(attrs...) / WithAttrs(...) to get prefer effects.
-func String(key string, val string) Attr          { return &kvp{key, val} }
+func String(key, val string) Attr                 { return &kvp{key, val} }
 func Bool(key string, val bool) Attr              { return &kvp{key, val} } // constructs boolean k-v pair. see String for performance tip.
 func Int(key string, val int) Attr                { return &kvp{key, val} } // constructs Int k-v pair. see String for performance tip.
 func Int8(key string, val int8) Attr              { return &kvp{key, val} } // constructs Int8 k-v pair. see String for performance tip.
@@ -204,14 +204,14 @@ func Numeric[T Numerics](key string, val T) Attr { return &kvp{key, val} } // co
 //	   Int("line", lineno),
 //	)
 func Group(key string, args ...any) Attr {
-	var g = &gkvp{key: key, items: argsToAttrs(nil, args...)}
+	g := &gkvp{key: key, items: argsToAttrs(nil, args...)}
 	return g
 }
 
 func buildAttrs(as ...any) (kvps Attrs)                             { return argsToAttrs(nil, as...) }
 func buildUniqueAttrs(keys map[string]bool, as ...any) (kvps Attrs) { return argsToAttrs(keys, as...) }
 
-func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) {
+func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint:revive
 	var key string
 	if keysKnown == nil {
 		// keysKnown = make(map[string]bool)
@@ -229,14 +229,13 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) {
 					}
 					key = ""
 				case Attrs:
-					for _, el := range k {
-						kvps = append(kvps, el)
-					}
+					kvps = append(kvps, k...)
 					key = ""
 				default:
 					// raiseerror(`bad sequences. The right list should be:
 					// NewGroupedAttrEasy("key", "attr1", 1, "attr2", false)`)
-					hintInternal(errUnmatchedPair, "expecting 'key' and 'value' pair in 'args' list, but unmatched 'key' found") // args must be key and value pair, key should be a string
+					hintInternal(errUnmatchedPair, "expecting 'key' and 'value' pair in 'args' list, but unmatched 'key' found")
+					// NOTE: args must be key and value pair, key should be a string
 				}
 			} else {
 				kvps = append(kvps, NewAttr(key, it))
@@ -276,7 +275,8 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) {
 			default:
 				// raiseerror(`bad sequences. The right list should be:
 				// NewGroupedAttrEasy("key", "attr1", 1, "attr2", false)`)
-				hintInternal(errUnmatchedPair, "expecting 'key' and 'value' pair in 'args' list, but unmatched 'key' found") // args must be key and value pair, key should be a string
+				hintInternal(errUnmatchedPair, "expecting 'key' and 'value' pair in 'args' list, but unmatched 'key' found")
+				// NOTE: args must be key and value pair, key should be a string
 			}
 		} else {
 			kvps = setUniqueKvp(keysKnown, kvps, key, it)
@@ -296,7 +296,7 @@ func setUniqueKvp(keys map[string]bool, kvps []Attr, key string, val any) []Attr
 			}
 		}
 	} else {
-		kvps = append(kvps, NewAttr(key, val))
+		kvps = append(kvps, NewAttr(key, val)) //nolint:revive
 		keys[key] = true
 	}
 	return kvps

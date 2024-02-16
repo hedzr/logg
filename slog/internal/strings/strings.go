@@ -9,19 +9,19 @@ func AddPrefix(delimiter rune, leaf string, prefix ...string) string {
 	for i, p := range prefix {
 		if p != "" {
 			if i > 0 {
-				sb.WriteRune(delimiter)
+				_, _ = sb.WriteRune(delimiter)
 			}
-			sb.WriteString(p)
+			_, _ = sb.WriteString(p)
 		}
 	}
 	if sb.Len() > 0 {
-		sb.WriteRune(delimiter)
+		_, _ = sb.WriteRune(delimiter)
 	}
-	sb.WriteString(leaf)
+	_, _ = sb.WriteString(leaf)
 	return sb.String()
 }
 
-func AddPrefixFaster(delimiter rune, leaf string, prefix string) string {
+func AddPrefixFaster(delimiter rune, leaf, prefix string) string {
 	if prefix == "" {
 		if leaf == "" {
 			return ""
@@ -33,9 +33,9 @@ func AddPrefixFaster(delimiter rune, leaf string, prefix string) string {
 
 	var sb strings.Builder
 	sb.Grow(len(prefix) + 1 + len(leaf))
-	sb.WriteString(prefix)
-	sb.WriteRune(delimiter)
-	sb.WriteString(leaf)
+	_, _ = sb.WriteString(prefix)
+	_, _ = sb.WriteRune(delimiter)
+	_, _ = sb.WriteString(leaf)
 	return sb.String()
 }
 

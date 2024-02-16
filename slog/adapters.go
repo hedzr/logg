@@ -8,7 +8,7 @@ import (
 // NewSlogHandler makes a log/slog Handler to adapt into std slog.
 func NewSlogHandler(logger Logger, config *HandlerOptions) logslog.Handler {
 	if config == nil {
-		config = &HandlerOptions{}
+		config = &HandlerOptions{} //nolint:revive
 	}
 	if config.NoSource {
 		RemoveFlags(Lcaller)
@@ -96,7 +96,7 @@ func (s *handler4LogSlog) WithGroup(name string) logslog.Handler {
 }
 
 // withFields returns a cloned Handler with the given fields.
-func (h *handler4LogSlog) withFields(fields ...Attr) *handler4LogSlog {
+func (s *handler4LogSlog) withFields(fields ...Attr) *handler4LogSlog {
 	cloned := &handler4LogSlog{
 		New().WithAttrs(fields...),
 	}
@@ -112,7 +112,7 @@ func convertGroupToFields(attrs []logslog.Attr) (ret Attrs) {
 	return
 }
 
-func convertAttrToField(attr logslog.Attr) Attr {
+func convertAttrToField(attr logslog.Attr) Attr { //nolint:revive
 	switch attr.Value.Kind() {
 	case logslog.KindBool:
 		return Bool(attr.Key, attr.Value.Bool())

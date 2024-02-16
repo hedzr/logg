@@ -24,46 +24,46 @@ var defaultLayouts = map[Flags]string{
 	Ldate | Ltime | Lmicroseconds: RFC3339Nano,
 }
 
-func intToString[T Integers](val T) string {
+func intToString[T Integers](val T) string { //nolint:unused
 	return intToStringEx(val, 10)
 }
 
-func intToStringEx[T Integers](val T, base int) string {
+func intToStringEx[T Integers](val T, base int) string { //nolint:unused
 	return strconv.FormatInt(int64(val), base)
 }
 
-func uintToString[T Uintegers](val T) string {
+func uintToString[T Uintegers](val T) string { //nolint:unused
 	return uintToStringEx(val, 10)
 }
 
-func uintToStringEx[T Uintegers](val T, base int) string {
+func uintToStringEx[T Uintegers](val T, base int) string { //nolint:unused
 	return strconv.FormatUint(uint64(val), base)
 }
 
-func floatToString[T Floats](val T) string {
+func floatToString[T Floats](val T) string { //nolint:unused
 	return floatToStringEx(float64(val), 'f', -1, 64)
 }
 
-func floatToStringEx[T Floats](val T, format byte, prec, bitSize int) string {
+func floatToStringEx[T Floats](val T, format byte, prec, bitSize int) string { //nolint:unused
 	return strconv.FormatFloat(float64(val), format, prec, bitSize)
 }
 
-func complexToString[T Complexes](val T) string {
+func complexToString[T Complexes](val T) string { //nolint:unused
 	return complexToStringEx(val, 'f', -1, 128)
 }
 
-func complexToStringEx[T Complexes](val T, format byte, prec, bitSize int) string {
+func complexToStringEx[T Complexes](val T, format byte, prec, bitSize int) string { //nolint:unused
 	return strconv.FormatComplex(complex128(val), format, prec, bitSize)
 }
 
-func boolToString(b bool) string {
+func boolToString(b bool) string { //nolint:unused
 	return strconv.FormatBool(b)
 }
 
 //
 
-func intSliceToString[T Integers](val IntSlice[T]) string {
-	var b = make([]byte, 0, len(val)*8) // 8: assume integer need 8 runes
+func intSliceToString[T Integers](val IntSlice[T]) string { //nolint:unused
+	b := make([]byte, 0, len(val)*8) // 8: assume integer need 8 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -75,8 +75,8 @@ func intSliceToString[T Integers](val IntSlice[T]) string {
 	return string(b)
 }
 
-func uintSliceToString[T Uintegers](val UintSlice[T]) string {
-	var b = make([]byte, 0, len(val)*8) // 8: assume unsigned integer need 8 runes
+func uintSliceToString[T Uintegers](val UintSlice[T]) string { //nolint:unused
+	b := make([]byte, 0, len(val)*8) // 8: assume unsigned integer need 8 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -88,8 +88,8 @@ func uintSliceToString[T Uintegers](val UintSlice[T]) string {
 	return string(b)
 }
 
-func floatSliceToString[T Floats](val FloatSlice[T]) string {
-	var b = make([]byte, 0, len(val)*16+2) // 8: assume floats need 16 runes
+func floatSliceToString[T Floats](val FloatSlice[T]) string { //nolint:unused
+	b := make([]byte, 0, len(val)*16+2) // 8: assume floats need 16 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -101,8 +101,8 @@ func floatSliceToString[T Floats](val FloatSlice[T]) string {
 	return string(b)
 }
 
-func complexSliceToString[T Complexes](val ComplexSlice[T]) string {
-	var b = make([]byte, 0, len(val)*32+2) // 8: assume complex need 32 runes
+func complexSliceToString[T Complexes](val ComplexSlice[T]) string { //nolint:unused
+	b := make([]byte, 0, len(val)*32+2) // 8: assume complex need 32 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -116,7 +116,7 @@ func complexSliceToString[T Complexes](val ComplexSlice[T]) string {
 }
 
 // func complexSliceToString[T Complexes](val ComplexSlice[T]) string {
-// 	var b = make([]byte, 0, len(val)*32+2) // 8: assume complex need 32 runes
+// 	b := make([]byte, 0, len(val)*32+2) // 8: assume complex need 32 runes
 // 	b = append(b, []byte("[")...)
 // 	for i := range val {
 // 		if i > 0 {
@@ -128,8 +128,8 @@ func complexSliceToString[T Complexes](val ComplexSlice[T]) string {
 // 	return string(b)
 // }
 
-func stringSliceToString(val []string) string {
-	var b = make([]byte, 0, len(val)*32+2) // 8: assume integer need 32 runes
+func stringSliceToString(val []string) string { //nolint:unused
+	b := make([]byte, 0, len(val)*32+2) // 8: assume integer need 32 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -141,8 +141,8 @@ func stringSliceToString(val []string) string {
 	return string(b)
 }
 
-func boolSliceToString(val []bool) string {
-	var b = make([]byte, 0, len(val)*8) // 8: assume bool need 5 runes
+func boolSliceToString(val []bool) string { //nolint:unused
+	b := make([]byte, 0, len(val)*8) // 8: assume bool need 5 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -154,8 +154,8 @@ func boolSliceToString(val []bool) string {
 	return string(b)
 }
 
-func timeSliceToString(val []time.Time) string {
-	var b = make([]byte, 0, len(val)*32+2) // 8: assume time need 24 runes
+func timeSliceToString(val []time.Time) string { //nolint:unused
+	b := make([]byte, 0, len(val)*32+2) // 8: assume time need 24 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {
@@ -167,8 +167,8 @@ func timeSliceToString(val []time.Time) string {
 	return string(b)
 }
 
-func durationSliceToString(val []time.Duration) string {
-	var b = make([]byte, 0, len(val)*16+2) // 8: assume duration need 16 runes
+func durationSliceToString(val []time.Duration) string { //nolint:unused
+	b := make([]byte, 0, len(val)*16+2) // 8: assume duration need 16 runes
 	b = append(b, []byte("[")...)
 	for i := range val {
 		if i > 0 {

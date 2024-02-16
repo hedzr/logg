@@ -37,6 +37,8 @@ func TestSlogBasic(t *testing.T) {
 	slog.OK("ok")
 	slog.Success("success")
 	slog.Fail("fail")
+
+	t.Log("ok")
 }
 
 func TestSlogBasic1(t *testing.T) {
@@ -57,12 +59,13 @@ func TestSlogBasic1(t *testing.T) {
 	slog.OK("ok")
 	slog.Success("success")
 	slog.Fail("fail")
+	t.Log("ok")
 }
 
 func TestSlogBasic2(t *testing.T) {
 	t.Logf("1. the level is %v", slog.GetLevel())
 	done := make(chan struct{})
-	func() {
+	fn := func() {
 		defer slog.SaveLevelAndSet(slog.WarnLevel)()
 
 		t.Logf("2.the level is %v", slog.GetLevel())
@@ -72,7 +75,8 @@ func TestSlogBasic2(t *testing.T) {
 		slog.Error("Error message")
 
 		close(done)
-	}()
+	}
+	fn()
 	<-done
 	t.Logf("3. the level is %v", slog.GetLevel())
 }
@@ -305,7 +309,7 @@ func TestSlogWithAttrs(t *testing.T) {
 
 // another sample:
 
-func testSlogAndHttpServer(t *testing.T) {
+func testSlogAndHTTPServer(t testing.TB) {
 	demoWorkingWithLegacyCodes := func() {
 		var srv http.Server
 		var sigint chan os.Signal

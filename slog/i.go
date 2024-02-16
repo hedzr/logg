@@ -147,8 +147,7 @@ type LogWriter interface {
 }
 
 // LogWriters for external adapters
-type LogWriters interface {
-}
+type LogWriters interface{} //nolint:revive
 
 type (
 	// Attr for external adapters
@@ -166,7 +165,7 @@ type (
 	}
 )
 
-const maxLogValues = 100
+const maxLogValues = 100 //nolint:unused
 
 // func errorlog(err error) {
 // 	// _, _ = fmt.Fprintf(lw.GetErrorOutput(), "[logg/slog] error occurs: %+v", err)
