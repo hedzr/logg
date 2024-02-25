@@ -741,6 +741,14 @@ func (s *entry) LogAttrs(ctx context.Context, level Level, msg string, args ...a
 	}
 }
 
+// Log implements Logger.
+func (s *entry) Log(ctx context.Context, level Level, msg string, args ...any) {
+	if s.EnabledContext(ctx, level) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, level, pc, msg, args...)
+	}
+}
+
 //
 
 //

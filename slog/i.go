@@ -51,6 +51,7 @@ type (
 		EnabledContext(ctx context.Context, requestingLevel Level) bool
 
 		LogAttrs(ctx context.Context, level Level, msg string, args ...any) // Attr, Attrs in args will be recognized as is
+		Log(ctx context.Context, level Level, msg string, args ...any)      // Attr, Attrs in args will be recognized as is
 
 		// WithSkip create a new child logger with specified extra
 		// ignored stack frames, which will be plussed over the
