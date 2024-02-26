@@ -53,25 +53,25 @@ import "github.com/hedzr/logg/slog"
 
 msg := "A message"
 args := []any{
-		"attr1", 0,
-		"attr2", false,
-		"attr3", 3.13,
-		"attr4", errors.New("simple"),
-		// ,,,
-		slog.Group("group1",
-			"attr1", 0,
-			"attr2", false,
-			slog.NewAttr("attr3", "any styles what u prefer"),
-			"attrn", // unpaired key can work here 
-			slog.Group("more", "group", []byte("more subgroup here")),
-		),
-		// ...
-		slog.Int("id", 23123),
-		slog.Group("properties",
-			slog.Int("width", 4000),
-			slog.Int("height", 3000),
-			slog.String("format", "jpeg"),
-		),
+    "attr1", 0,
+    "attr2", false,
+    "attr3", 3.13,
+    "attr4", errors.New("simple"),
+    // ,,,
+    slog.Group("group1",
+        "attr1", 0,
+        "attr2", false,
+        slog.NewAttr("attr3", "any styles what u prefer"),
+        "attrn", // unpaired key can work here 
+        slog.Group("more", "group", []byte("more subgroup here")),
+    ),
+    // ...
+    slog.Int("id", 23123),
+    slog.Group("properties",
+        slog.Int("width", 4000),
+        slog.Int("height", 3000),
+        slog.String("format", "jpeg"),
+    ),
 }
 
 slog.Print("")    // logging a clean newline without decorations
@@ -117,8 +117,6 @@ slog.Info("2")
 
 In a large long logging outputs, one and more blank line(s) maybe help your focus.
 
-
-
 ### Customizing Your Verbs
 
 Like `OK`, `Success` and `Fail`, you could wrap logg/slogg package-level predicates/verbs for giving more features.
@@ -139,47 +137,45 @@ By creating and managing a sublogger, make your own logger might be dead simple:
 
 ```go
 func newMyLogger2() *mylogger2 {
-	l := slog.New("mylogger").WithLevel(slog.InfoLevel)
-	s := &mylogger2{
-		l, // Provides basic Logger interface such as Info, Debug, etc.
+    l := slog.New("mylogger").WithLevel(slog.InfoLevel)
+    s := &mylogger2{
+        l, // Provides basic Logger interface such as Info, Debug, etc.
     true, // enable Infof()
-		l.WithSkip(1), // A sublogger created here. specially for Infof
-	}
-	return s
+        l.WithSkip(1), // A sublogger created here. specially for Infof
+    }
+    return s
 }
 
 type mylogger2 struct {
-	slog.Logger
-	SprintfLikeLoggingIsEnabled bool
-	sl                          slog.Logger
+    slog.Logger
+    SprintfLikeLoggingIsEnabled bool
+    sl                          slog.Logger
 }
 
 func (s *mylogger2) Close() { s.Logger.Close() }
 
 func (s *mylogger2) Infof(msg string, args ...any) {
-	if s.SprintfLikeLoggingIsEnabled {
-		if len(args) > 0 {
-			// msg = fmt.Sprintf(msg, args...)
+    if s.SprintfLikeLoggingIsEnabled {
+        if len(args) > 0 {
+            // msg = fmt.Sprintf(msg, args...)
 
-			var data []byte
-			data = fmt.Appendf(data, msg, args...)
-			s.sl.Info(string(data))
-		}
-		s.sl.Info(msg)
-	}
+            var data []byte
+            data = fmt.Appendf(data, msg, args...)
+            s.sl.Info(string(data))
+        }
+        s.sl.Info(msg)
+    }
 }
 
 func TestSlogBasic4(t *testing.T) {
-	l := newMyLogger2()
-	l.Infof("what's wrong with %v", "him")
-	l.Info("no matter")
-	// l.Infof("what's wrong with %v, %v, %v, %v, %v, %v", m1AttrsAsAnySlice()...)
+    l := newMyLogger2()
+    l.Infof("what's wrong with %v", "him")
+    l.Info("no matter")
+    // l.Infof("what's wrong with %v, %v, %v, %v, %v, %v", m1AttrsAsAnySlice()...)
 }
 ```
 
 That is it.
-
-
 
 ### Builtin Output Formats
 
@@ -210,11 +206,9 @@ and,
 
 ![image-20231028145416343](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231028145416343.png)
 
-
-
 ### Set Level
 
-The default is `WarnLevel` for a released app. If debugger detected the `DebugLevel` will be assumed. 
+The default is `WarnLevel` for a released app. If debugger detected the `DebugLevel` will be assumed.
 
 Also the executable path will be tested for looking up if runing in test mode.
 
@@ -229,17 +223,13 @@ To restore old level on Default logger, `SaveLevelAndSet` is available:
 
 ```go
 func TestSlogBasic2(t *testing.T) {
-	defer slog.SaveLevelAndSet(slog.TraceLevel)()
-	slog.Debug("Debug message") // should be enabled now
-	slog.Info("Info message")   // should be enabled now
-	slog.Warn("Warning message")
-	slog.Error("Error message")
+    defer slog.SaveLevelAndSet(slog.TraceLevel)()
+    slog.Debug("Debug message") // should be enabled now
+    slog.Info("Info message")   // should be enabled now
+    slog.Warn("Warning message")
+    slog.Error("Error message")
 }
 ```
-
-
-
-
 
 ### Sublogger
 
@@ -294,23 +284,21 @@ A logger or a sublogger could be identify by a unique name. Passing a string as 
 And attributes and WithOpts can follow the logger name. `New(...)` parses all of them and process them. For examples:
 
 ```go
-	l := slog.New("standalone-logger-for-app",
-		slog.NewAttr("attr1", 2),
-		slog.NewAttrs("attr2", 3, "attr3", 4.1),
-		"attr4", true, "attr3", "string",
-		slog.WithLevel(slog.AlwaysLevel),
-	)
-	defer l.Close()
+    l := slog.New("standalone-logger-for-app",
+        slog.NewAttr("attr1", 2),
+        slog.NewAttrs("attr2", 3, "attr3", 4.1),
+        "attr4", true, "attr3", "string",
+        slog.WithLevel(slog.AlwaysLevel),
+    )
+    defer l.Close()
 
-	sub1 := l.New("sub1").With("logger", "sub1")
-	sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
+    sub1 := l.New("sub1").With("logger", "sub1")
+    sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
 
-	sub1.Debug("hi debug", "AA", 1.23456789)
+    sub1.Debug("hi debug", "AA", 1.23456789)
 ```
 
 Making children loggers is possible.
-
-
 
 ### Logging with Attributes
 
@@ -319,23 +307,23 @@ The attributes can be prepared or passed in several forms.
 #### Plain form
 
 ```go
-	logger.Info("info message",
-		"attr1", 0,
-		"attr2", false,
-		"attr3", 3.13,
-	) // plain key and value pairs
+    logger.Info("info message",
+        "attr1", 0,
+        "attr2", false,
+        "attr3", 3.13,
+    ) // plain key and value pairs
 ```
 
 #### NewAttr and NewGroupedAttr
 
 ```go
 logger.Info("info message",
-		"attr1", 0,
-		"attr4", errors.New("simple"),
-		"attr3", 3.13,
-		slog.NewAttr("attr3", "any styles what u prefer"),
-		slog.NewGroupedAttrEasy("group1", "attr1", 13, "attr2", false),
-	) // use NewAttr, NewGroupedAttrs
+        "attr1", 0,
+        "attr4", errors.New("simple"),
+        "attr3", 3.13,
+        slog.NewAttr("attr3", "any styles what u prefer"),
+        slog.NewGroupedAttrEasy("group1", "attr1", 13, "attr2", false),
+    ) // use NewAttr, NewGroupedAttrs
 ```
 
 #### Int, Float, String, Any, ..., Group
@@ -344,13 +332,13 @@ logg/slog supports strong typed attributes:
 
 ```go
 logger.Info("image uploaded",
-		slog.Int("id", 23123),
-		slog.Group("properties",
-			slog.Int("width", 4000),
-			slog.Int("height", 3000),
-			slog.String("format", "jpeg"),
-		),
-	) // use Int, Float, String, Any, ..., and Group
+        slog.Int("id", 23123),
+        slog.Group("properties",
+            slog.Int("width", 4000),
+            slog.Int("height", 3000),
+            slog.String("format", "jpeg"),
+        ),
+    ) // use Int, Float, String, Any, ..., and Group
 ```
 
 These interfaces are very similar with standard log/slog.
@@ -361,26 +349,26 @@ The above forms can be mixed in any order together.
 
 ```go
 logger.Info("image uploaded",
-		"attr1", 0,
-		"attr2", false,
-		"attr3", 3.13,
-		"attr4", errors.New("simple"),
-		// ,,,
-		slog.Group("group1", 
-			"attr1", 0,
-			"attr2", false,
-			slog.NewAttr("attr3", "any styles what u prefer"),
-			slog.Group("more", "group", []byte("more sub-attrs")),
-			"attrN", // unpaired key can work here
-		),
-		// ...
-		slog.Int("id", 23123),
-		slog.Group("properties",
-			slog.Int("width", 4000),
-			slog.Int("height", 3000),
-			slog.String("format", "jpeg"),
-		),
-	)
+        "attr1", 0,
+        "attr2", false,
+        "attr3", 3.13,
+        "attr4", errors.New("simple"),
+        // ,,,
+        slog.Group("group1", 
+            "attr1", 0,
+            "attr2", false,
+            slog.NewAttr("attr3", "any styles what u prefer"),
+            slog.Group("more", "group", []byte("more sub-attrs")),
+            "attrN", // unpaired key can work here
+        ),
+        // ...
+        slog.Int("id", 23123),
+        slog.Group("properties",
+            slog.Int("width", 4000),
+            slog.Int("height", 3000),
+            slog.String("format", "jpeg"),
+        ),
+    )
 ```
 
 #### Work with common Attributes
@@ -410,22 +398,20 @@ logger.Info("message", "type", "int") // Out: ,,, A message    attr1=v1 attr2=v2
 
 See above of above.
 
-
-
 ### Logging contextual attrs
 
 Same to standard `log/slog`, `logg/slog` has LogAttrs() to log attributes contextually.
 
 ```go
-	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
-	ctx := context.Background()
-	logger.InfoContext(ctx, "info msg", "attr1", 111333,
-		slog.Group("memory",
-			slog.Int("current", 50),
-			slog.Int("min", 20),
-			slog.Int("max", 80)),
-		slog.Int("cpu", 10),
-	)
+    logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
+    ctx := context.Background()
+    logger.InfoContext(ctx, "info msg", "attr1", 111333,
+        slog.Group("memory",
+            slog.Int("current", 50),
+            slog.Int("min", 20),
+            slog.Int("max", 80)),
+        slog.Int("cpu", 10),
+    )
 ```
 
 #### Extracting attrs from context
@@ -434,16 +420,16 @@ Sometimes the attributes can be extracted from context.Context.
 
 ```go
 func TestSlogWithContext(t *testing.T) {
-	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
-	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh")
-	logger.WithContextKeys("ctx").InfoContext(ctx, "info msg",
-		"attr1", 111333,
-		slog.Group("memory",
-			slog.Int("current", 50),
-			slog.Int("min", 20),
-			slog.Int("max", 80)),
-		slog.Int("cpu", 10),
-	)
+    logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
+    ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh")
+    logger.WithContextKeys("ctx").InfoContext(ctx, "info msg",
+        "attr1", 111333,
+        slog.Group("memory",
+            slog.Int("current", 50),
+            slog.Int("min", 20),
+            slog.Int("max", 80)),
+        slog.Int("cpu", 10),
+    )
 }
 ```
 
@@ -452,12 +438,6 @@ The result:
 ![image-20231106074712683](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231106074712683.png)
 
 As you seen, the value in context was been extracted and printed out.
-
-
-
-
-
-
 
 ### Set Writer
 
@@ -483,41 +463,39 @@ Also we provides sub-feature to allow you specify special writer for a special l
 
 ```go
 func TestAddLevelWriter1(t *testing.T) {
-	logger := New().AddLevelWriter(InfoLevel, &decorated{os.Stdout})
-	logger.Info("info msg")
-	logger.Debug(getMessage(0))
+    logger := New().AddLevelWriter(InfoLevel, &decorated{os.Stdout})
+    logger.Info("info msg")
+    logger.Debug(getMessage(0))
 }
 
 type decorated struct {
-	*os.File
+    *os.File
 }
 
 func (s *decorated) Write(p []byte) (n int, err error) {
-	if s.File != nil {
-		if ni, e := s.File.WriteString("[decorated] "); e != nil {
-			err = errors.Join(err, e)
-		} else {
-			n += ni
-		}
-		if ni, e := s.File.Write(p); e != nil {
-			err = errors.Join(err, e)
-		} else {
-			n += ni
-		}
-	}
-	return
+    if s.File != nil {
+        if ni, e := s.File.WriteString("[decorated] "); e != nil {
+            err = errors.Join(err, e)
+        } else {
+            n += ni
+        }
+        if ni, e := s.File.Write(p); e != nil {
+            err = errors.Join(err, e)
+        } else {
+            n += ni
+        }
+    }
+    return
 }
 ```
 
 The result is similar with:
 
-`````
+```bash
 [decorated] 10:57:22.986797+08:00 [INF] info msg                              ./new_test.go:170 slog.TestAddLevelWriter1
 10:57:22.987031+08:00 [DBG] Test logging, but use a somewhat realistic message length. (#0)  ./new_test.go:171 slog.TestAddLevelWriter1
 
-`````
-
-
+```
 
 #### Close()
 
@@ -540,15 +518,7 @@ func main() {
 
 The file writer will get a chance to shutdown itself gracefully.
 
-
-
-
-
 ### Set Handler
-
-
-
-
 
 ### Customizing the Level
 
@@ -556,50 +526,50 @@ In logg/slog, using your own logging level is enough simple:
 
 ```go
 const (
-	NoticeLevel = slog.Level(17) // A custom level must have a value greater than slog.MaxLevel
-	HintLevel   = slog.Level(-8) // Or use a negative number
-	SwellLevel  = slog.Level(12) // Sometimes, you may use the value equal with slog.MaxLevel
+    NoticeLevel = slog.Level(17) // A custom level must have a value greater than slog.MaxLevel
+    HintLevel   = slog.Level(-8) // Or use a negative number
+    SwellLevel  = slog.Level(12) // Sometimes, you may use the value equal with slog.MaxLevel
 )
 
 func TestSlogCustomizedLevel(t *testing.T) {
-	checkerr(t, slog.RegisterLevel(NoticeLevel, "NOTICE",
-		slog.RegWithShortTags([6]string{"", "N", "NT", "NTC", "NOTC", "NOTIC"}),
-		slog.RegWithColor(color.FgWhite, color.BgUnderline),
-		slog.RegWithTreatedAsLevel(slog.InfoLevel),
-	))
+    checkerr(t, slog.RegisterLevel(NoticeLevel, "NOTICE",
+        slog.RegWithShortTags([6]string{"", "N", "NT", "NTC", "NOTC", "NOTIC"}),
+        slog.RegWithColor(color.FgWhite, color.BgUnderline),
+        slog.RegWithTreatedAsLevel(slog.InfoLevel),
+    ))
 
-	checkerr(t, slog.RegisterLevel(HintLevel, "Hint",
-		slog.RegWithShortTags([6]string{"", "H", "HT", "HNT", "HINT", "HINT "}),
-		slog.RegWithColor(color.NoColor, color.BgInverse),
-		slog.RegWithTreatedAsLevel(slog.InfoLevel),
-	))
+    checkerr(t, slog.RegisterLevel(HintLevel, "Hint",
+        slog.RegWithShortTags([6]string{"", "H", "HT", "HNT", "HINT", "HINT "}),
+        slog.RegWithColor(color.NoColor, color.BgInverse),
+        slog.RegWithTreatedAsLevel(slog.InfoLevel),
+    ))
 
-	checkerr(t, slog.RegisterLevel(SwellLevel, "SWELL",
-		slog.RegWithShortTags([6]string{"", "S", "SW", "SWL", "SWEL", "SWEEL"}),
-		slog.RegWithColor(color.FgRed, color.BgBoldOrBright),
-		slog.RegWithTreatedAsLevel(slog.ErrorLevel),
-		slog.RegWithPrintToErrorDevice(),
-	))
+    checkerr(t, slog.RegisterLevel(SwellLevel, "SWELL",
+        slog.RegWithShortTags([6]string{"", "S", "SW", "SWL", "SWEL", "SWEEL"}),
+        slog.RegWithColor(color.FgRed, color.BgBoldOrBright),
+        slog.RegWithTreatedAsLevel(slog.ErrorLevel),
+        slog.RegWithPrintToErrorDevice(),
+    ))
 
-	logger := slog.New()
+    logger := slog.New()
 
-	logger.Debug("Debug message")
-	logger.Info("Info message")
-	logger.Warn("Warning message")
-	logger.Error("Error message")
+    logger.Debug("Debug message")
+    logger.Info("Info message")
+    logger.Warn("Warning message")
+    logger.Error("Error message")
 
-	slog.SetLevelOutputWidth(5)
+    slog.SetLevelOutputWidth(5)
 
-	ctx := context.Background()
-	logger.LogAttrs(ctx, NoticeLevel, "Notice message")
-	logger.LogAttrs(ctx, HintLevel, "Hint message")
-	logger.LogAttrs(ctx, SwellLevel, "Swell level")
+    ctx := context.Background()
+    logger.LogAttrs(ctx, NoticeLevel, "Notice message")
+    logger.LogAttrs(ctx, HintLevel, "Hint message")
+    logger.LogAttrs(ctx, SwellLevel, "Swell level")
 }
 
 func checkerr(t *testing.T, err error) {
-	if err != nil {
-		t.Error(err)
-	}
+    if err != nil {
+        t.Error(err)
+    }
 }
 ```
 
@@ -610,8 +580,6 @@ Its outputs looks like
 The ansi color representations relyes on your terminal settings.
 
 `SetLevelOutputWidth(n)` lets you can control the level serverity's display width (from 1 to 5). At customizing you should pass a array (`[6]string`) for each levels. For example, HintLevel can be displayed as "HINT" when output width is 4, or as "H" when width is 1. You could change it globally at any time. Just like the snapshot above, it was changed to 5 at last time, so HintLevel has width 5.
-
-
 
 ### Customizing the Colors
 
@@ -631,9 +599,6 @@ const NoColor = color.Color(-1)
 
 [`hedzr/is`](https://github.com/hedzr/is) provides a color Translator to format your html-like string to ansi colored text for terminal outputting. For more information see hedzr/is doc.
 
-
-
-
 ### Adapt into `log/slog`
 
 If you are using unified `log/slog` interfaces, put logg/slog into it:
@@ -643,36 +608,36 @@ import "log/slog"
 import logslog "github.com/hedzr/logg/slog"
 
 func TestSlogUsedForLogSlog(t *testing.T) {
-	l := slog.New("standalone-logger-for-app",
-		slog.NewAttr("attr1", 2),
-		slog.NewAttrs("attr2", 3, "attr3", 4.1),
-		"attr4", true, "attr3", "string",
-		slog.WithLevel(slog.AlwaysLevel),
-	)
-	defer l.Close()
+    l := slog.New("standalone-logger-for-app",
+        slog.NewAttr("attr1", 2),
+        slog.NewAttrs("attr2", 3, "attr3", 4.1),
+        "attr4", true, "attr3", "string",
+        slog.WithLevel(slog.AlwaysLevel),
+    )
+    defer l.Close()
 
-	sub1 := l.New("sub1").With("logger", "sub1")
-	sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
+    sub1 := l.New("sub1").With("logger", "sub1")
+    sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
 
-	// create a log/slog logger HERE
-	logger := logslog.New(slog.NewSlogHandler(l, nil))
+    // create a log/slog logger HERE
+    logger := logslog.New(slog.NewSlogHandler(l, nil))
 
-	t.Logf("logger: %v", logger)
-	t.Logf("l: %v", l)
+    t.Logf("logger: %v", logger)
+    t.Logf("l: %v", l)
 
-	// and logging with log/slog
-	logger.Debug("hi debug", "AA", 1.23456789)
-	logger.Info(
-		"incoming request",
-		logslog.String("method", "GET"),
-		logslog.String("path", "/api/user"),
-		logslog.Int("status", 200),
-	)
+    // and logging with log/slog
+    logger.Debug("hi debug", "AA", 1.23456789)
+    logger.Info(
+        "incoming request",
+        logslog.String("method", "GET"),
+        logslog.String("path", "/api/user"),
+        logslog.Int("status", 200),
+    )
 
-	// now using our logg/slog interface
-	sub1.Debug("hi debug", "AA", 1.23456789)
-	sub2.Debug("hi debug", "AA", 1.23456789)
-	sub2.Info("hi info", "AA", 1.23456789)
+    // now using our logg/slog interface
+    sub1.Debug("hi debug", "AA", 1.23456789)
+    sub2.Debug("hi debug", "AA", 1.23456789)
+    sub2.Info("hi info", "AA", 1.23456789)
 }
 ```
 
@@ -694,52 +659,52 @@ Here is a sample to pretty print the values in attributes:
 import "github.com/alecthomas/repr"
 
 func NewSpewPrinter() *prettyPrinter { //nolint:revive // just a test
-	return &prettyPrinter{
-		repr.New(os.Stdout, repr.Indent("  ")),
-	}
+    return &prettyPrinter{
+        repr.New(os.Stdout, repr.Indent("  ")),
+    }
 }
 
 type prettyPrinter struct {
-	*repr.Printer
+    *repr.Printer
 }
 
 func (p *prettyPrinter) SetWriter(w io.Writer) {
-	p.Printer = repr.New(w, repr.Indent("  "))
+    p.Printer = repr.New(w, repr.Indent("  "))
 }
 
 func (p *prettyPrinter) WriteValue(value any) {
-	// p.reprValue(map[reflect.Value]bool{}, reflect.ValueOf(value), "", true, false)
-	p.Print(value)
+    // p.reprValue(map[reflect.Value]bool{}, reflect.ValueOf(value), "", true, false)
+    p.Print(value)
 }
 
 func TestSlogCustomValueStringer(t *testing.T) {
-	// slog.SetLevel(slog.InfoLevel)
-	slog.AddFlags(slog.Lprivacypathregexp | slog.Lprivacypath)
+    // slog.SetLevel(slog.InfoLevel)
+    slog.AddFlags(slog.Lprivacypathregexp | slog.Lprivacypath)
 
-	defer slog.SaveFlagsAnd(func() { //nolint:revive // ok
-		slog.AddFlags(slog.Lprettyprint)
-	})()
+    defer slog.SaveFlagsAnd(func() { //nolint:revive // ok
+        slog.AddFlags(slog.Lprettyprint)
+    })()
 
-	printer := NewSpewPrinter()
+    printer := NewSpewPrinter()
 
-	for _, logger := range []slog.Logger{
-		slog.New(" spew ").WithValueStringer(printer),
-		slog.New("normal"),
-	} {
-		logger.Println()
-		logger.LogAttrs(
-			context.Background(),
-			slog.InfoLevel,
-			"image uploaded",
-			slog.Int("id", 23123),
-			slog.Group("properties",
-				slog.Int("width", 4000),
-				slog.Int("height", 3000),
-				slog.String("format", "jpeg"),
-				slog.Any("Map", map[int][]float64{3: {3.14, 2.72}, 5: {0.717, 1.732}}),
-			),
-		)
-	}
+    for _, logger := range []slog.Logger{
+        slog.New(" spew ").WithValueStringer(printer),
+        slog.New("normal"),
+    } {
+        logger.Println()
+        logger.LogAttrs(
+            context.Background(),
+            slog.InfoLevel,
+            "image uploaded",
+            slog.Int("id", 23123),
+            slog.Group("properties",
+                slog.Int("width", 4000),
+                slog.Int("height", 3000),
+                slog.String("format", "jpeg"),
+                slog.Any("Map", map[int][]float64{3: {3.14, 2.72}, 5: {0.717, 1.732}}),
+            ),
+        )
+    }
 }
 ```
 
@@ -759,30 +724,30 @@ Your struct can implement `LogObjectMashaller` or `LogArrayMashaller` so that th
 type users []*user
 
 func (uu users) MarshalLogArray(enc *slog.PrintCtx) (err error) {
-	for i := range uu {
-		if i > 0 {
-			enc.WriteRune(',')
-		}
-		if e := uu[i].MarshalLogObject(enc); e != nil {
-			err = errors.Join(err, e)
-		}
-	}
-	return
+    for i := range uu {
+        if i > 0 {
+            enc.WriteRune(',')
+        }
+        if e := uu[i].MarshalLogObject(enc); e != nil {
+            err = errors.Join(err, e)
+        }
+    }
+    return
 }
 
 type user struct {
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+    Name      string    `json:"name"`
+    Email     string    `json:"email"`
+    CreatedAt time.Time `json:"created_at"`
 }
 
 func (u *user) MarshalLogObject(enc *slog.PrintCtx) (err error) {
-	enc.AddString("name", u.Name)
-	enc.AddRune(',')
-	enc.AddString("email", u.Email)
-	enc.AddRune(',')
-	enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
-	return
+    enc.AddString("name", u.Name)
+    enc.AddRune(',')
+    enc.AddString("email", u.Email)
+    enc.AddRune(',')
+    enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
+    return
 }
 ```
 
@@ -800,8 +765,8 @@ For this test case:
 
 ```go
 func TestLogOneTwoThree(t *testing.T) {
-	l := slogg.New().WithLevel(slogg.InfoLevel)
-	l.Info("info msg", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
+    l := slogg.New().WithLevel(slogg.InfoLevel)
+    l.Info("info msg", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
 }
 ```
 
@@ -821,7 +786,7 @@ The codes looks like:
 
 ```go
 func init() {
-	slog.AddFlags(slog.Lprivacypathregexp | slog.Lprivacypath)
+    slog.AddFlags(slog.Lprivacypathregexp | slog.Lprivacypath)
 }
 ```
 
@@ -843,7 +808,7 @@ In outputs, package name in caller information has form `github.com/user/repo/of
 
 ```go
 func init() {
-	slog.AddFlags(slog.Lcallerpackagename)
+    slog.AddFlags(slog.Lcallerpackagename)
 }
 ```
 
@@ -873,7 +838,7 @@ defer slog.SaveLevelAndSet(slog.WarnLevel)
 
 // Save global Flags and modify it for local logic, and restore it after going back to up level
 defer slog.SaveFlagsAnd(func() {
-	slog.AddFlags(slog.LattrsR) // add, remove, or set flags
+    slog.AddFlags(slog.LattrsR) // add, remove, or set flags
 })()
 
 ```
@@ -892,8 +857,8 @@ Thinking about another case, a logging line has title and details, what form out
 
 ```go
 func TestLogLongLine(t *testing.T) {
-	l := New()
-	l.Info("/ERROR/ Started at "+time.Now().String()+", this is a multi-line test\nVersion: 2.0.1\nPackage: hedzr/hilog", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
+    l := New()
+    l.Info("/ERROR/ Started at "+time.Now().String()+", this is a multi-line test\nVersion: 2.0.1\nPackage: hedzr/hilog", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
 }
 ```
 
