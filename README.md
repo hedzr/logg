@@ -714,8 +714,6 @@ The outputs are:
 
 To integrete `go-spew` is similar and simple.
 
-
-
 ### Hide the sensitive fields
 
 Your struct can implement `LogObjectMashaller` or `LogArrayMashaller` so that the sensitive fields can be harden.
@@ -753,8 +751,6 @@ func (u *user) MarshalLogObject(enc *slog.PrintCtx) (err error) {
 
 `*slog.PrintCtx` is our value encoder.
 
-
-
 ### Harden filepath, shorten package name
 
 The caller information could leak the user's name, disk volumes, directory structure and others sensitive contents.
@@ -778,7 +774,7 @@ It may print out:
 
 Now we enable privacy flags, a builtin regexp rule (`/Volumes/.*/(.*)` -> `~$1`) will take effects:
 
-`````
+```bash
 20:22:33.688847+08:00 [INF] info msg                             Aa=1 Bbb=a string Cc=3.732 D=(2.71828+5.3571i) ~work/go.work/libs.log/bench/logg_test.go:17 bench.TestLogOneTwoThree
 `````
 
@@ -794,8 +790,6 @@ The builtin rules includes truncate homdir to `~`, disable absolute pathname, an
 
 You may make calls to `AddKnownPathMapping(path,repl)` and `AddKnownPathRegexpMapping(expr, repl)` to setup
 them.
-
-
 
 #### Shorten package name
 
@@ -814,9 +808,7 @@ func init() {
 
 If `Lcallerpackagename` is not present (this is default behavior), the package name will be truncated simply.
 
-`AddCodeHostingProviders(provide, repl)` API can add more rules for shortening. 
-
-
+`AddCodeHostingProviders(provide, repl)` API can add more rules for shortening.
 
 #### More Rules
 
@@ -825,8 +817,6 @@ You can always append yours with `AddKnownPathMapping(pathname, repl string)` an
 If `Lprivacypathregexp` and `Lprivacypath` is not present (this is default behavior), we try to truncate the pathname as possible as we can.
 
 And, `AddCodeHostingProviders(provider, repl string)` do similar things and need `Lcallerpackagename` is enabled.
-
-
 
 ### Other Helpers
 
@@ -842,8 +832,6 @@ defer slog.SaveFlagsAnd(func() {
 })()
 
 ```
-
-
 
 ## Others
 
@@ -867,8 +855,6 @@ It prints:
 ![image-20231106234956844](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231106234956844.png)
 
 As you seen, a message will be splitted to first line (as a title) and rest lines (as a details text). So you can avoid write a long message. Instead, you write a title with some details to describe a logging line better clearly. By the way, its json or logfmt format is still a message field with key name "msg".
-
-
 
 ## LICENSE
 
