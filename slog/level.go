@@ -189,7 +189,7 @@ func (level Level) String() string {
 	if b, err := level.MarshalText(); err == nil {
 		return string(b)
 	}
-	return "unknown"
+	return fmt.Sprintf("L#%d", int(level))
 }
 
 // ShortTag convert Level to a short tag string. eg. PanicLevel becomes "P".

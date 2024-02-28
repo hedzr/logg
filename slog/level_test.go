@@ -3,6 +3,8 @@ package slog
 import (
 	"context"
 	"testing"
+
+	"github.com/hedzr/is/term/color"
 )
 
 func TestSlogLevelEnabled(t *testing.T) {
@@ -133,5 +135,87 @@ func TestSlogLevelEnabled(t *testing.T) {
 		}
 	}
 	// Debug("hi debug", "AA", 1.23456789)
+}
 
+func TestAllLevels(t *testing.T) {
+	t.Log(AllLevels())
+
+	for _, l := range AllLevels() {
+		if b, err := l.MarshalText(); err == nil {
+			var x Level
+			xl := x.UnmarshalText(b)
+			t.Logf("MarshalText: %v - %v/%v", string(b), x, xl)
+		}
+		if b, err := l.MarshalJSON(); err == nil {
+			var x Level
+			xl := x.UnmarshalJSON(b)
+			t.Logf("MarshalJSON: %v - %v/%v", string(b), x, xl)
+		}
+		t.Log(l)
+	}
+
+	for i, c := range []struct {
+		from   string
+		expect Level
+	}{
+		{"panic", PanicLevel},
+		{"p", PanicLevel},
+	} {
+		actual, err := ParseLevel(c.from)
+		if actual != c.expect || err != nil {
+			if actual != PanicLevel {
+				t.Fatalf("%5d. expect %v, but got %v (err=%v)", i, c.expect, actual, err)
+			}
+		}
+	}
+}
+
+const (
+	NoticeLevel1 = Level(18) // A custom level must have a value larger than slog.MaxLevel
+	NoticeLevel2 = Level(19)
+	// HintLevel   = Level(-8) // Or use a negative number
+	// SwellLevel  = Level(12) // Sometimes, you may use the value equal with slog.MaxLevel
+)
+
+func TestLevel_ShortTag(t *testing.T) {
+	RegisterLevel(NoticeLevel1, "NOTICE1",
+		RegWithShortTags([6]string{"", "1", "1T", "1TC", "1OTC", "1OTIC"}),
+		RegWithColor(color.FgWhite, color.BgUnderline),
+		RegWithTreatedAsLevel(InfoLevel),
+		RegWithPrintToErrorDevice(false, true),
+	)
+
+	for _, l := range AllLevels() {
+		for i := 1; i < MaxLengthShortTag; i++ {
+			s := l.ShortTag(i)
+			t.Logf("Level %v: %v", l, s)
+		}
+	}
+
+	for i := 1; i < MaxLengthShortTag; i++ {
+		x := Level(123)
+		s := x.ShortTag(i)
+		t.Logf("Level %v: %v", x, s)
+	}
+
+	RegisterLevel(NoticeLevel2, "NOTICE2",
+		RegWithShortTags([6]string{"", "2", "2T", "2TC", "2OTC", "2OTIC"}),
+		RegWithColor(color.FgWhite, color.NoColor),
+		RegWithTreatedAsLevel(InfoLevel),
+		RegWithPrintToErrorDevice(false),
+	)
+
+	for _, l := range AllLevels() {
+		for i := 1; i < MaxLengthShortTag; i++ {
+			s := l.ShortTag(i)
+			t.Logf("Level %v: %v", l, s)
+		}
+	}
+
+	RegisterLevel(NoticeLevel2, "NOTICE2",
+		RegWithShortTags([6]string{"", "2", "2T", "2TC", "2OTC", "2OTIC"}),
+		RegWithColor(color.FgWhite, color.NoColor),
+		RegWithTreatedAsLevel(InfoLevel),
+		RegWithPrintToErrorDevice(false),
+	)
 }
