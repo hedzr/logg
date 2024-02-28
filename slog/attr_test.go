@@ -2,6 +2,7 @@ package slog
 
 import (
 	"testing"
+	"time"
 )
 
 func TestNewGroupedAttr(t *testing.T) {
@@ -59,6 +60,7 @@ func TestGkvp_SetValue(t *testing.T) {
 
 	g.SetValue(NewAttrs(
 		String("s1", "hello"),
+		Time("time", time.Now()),
 	))
 	testBytes = testBytes[:0]
 	pc = NewPrintCtx(testBytes)
