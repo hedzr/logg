@@ -152,6 +152,22 @@ func (colorizeToolS) pad(str, padChar string, count int) string { //nolint:unuse
 	return lead + str
 }
 
+func (colorizeToolS) alignr(str, padChar string, width int) string { //nolint:unused
+	if len(str) > width {
+		return str
+	}
+
+	lead := strings.Repeat(padChar, width)
+	if strings.Contains(str, "\n") {
+		lines := strings.Split(str, "\n")
+		for i := 0; i < len(lines); i++ {
+			lines[i] = (lead + lines[i])[:width]
+		}
+		return strings.Join(lines, "\n")
+	}
+	return lead + str
+}
+
 func (colorizeToolS) padFunc(str, padChar string, count int, fn func(i int, line string) string) string { //nolint:unused
 	lead := strings.Repeat(padChar, count)
 	if strings.Contains(str, "\n") {
