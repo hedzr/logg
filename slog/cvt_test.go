@@ -287,11 +287,13 @@ func TestCvt(t *testing.T) {
 	})
 
 	t.Run("timeSliceToString", func(t *testing.T) {
+		loc, _ := time.LoadLocation("Asia/Shanghai")
+
 		for i, c := range []struct {
 			from   []time.Time
 			expect string
 		}{
-			{[]time.Time{time.Unix(0, 0), time.Unix(1, 1)},
+			{[]time.Time{time.Unix(0, 0), time.Unix(1, 1).In(loc)},
 				"[\"1970-01-01T08:00:00+08:00\",\"1970-01-01T08:00:01.000000001+08:00\"]"},
 			{[]time.Time{}, "[]"},
 			{nil, "[]"},
