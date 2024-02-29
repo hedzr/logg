@@ -162,8 +162,8 @@ func (s *entry) newChildLogger(args ...any) *entry {
 	return s.items[name]
 }
 
-func (s *entry) children() map[string]*entry { return s.items } //nolint:unused // to be
-func (s *entry) parent() *entry              { return s.owner } //nolint:unused // to be
+// func (s *entry) children() map[string]*entry { return s.items } //nolint:unused // to be
+// func (s *entry) parent() *entry              { return s.owner } //nolint:unused // to be
 
 func (s *entry) Parent() Entry { return s.owner } //nolint:unused // to be
 func (s *entry) Root() Entry {
@@ -287,7 +287,9 @@ func WithTimeFormat(layout ...string) Opt {
 func (s *entry) WithTimeFormat(layout ...string) Entry {
 	var lay = time.RFC3339Nano
 	for _, ll := range layout {
-		lay = ll
+		if ll != "" {
+			lay = ll
+		}
 	}
 	s.timeLayout = lay
 	return s

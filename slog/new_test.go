@@ -9,25 +9,38 @@ import (
 )
 
 func TestNewLogger(t *testing.T) {
-	l := New()
+	l := New(WithJSONMode(false, false),
+		WithColorMode(false),
+		WithUTCMode(false, true, false),
+		WithTimeFormat("", "", time.RFC3339Nano),
+		WithAttrs(Int("a", 1)),
+		WithAttrs1(NewAttrs("a", 1)),
+		With("b", 2),
+	)
 	ll := l.(*logimp)
 
 	if ll.owner != nil {
 		t.Error("ll.owner should be nil")
 	}
 	// assert.Nil(t, ll.owner)
+
+	t.Logf("%v", l.GetWriter())
+	t.Logf("%v", l.GetWriterBy(DebugLevel))
+	t.Logf("%v", GetDefaultWriter())
+	t.Logf("%v", GetDefaultLoggersWriter())
 }
 
 func TestNewChildLogger(t *testing.T) {
 	l := New()
 	ll := l.(*logimp)
 
-	if ll.owner != nil {
+	t.Log(ll.owner, ll.Parent())
+	if ll.owner != nil && ll.Parent() != nil {
 		t.Error("ll.owner should be nil")
 	}
 	// assert.Nil(t, ll.owner)
 
-	l.Warn("l warn msg", "local", false)
+	l.Warn("l warn msg", "local", false, "n", l.Name())
 
 	lc1 := l.New("c1").WithAttrs(NewAttr("lc1", true))
 	llc1 := lc1.(*entry)
