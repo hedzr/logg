@@ -1,9 +1,12 @@
 package slog
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -31,6 +34,9 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestNewChildLogger(t *testing.T) {
+	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
+	defer SaveLevelAndSet(TraceLevel)()
+
 	l := New()
 	ll := l.(*logimp)
 
@@ -91,6 +97,9 @@ func TestLogLongLine(t *testing.T) {
 }
 
 func TestLogAllVerbs(t *testing.T) {
+	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
+	defer SaveLevelAndSet(TraceLevel)()
+
 	attrs := smallPackagedAttrs()
 	attrsDeep := deepPackagedAttrs()
 
@@ -146,6 +155,9 @@ func TestLogAllVerbs(t *testing.T) {
 }
 
 func TestLogDefault(t *testing.T) {
+	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
+	defer SaveLevelAndSet(TraceLevel)()
+
 	l := New().WithLevel(AlwaysLevel)
 
 	l.Print("print msg", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
@@ -222,6 +234,82 @@ func TestWithoutFields(t *testing.T) {
 	logger.Info(getMessage(0))
 	logger.Debug(getMessage(0))
 }
+
+func TestWithWriter(t *testing.T) {
+	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
+	defer SaveLevelAndSet(TraceLevel)()
+
+	l := New(WithJSONMode(false, false),
+		WithColorMode(false),
+		WithUTCMode(false, true, false),
+		WithTimeFormat("", "", time.RFC3339Nano),
+		WithAttrs(Int("a", 1)),
+		WithAttrs1(NewAttrs("a", 1)),
+		With("b", 2),
+
+		WithWriter(io.Discard),
+		AddWriter(io.Discard),
+		WithErrorWriter(io.Discard),
+		AddErrorWriter(io.Discard),
+		ResetWriters(),
+
+		AddLevelWriter(ErrorLevel, io.Discard),
+		RemoveLevelWriter(ErrorLevel, io.Discard),
+		ResetLevelWriter(ErrorLevel),
+		ResetLevelWriters(),
+
+		WithSkip(1),
+	)
+	ll := l.(*logimp)
+
+	if ll.owner != nil {
+		t.Error("ll.owner should be nil")
+	}
+	// assert.Nil(t, ll.owner)
+
+	SetSkip(0)
+
+	l.WithValueStringer(nil)
+	l.Println("")
+
+	t.Logf("%v", l.Skip())
+
+	t.Logf("%v", l.Enabled(ErrorLevel))
+
+	t.Logf("%v", l.GetWriter())
+	t.Logf("%v", l.GetWriterBy(DebugLevel))
+	t.Logf("%v", GetDefaultWriter())
+	t.Logf("%v", GetDefaultLoggersWriter())
+
+	var ss strings.Builder
+	ss.WriteString("val")
+
+	l.WithContextKeys(&ss, "from") // set two keys here: one is a Stringer, another is a string
+
+	ctx := context.WithValue(
+		context.WithValue(context.Background(), "from", "consul-center"),
+		&ss, "test")
+
+	l.PanicContext(ctx, "panic")
+	l.FatalContext(ctx, "fatal")
+	l.ErrorContext(ctx, "error")
+	l.WarnContext(ctx, "warn")
+	l.InfoContext(ctx, "info")
+	l.DebugContext(ctx, "debug")
+	l.TraceContext(ctx, "trace")
+	l.PrintContext(ctx, "print")
+	l.PrintlnContext(ctx, "println")
+	l.OKContext(ctx, "ok")
+	l.SuccessContext(ctx, "success")
+	l.FailContext(ctx, "fail")
+	l.Log(ctx, AlwaysLevel, "log")
+}
+
+//
+
+//
+
+//
 
 func BenchmarkWithoutFields(b *testing.B) {
 	b.Logf("Logging without any structured context. [BenchmarkWithoutFields]")
