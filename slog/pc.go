@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -1060,77 +1059,77 @@ func (s *PrintCtx) appendValue(val any) {
 	}
 }
 
-func (s *PrintCtx) expandSlice(val any, valtyp reflect.Type) {
-	v := reflect.ValueOf(val)
-	// kind := valtyp.Elem().Kind()
-
-	s.pcAppendRune('[')
-	for i := 0; i < v.Len(); i++ {
-		if i > 0 {
-			s.pcAppendRune(',')
-			// s.appendRune(' ')
-		}
-		ve := v.Index(i)
-		switch {
-		case ve.CanInterface():
-			vev := ve.Interface()
-			s.appendValue(vev)
-
-		// switch kind {
-		// case reflect.Bool:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Int:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Int8:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Int16:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Int32:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Int64:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Uint:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Uint8:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Uint16:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Uint32:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Uint64:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Uintptr:
-		// case reflect.Float32:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Float64:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Complex64:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Complex128:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Array:
-		// case reflect.Chan:
-		// case reflect.Func:
-		// case reflect.Interface:
-		// case reflect.Map:
-		// case reflect.Pointer:
-		// case reflect.Slice:
-		// case reflect.String:
-		// 	s.appendValue(vev, pc)
-		// case reflect.Struct:
-		// case reflect.UnsafePointer:
-		// default:
-		// 	s.pcAppendStringValue(s.pcTryQuoteValue(fmt.Sprintf("{{%v}}", z)))
-		// }
-
-		case ve.IsZero():
-			s.pcAppendString("<zero>")
-		case ve.IsNil():
-			s.pcAppendString("<nil>")
-		}
-	}
-	s.pcAppendRune(']')
-}
+// func (s *PrintCtx) expandSlice(val any, valtyp reflect.Type) {
+// 	v := reflect.ValueOf(val)
+// 	// kind := valtyp.Elem().Kind()
+//
+// 	s.pcAppendRune('[')
+// 	for i := 0; i < v.Len(); i++ {
+// 		if i > 0 {
+// 			s.pcAppendRune(',')
+// 			// s.appendRune(' ')
+// 		}
+// 		ve := v.Index(i)
+// 		switch {
+// 		case ve.CanInterface():
+// 			vev := ve.Interface()
+// 			s.appendValue(vev)
+//
+// 		// switch kind {
+// 		// case reflect.Bool:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Int:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Int8:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Int16:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Int32:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Int64:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Uint:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Uint8:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Uint16:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Uint32:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Uint64:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Uintptr:
+// 		// case reflect.Float32:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Float64:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Complex64:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Complex128:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Array:
+// 		// case reflect.Chan:
+// 		// case reflect.Func:
+// 		// case reflect.Interface:
+// 		// case reflect.Map:
+// 		// case reflect.Pointer:
+// 		// case reflect.Slice:
+// 		// case reflect.String:
+// 		// 	s.appendValue(vev, pc)
+// 		// case reflect.Struct:
+// 		// case reflect.UnsafePointer:
+// 		// default:
+// 		// 	s.pcAppendStringValue(s.pcTryQuoteValue(fmt.Sprintf("{{%v}}", z)))
+// 		// }
+//
+// 		case ve.IsZero():
+// 			s.pcAppendString("<zero>")
+// 		case ve.IsNil():
+// 			s.pcAppendString("<nil>")
+// 		}
+// 	}
+// 	s.pcAppendRune(']')
+// }
 
 //
 

@@ -2,7 +2,9 @@ package slog
 
 import (
 	"fmt"
+	"io"
 	"runtime/debug"
+	"strings"
 	"testing"
 	"time"
 
@@ -361,48 +363,104 @@ func TestEnvTest(t *testing.T) {
 func TestAddXXX(t *testing.T) {
 	var pc PrintCtx
 
-	pc.AddInt64("int64", int64(-101))
-	pc.AddRune(',')
-	pc.AddInt32("int32", int32(-32))
-	pc.AddRune(',')
-	pc.AddInt16("int16", int16(-16))
-	pc.AddRune(',')
-	pc.AddInt8("int8", int8(-8))
-	pc.AddRune(',')
+	subTest := func(t *testing.T, pc *PrintCtx) {
+		pc.AddInt64("int64", int64(-101))
+		pc.AddRune(',')
+		pc.AddInt32("int32", int32(-32))
+		pc.AddRune(',')
+		pc.AddInt16("int16", int16(-16))
+		pc.AddRune(',')
+		pc.AddInt8("int8", int8(-8))
+		pc.AddRune(',')
 
-	pc.AddUint64("uint64", uint64(101))
-	pc.AddRune(',')
-	pc.AddUint32("uint32", uint32(32))
-	pc.AddRune(',')
-	pc.AddUint16("uint16", uint16(16))
-	pc.AddRune(',')
-	pc.AddUint8("uint8", uint8(8))
-	pc.AddRune(',')
-	pc.AddUint("uint", uint(65536))
-	pc.AddRune(',')
+		pc.AddUint64("uint64", uint64(101))
+		pc.AddRune(',')
+		pc.AddUint32("uint32", uint32(32))
+		pc.AddRune(',')
+		pc.AddUint16("uint16", uint16(16))
+		pc.AddRune(',')
+		pc.AddUint8("uint8", uint8(8))
+		pc.AddRune(',')
+		pc.AddUint("uint", uint(65536))
+		pc.AddRune(',')
 
-	pc.AddFloat32("float32", float32(65536.32768))
-	pc.AddRune(',')
-	pc.AddFloat64("float64", float64(3.13))
-	pc.AddRune(',')
-	pc.AddFloat64("float64", float64(65536.32768))
-	pc.AddRune(',')
+		pc.AddFloat32("float32", float32(65536.32768))
+		pc.AddRune(',')
+		pc.AddFloat64("float64", float64(3.13))
+		pc.AddRune(',')
+		pc.AddFloat64("float64", float64(65536.32768))
+		pc.AddRune(',')
 
-	pc.AddComplex64("complex64", 65536.32768+2.718i)
-	pc.AddRune(',')
-	pc.AddComplex128("complex128", 3.13-2.718i)
-	pc.AddRune(',')
-	pc.AddComplex128("complex128", 65536.32768+2.718i)
-	pc.AddRune(',')
+		pc.AddComplex64("complex64", 65536.32768+2.718i)
+		pc.AddRune(',')
+		pc.AddComplex128("complex128", 3.13-2.718i)
+		pc.AddRune(',')
+		pc.AddComplex128("complex128", 65536.32768+2.718i)
+		pc.AddRune(',')
 
-	pc.AddBool("bool", false)
-	pc.AddRune(',')
+		pc.AddBool("bool", false)
+		pc.AddRune(',')
 
-	pc.AddString("ending-string", "modified")
-	pc.AddRune(',')
+		pc.AddString("ending-string", "modified")
+		pc.AddRune(',')
 
-	t.Logf("pc: %v", pc.String())
+		t.Logf("pc: %v", pc.String())
+	}
+
+	l := newentry(nil, WithJSONMode(true))
+	pc.setentry(l)
+	subTest(t, &pc)
+
+	l = newentry(nil, WithJSONMode(true))
+	pc.setentry(l)
+	subTest(t, &pc)
+
+	l = newentry(nil, WithJSONMode(true))
+	pc.setentry(l)
+	pc.appendValue(struct{}{})
+	subTest(t, &pc)
+
+	l = newentry(nil, WithColorMode(true), WithJSONMode(true))
+	l.useColor = true
+	pc.setentry(l)
+	pc.noColor = false
+	pc.AddPrefixedString("pre-", "want", "vn")
+	pc.AddPrefixedInt("pre-", "want", 92)
+	pc.appendValue(nil)
+	pc.appendValue(&amS{})
+	pc.appendValue(&omS{})
+	pc.appendValue([]time.Time{time.Now()})
+	pc.appendValue([]time.Duration{time.Second})
+	pc.appendValue(io.ErrNoProgress)
+	var ss strings.Builder
+	pc.appendValue(&ss)
+	pc.appendValue([]byte("hello"))
+	pc.appendValue([]string{"hello"})
+	pc.appendValue([]bool{true})
+	pc.appendValue([]int{23})
+	pc.appendValue([]int8{23})
+	pc.appendValue([]int16{23})
+	pc.appendValue([]int32{23})
+	pc.appendValue([]int64{23})
+	pc.appendValue([]uint{23})
+	pc.appendValue([]uint8{23})
+	pc.appendValue([]uint16{23})
+	pc.appendValue([]uint32{23})
+	pc.appendValue([]uint64{23})
+	pc.appendValue([]float64{23})
+	pc.appendValue([]float32{23})
+	pc.appendValue([]complex128{23})
+	pc.appendValue([]complex64{23})
+	subTest(t, &pc)
 }
+
+type amS struct{}
+
+func (s *amS) MarshalSlogArray(enc *PrintCtx) error { return nil }
+
+type omS struct{}
+
+func (s *omS) MarshalSlogObject(enc *PrintCtx) error { return nil }
 
 func TestAppendXXX(t *testing.T) {
 	var pc PrintCtx
@@ -416,6 +474,13 @@ func TestAppendXXX(t *testing.T) {
 	pc.AppendRune('$')
 
 	t.Logf("pc: %v", pc.String())
+}
+
+func TestSource_ToGroup(t *testing.T) {
+	var pc PrintCtx
+	t.Log(pc.source().toGroup())
+
+	t.Log(stack(0, 0))
 }
 
 func BenchmarkPrintCtx_appendValue(b *testing.B) {
