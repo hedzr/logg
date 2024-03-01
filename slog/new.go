@@ -469,6 +469,21 @@ func (s *entry) AddWriter(wr io.Writer) Entry {
 	return s
 }
 
+func WithErrorWriter(wr io.Writer) Opt {
+	return func(s *entry) {
+		s.WithWriter(wr)
+	}
+}
+
+func (s *entry) WithErrorWriter(wr io.Writer) Entry {
+	if s.writer == nil {
+		s.writer = newDualWriter()
+	}
+	s.writer.SetErrorWriter(wr)
+	// s.writer.SetLogWriter(wr)
+	return s
+}
+
 // AddErrorWriter adds a stderr writers to Default logger.
 // It is a Opt functor so you have to invoke it at New(,,,).
 //
@@ -483,7 +498,7 @@ func (s *entry) AddErrorWriter(wr io.Writer) Entry {
 	if s.writer == nil {
 		s.writer = newDualWriter()
 	}
-	s.writer.SetErrorWriter(wr)
+	s.writer.AddErrorWriter(wr)
 	// s.writer.SetLogWriter(wr)
 	return s
 }
@@ -780,16 +795,23 @@ func (s *entry) parseArgs(ctx context.Context, lvl Level, stackFrame uintptr, ms
 	// var key string
 	// var keys = make(map[string]bool, roughSize)
 
+	var keys map[string]bool
 	kvps = s.leadingTags(roughSize, lvl, stackFrame, msg)
 
 	if s.ctxKeysWanted() {
 		kvps = append(kvps, s.fromCtx(ctx)...)
 	}
 	if len(s.attrs) > 0 {
-		kvps = append(kvps, s.walkParentAttrs(ctx, lvl, s, nil)...)
+		if keys == nil {
+			keys = make(map[string]bool, roughSize)
+		}
+		kvps = append(kvps, s.walkParentAttrs(ctx, lvl, s, keys)...)
 	}
 	if len(args) > 0 {
-		kvps = append(kvps, argsToAttrs(nil, args...)...)
+		if keys == nil {
+			keys = make(map[string]bool, roughSize)
+		}
+		kvps = append(kvps, argsToAttrs(keys, args...)...)
 	}
 
 	// if key != "" {
