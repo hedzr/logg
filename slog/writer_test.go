@@ -38,6 +38,23 @@ func testDualWriter(t *testing.T) {
 	dw.ResetLevelWriters()
 	dw.Clear()
 	dw.Reset()
+
+	//
+
+	var d2 LogWriter
+	d2 = newDualWriter()
+
+	dw.Set(d2)
+	dw.SetWriter(d2)
+	dw.SetErrorWriter(d2)
+
+	dw.Add(d2)
+	dw.AddErrorWriter(d2)
+	dw.AddLevelWriter(ErrorLevel, d2)
+	w := dw.Get(ErrorLevel)
+	dw.RemoveLevelWriter(ErrorLevel, d2)
+
+	t.Log(w) // var w LWs
 }
 
 func TestLWs(t *testing.T) {
