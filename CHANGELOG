@@ -1,5 +1,12 @@
 # HISTORY / CHANGELOG
 
+- v0.5.11
+  - added Log(ctx, lvl, msg, args...) as a synonym of LogAttrs
+  - added missed WithErrorWriter()
+  - fixed AddErrorWriter()
+  - more coverage tests
+  - security updates: google/x/crypto
+
 - v0.5.9
   - updated internal times package to better
 
