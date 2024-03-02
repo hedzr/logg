@@ -2,10 +2,10 @@
 
 ![Go](https://github.com/hedzr/logg/workflows/Go/badge.svg)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/hedzr/logg.svg?label=release)](https://github.com/hedzr/logg/releases)
-[![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg) <!--
+[![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/logg)](https://goreportcard.com/report/github.com/hedzr/logg)
 [![Coverage Status](https://coveralls.io/repos/github/hedzr/logg/badge.svg?branch=master&.9)](https://coveralls.io/github/hedzr/logg?branch=master)
---> [![deps.dev](https://img.shields.io/badge/deps-dev-green)](https://deps.dev/go/github.com%2Fhedzr%2Flogg)
+[![deps.dev](https://img.shields.io/badge/deps-dev-green)](https://deps.dev/go/github.com%2Fhedzr%2Flogg)
 
 A golang logging library, to provide colorful output at terminal.
 
