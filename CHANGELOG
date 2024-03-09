@@ -1,11 +1,15 @@
 # HISTORY / CHANGELOG
 
+- v0.5.12
+  - security updates - google/x/crypto
+  - security patch (from hedzr/is)
+
 - v0.5.11
   - added Log(ctx, lvl, msg, args...) as a synonym of LogAttrs
   - added missed WithErrorWriter()
   - fixed AddErrorWriter()
   - more coverage tests
-  - security updates: google/x/crypto
+  - security updates - google/x/crypto
 
 - v0.5.9
   - updated internal times package to better
@@ -23,10 +27,10 @@
 
 - v0.5.5
   - updated deps
-  - security updates: google x libs
+  - security updates - google x libs
 
 - v0.5.3
-  - security updates: google x libs
+  - security updates - google x libs
 
 - v0.5.1
   - initial public release

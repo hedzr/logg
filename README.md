@@ -26,6 +26,8 @@ It is pre-releasing currently. Some abilities are:
 
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
 
+### Chanages
+
 See also [CHANGELOG](CHANGELOG).
 
 > Since v0.5.7, `logg/slog` enables privacy hardening flags by default now.
