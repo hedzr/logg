@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.5.13
+  - fixed go.mod sync state
+  - upgraded hedzr/is
+
 - v0.5.12
   - security updates - google/x/crypto
   - security patch (from hedzr/is)
