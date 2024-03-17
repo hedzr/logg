@@ -7,11 +7,11 @@
 [![Coverage Status](https://coveralls.io/repos/github/hedzr/logg/badge.svg?branch=master&.9)](https://coveralls.io/github/hedzr/logg?branch=master)
 [![deps.dev](https://img.shields.io/badge/deps-dev-green)](https://deps.dev/go/github.com%2Fhedzr%2Flogg)
 
-A golang logging library, to provide colorful output at terminal.
+A golang logging library with log/slog style APIs, with colorful console output.
 
 ## Features
 
-It is pre-releasing currently. Some abilities are:
+The abilities are:
 
 - fast enough: performance is not our unique aim, and this one is enough quick.
 - colorful console output by default.
