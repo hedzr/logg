@@ -1,5 +1,8 @@
 # HISTORY / CHANGELOG
 
+- v0.5.18
+  - upgraded hedzr/is
+
 - v0.5.13
   - fixed go.mod sync state
   - upgraded hedzr/is

@@ -1,6 +1,7 @@
 # hedzr/logg
 
 ![Go](https://github.com/hedzr/logg/workflows/Go/badge.svg)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/hedzr/store)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/hedzr/logg.svg?label=release)](https://github.com/hedzr/logg/releases)
 [![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/logg)](https://goreportcard.com/report/github.com/hedzr/logg)
