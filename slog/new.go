@@ -802,7 +802,7 @@ func (s *entry) parseArgs(ctx context.Context, lvl Level, stackFrame uintptr, ms
 		kvps = append(kvps, s.fromCtx(ctx)...)
 	}
 	if len(s.attrs) > 0 {
-		if keys == nil {
+		if keys == nil { //nolint:cond
 			keys = make(map[string]bool, roughSize)
 		}
 		kvps = append(kvps, s.walkParentAttrs(ctx, lvl, s, keys)...)

@@ -39,6 +39,7 @@ func TestGkvp_SetValue(t *testing.T) {
 	// t.Logf("%v", pc.String())
 
 	g.Add(String("s1", "hello"))
+	t.Logf("%v", pc.String())
 	testBytes = testBytes[:0]
 	pc = NewPrintCtx(testBytes)
 	g.SerializeValueTo(pc)

@@ -5,7 +5,7 @@ import (
 )
 
 func TestTriBool_Equal(t *testing.T) {
-	var b = TriTrue
+	b := TriTrue
 	if !b.Equal(TriTrue) {
 		t.Fail()
 	}
@@ -105,7 +105,7 @@ func TestTriBool_Marshal(t *testing.T) {
 		{TriFalse, "false"},
 		{TriNoState, "unset"},
 	} {
-		if actual, err := c.src.MarshalText(); string(actual) != c.expect || err != nil {
+		if actual, err := c.src.MarshalText(); err != nil || string(actual) != c.expect {
 			t.Fatalf("%5d. %v marshal to: expect %v, but got %v", i, c.src, c.expect, actual)
 		}
 	}

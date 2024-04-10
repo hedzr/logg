@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestCvt(t *testing.T) {
+func TestCvt(t *testing.T) { //nolint:revive
 	t.Run("intToString", func(t *testing.T) {
 		for i, c := range []struct {
 			from   int
@@ -293,8 +293,10 @@ func TestCvt(t *testing.T) {
 			from   []time.Time
 			expect string
 		}{
-			{[]time.Time{time.Unix(0, 0).In(loc), time.Unix(1, 1).In(loc)},
-				"[\"1970-01-01T08:00:00+08:00\",\"1970-01-01T08:00:01.000000001+08:00\"]"},
+			{
+				[]time.Time{time.Unix(0, 0).In(loc), time.Unix(1, 1).In(loc)},
+				"[\"1970-01-01T08:00:00+08:00\",\"1970-01-01T08:00:01.000000001+08:00\"]",
+			},
 			{[]time.Time{}, "[]"},
 			{nil, "[]"},
 		} {

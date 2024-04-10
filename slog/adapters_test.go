@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestHandler4LogSlog_Log(t *testing.T) {
+func TestHandler4LogSlog_Log(t *testing.T) { //nolint:revive
 	l := New()
 
 	h := NewSlogHandler(l, &HandlerOptions{
@@ -89,7 +89,7 @@ func TestHandler4LogSlog_Log(t *testing.T) {
 		}
 		if actual := h.Enabled(ctx, c.requesting); actual {
 			t.Logf("%5d. h[%v].Enable(ctx, %v) => expect %v, actual is %v, passed", i+1, l.Level(), c.requesting, c.expect, actual)
-			h.WithAttrs([]logslog.Attr{
+			_ = h.WithAttrs([]logslog.Attr{
 				logslog.Int("k1", 1),
 				logslog.Bool("b1", true),
 				logslog.Time("time1", time.Now()),
@@ -103,7 +103,7 @@ func TestHandler4LogSlog_Log(t *testing.T) {
 	}
 }
 
-func TestHandler4LogSlog_Enabled(t *testing.T) {
+func TestHandler4LogSlog_Enabled(t *testing.T) { //nolint:revive
 	l := New()
 
 	h := NewSlogHandler(l, &HandlerOptions{

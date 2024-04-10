@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	logslog "log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,10 +12,7 @@ import (
 	"testing"
 	"time"
 
-	logslog "log/slog"
-
 	"github.com/hedzr/is/term/color"
-
 	"github.com/hedzr/logg/slog"
 )
 
@@ -310,7 +308,7 @@ func TestSlogWithAttrs(t *testing.T) {
 
 // another sample:
 
-func testSlogAndHTTPServer(t testing.TB) {
+func testSlogAndHTTPServer(t testing.TB) { //nolint:unused
 	demoWorkingWithLegacyCodes := func() {
 		var srv http.Server
 		var sigint chan os.Signal
@@ -460,7 +458,7 @@ func TestSlogChildLogger(t *testing.T) {
 
 func TestSlogNewWithAttrs(t *testing.T) {
 	logger := slog.New("", "app-version", "v0.0.1-beta")
-	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh")
+	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh") //nolint:staticcheck
 	logger.InfoContext(ctx, "info msg",
 		"attr1", 111333,
 		slog.Group("memory",
@@ -473,7 +471,7 @@ func TestSlogNewWithAttrs(t *testing.T) {
 
 func TestSlogWithContext(t *testing.T) {
 	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
-	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh")
+	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh") //nolint:staticcheck
 	logger.WithContextKeys("ctx").InfoContext(ctx, "info msg",
 		"attr1", 111333,
 		slog.Group("memory",
@@ -486,7 +484,7 @@ func TestSlogWithContext(t *testing.T) {
 
 func TestSlogPassLoggerWithContext(t *testing.T) {
 	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
-	ctx := context.WithValue(context.Background(), LoggerKey, logger) // 👈 context containing logger
+	ctx := context.WithValue(context.Background(), LoggerKey, logger) //nolint:staticcheck // 👈 context containing logger
 	sendUsageStatus(ctx)
 }
 

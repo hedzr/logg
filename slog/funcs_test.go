@@ -17,16 +17,17 @@ func TestIsTty(t *testing.T) {
 }
 
 func TestPanic(t *testing.T) {
-	defer SaveFlagsAndMod(LnoInterrupt)()
+	defer SaveFlagsAndMod(LnoInterrupt)() //nolint:revive
 	Panic("panic msg")
 	Fatal("fatal msg")
 	PanicContext(context.TODO(), "panic msg")
 	FatalContext(context.TODO(), "fatal msg")
+	t.Log("OK")
 }
 
 func TestLogContext(t *testing.T) {
-	defer SaveFlagsAndMod(LnoInterrupt)()
-	defer SaveLevelAndSet(TraceLevel)()
+	defer SaveFlagsAndMod(LnoInterrupt)() //nolint:revive
+	defer SaveLevelAndSet(TraceLevel)()   //nolint:revive
 
 	ErrorContext(context.TODO(), "error msg")
 	WarnContext(context.TODO(), "warn msg")
@@ -101,6 +102,7 @@ func TestLogContext(t *testing.T) {
 
 func TestPrintlnEmpty(t *testing.T) {
 	Println()
+	t.Log("")
 }
 
 func TestLogCtxCtx(t *testing.T) {
@@ -114,6 +116,7 @@ func TestLogCtxCtx(t *testing.T) {
 	logctxctx(context.TODO(), WarnLevel,
 		"logctxctx",
 	)
+	t.Log("")
 }
 
 func TestNewLogLogger(t *testing.T) {
@@ -124,4 +127,5 @@ func TestNewLogLogger(t *testing.T) {
 	_, _ = lw.Write([]byte("string"))
 
 	raiseerror("e")
+	t.Log("")
 }

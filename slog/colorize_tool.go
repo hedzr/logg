@@ -186,7 +186,7 @@ func (colorizeToolS) firstLine(str string) string { //nolint:unused
 }
 
 func (colorizeToolS) restLines(str string) (ret string, eol bool) { //nolint:unused
-	if len(str) > 0 {
+	if str != "" {
 		eol = str[len(str)-1] == '\n'
 		if eol {
 			str = strings.TrimRight(str, "\n\r") //nolint:revive
@@ -200,7 +200,7 @@ func (colorizeToolS) restLines(str string) (ret string, eol bool) { //nolint:unu
 }
 
 func (colorizeToolS) splitFirstAndRestLines(str string) (firstLine, restLines string, eol bool) {
-	if len(str) > 0 {
+	if str != "" {
 		eol = str[len(str)-1] == '\n'
 		if eol {
 			str = strings.TrimRight(str, "\n\r") //nolint:revive
