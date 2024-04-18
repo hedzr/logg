@@ -1,5 +1,10 @@
 # HISTORY / CHANGELOG
 
+- v0.5.20
+  - lint codes
+  - fix go toolchain version in tests/ submodule
+  - add `Verbose` output to `AddFlags` so that user can catch more states in advanced debugging
+
 - v0.5.19
   - upgraded hedzr/is
   - security patch
