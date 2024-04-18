@@ -4,7 +4,7 @@ go 1.21
 
 replace github.com/hedzr/logg => ../
 
-require github.com/hedzr/logg v0.5.19
+require github.com/hedzr/logg v0.5.20
 
 require (
 	github.com/hedzr/is v0.5.19 // indirect
