@@ -78,6 +78,7 @@ func IsAllBitsSet(f Flags) bool { return flags&f == f } // detects if all of giv
 func AddFlags(flagsToAdd ...Flags) {
 	for _, f := range flagsToAdd {
 		flags |= f
+		Verbose("add a flag", "flag", f)
 	}
 }
 
