@@ -1,6 +1,6 @@
 module github.com/hedzr/logg/tests
 
-go 1.22
+go 1.21
 
 replace github.com/hedzr/logg => ../
 
