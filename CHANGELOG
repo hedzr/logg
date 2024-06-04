@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.5.21
+  - upgraded hedzr/is
+  - security patch
+
 - v0.5.20
   - lint codes
   - fix go toolchain version in tests/ submodule
