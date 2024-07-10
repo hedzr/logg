@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.5.22
+  - upgraded hedzr/is
+  - security patch
+
 - v0.5.21
   - upgraded hedzr/is
   - security patch
