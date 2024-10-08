@@ -1,5 +1,5 @@
-github.com/hedzr/is v0.5.25 h1:3c9P3WKfe0L/T1I8KE+xMw/ymDXK4u8/yErvu3NMFJg=
-github.com/hedzr/is v0.5.25/go.mod h1:tBquO1vJH9iB3s5vbskchfQRSRb7ea6qT2nHfnimXyg=
+github.com/hedzr/is v0.5.26 h1:8Ayv3wVMtF1yBhw9UeWMMtKORBeOz9VPbmmf1US0PPQ=
+github.com/hedzr/is v0.5.26/go.mod h1:WPdrinHKBspd2KoCCdkFDuErxWIhTk38/lYP77ju/GE=
 golang.org/x/crypto v0.28.0 h1:GBDwsMXVQi34v5CCYUm2jkJvu4cbtru2U4TN2PSyQnw=
 golang.org/x/crypto v0.28.0/go.mod h1:rmgy+3RHxRZMyY0jjAJShp2zgEdOqj2AO7U0pYmeQ7U=
 golang.org/x/net v0.30.0 h1:AcW1SDZMkb8IpzCdQUaIq2sP4sZ4zw+55h6ynffypl4=
