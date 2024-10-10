@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.6.0
+  - BREAK: Some interfaces CHANGED but userland operations almost keep unchanged.
+  - upgraded hedzr/is
+
 - v0.5.26
   - upgraded hedzr/is
 
