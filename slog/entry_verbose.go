@@ -8,7 +8,7 @@ import (
 )
 
 // VerboseContext implements Logger.
-func (s *entry) VerboseContext(ctx context.Context, msg string, args ...any) {
+func (s *Entry) VerboseContext(ctx context.Context, msg string, args ...any) {
 	// if s.EnabledContext(ctx, TraceLevel) {
 	pc := getpc(2, s.extraFrames)
 	s.logContext(ctx, TraceLevel, pc, msg, args...)
@@ -16,7 +16,7 @@ func (s *entry) VerboseContext(ctx context.Context, msg string, args ...any) {
 }
 
 // Verbose implements Logger.
-func (s *entry) Verbose(msg string, args ...any) {
+func (s *Entry) Verbose(msg string, args ...any) {
 	// if s.EnabledContext(ctx, TraceLevel) {
 	pc := getpc(2, s.extraFrames)
 	s.logContext(context.Background(), TraceLevel, pc, msg, args...)
@@ -29,7 +29,7 @@ func vlogctx(ctx context.Context, msg string, args ...any) {
 	case *logimp:
 		pc := getpc(3, s.extraFrames)
 		s.logContext(ctx, TraceLevel, pc, msg, args...)
-	case *entry:
+	case *Entry:
 		pc := getpc(3, s.extraFrames)
 		s.logContext(ctx, TraceLevel, pc, msg, args...)
 	}

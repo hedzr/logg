@@ -2,6 +2,8 @@ package slog
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -72,6 +74,37 @@ func stack(skip, nFrames int) string {
 	return b.String()
 }
 
+// Safety applies logg/slog's security policies on given file pathname.
+//
+// - When you have preset tiled pathes, such as `~work' pointed
+// to `/Volumes/vWork/work', a safety path of `/Volumes/vWork/work/a.go'
+// will be translated as `~work/a.go'.
+//
+// It relies on Lprivacypath is set. See AddFlags.
+//
+// These ways can merge flags into internal settings:
+//
+//	AddFlags(Lprivacypathregexp | Lprivacypath)
+//	AddFlags(Lprivacypathregexp, Lprivacypath)
+//
+// - When Lprivacypath | Lprivacypathregexp enabled, the
+// user's homedir will be translated to '~' to avoid user account
+// name leaked.
+//
+// You may add more policies with AddKnownPathMapping and
+// AddKnownPathRegexpMapping.
+func Safety(file string) string {
+	return checkpath(file)
+}
+
+// SafetyFiles is an overrided prototype of Safety.
+func SafetyFiles(files []string) (ret []string) {
+	for _, f := range files {
+		ret = append(ret, checkpath(f))
+	}
+	return
+}
+
 func checkpath(file string) string {
 	// if s.curdir == "" {
 	// 	s.curdir, _ = os.Getwd()
@@ -80,28 +113,34 @@ func checkpath(file string) string {
 	// 	file= file[len(s.curdir)+1:]
 	// }
 
+	privfile := file
 	if IsAnyBitsSet(Lprivacypath) {
 		for k, v := range knownPathMap {
-			if strings.HasPrefix(file, k) {
-				file = strings.ReplaceAll(file, k, v)
+			if strings.HasPrefix(privfile, k) {
+				privfile = strings.ReplaceAll(privfile, k, v)
 			}
 		}
 
 		if IsAnyBitsSet(Lprivacypathregexp) {
 			for _, rpl := range knownPathRegexpMap {
 				if rpl.expr.MatchString(file) {
-					file = rpl.expr.ReplaceAllString(file, rpl.repl)
+					privfile = rpl.expr.ReplaceAllString(privfile, rpl.repl)
 				}
 			}
 		} else {
-			if strings.HasPrefix(file, "/Volumes/") {
-				if pos := strings.IndexRune(file[9:], '/'); pos >= 0 {
-					file = "~" + file[9+pos:]
+			if strings.HasPrefix(privfile, "/Volumes/") {
+				if pos := strings.IndexRune(privfile[9:], '/'); pos >= 0 {
+					privfile = "~" + privfile[9+pos:]
 				}
 			}
 		}
 	}
-	return file
+	cwd, _ := os.Getwd()
+	relfile, _ := filepath.Rel(cwd, file)
+	if l := len(relfile); l > 0 && l < len(privfile) {
+		return relfile
+	}
+	return privfile
 }
 
 func checkedfuncname(name string) string {

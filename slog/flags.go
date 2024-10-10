@@ -8,7 +8,7 @@ const (
 	Lmicroseconds                        // do print microseconds part
 	LlocalTime                           // use local time instead of UTC
 	Lattrs                               // do print Attr key-value pairs
-	LattrsR                              // collect Attr along with entry and Logger chains
+	LattrsR                              // collect Attr along with Entry and Logger chains
 	Llineno                              // do print caller info (file:line)
 	Lcaller                              // do print Caller information (function)
 	Lcallerpackagename                   // do print the package name of caller, such as: GH/hedzr/logg/slog_test.TestSlogLogfmt

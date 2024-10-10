@@ -74,7 +74,7 @@ func logctx(lvl Level, msg string, args ...any) {
 			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
 			s.logContext(ctx, lvl, pc, msg, args...)
 		}
-	case *entry:
+	case *Entry:
 		if s.EnabledContext(ctx, lvl) {
 			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
 			s.logContext(ctx, lvl, pc, msg, args...)
@@ -89,7 +89,7 @@ func logctxctx(ctx context.Context, lvl Level, msg string, args ...any) {
 			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
 			s.logContext(ctx, lvl, pc, msg, args...)
 		}
-	case *entry:
+	case *Entry:
 		if s.EnabledContext(ctx, lvl) {
 			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
 			s.logContext(ctx, lvl, pc, msg, args...)

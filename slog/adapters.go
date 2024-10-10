@@ -5,7 +5,25 @@ import (
 	logslog "log/slog"
 )
 
-// NewSlogHandler makes a log/slog Handler to adapt into std slog.
+// NewSlogHandler makes a log/slog Handler to adapt into standard slog.
+//
+// Demo code:
+//
+//		import logz "github.com/hedzr/logg/slog"
+//	 import "log/slog"
+//
+//		sll := logz.NewSlogHandler(logz.Default(), &logz.HandlerOptions{
+//			NoColor:  false,
+//			NoSource: false,
+//			JSON:     false,
+//			Level:    logz.InfoLevel,
+//		})
+//
+//		logger = slog.New(sll)
+//		logger.Info("log/slog: app starting...", "args", os.Args)
+//		defer func() {
+//			logger.Info("log/slog: app terminated.", "args", os.Args)
+//		}()
 func NewSlogHandler(logger Logger, config *HandlerOptions) logslog.Handler {
 	if config == nil {
 		config = &HandlerOptions{} //nolint:revive
@@ -23,7 +41,11 @@ func NewSlogHandler(logger Logger, config *HandlerOptions) logslog.Handler {
 	return &handler4LogSlog{logger.WithColorMode(!config.NoColor).WithJSONMode(config.JSON)}
 }
 
-// HandlerOptions is used for our log/slog Handler
+// HandlerOptions is used for our log/slog Handler.
+//
+// The HandlerOptions.Level field can be used to initial log/slog.Level.
+// Due the slog.Level is less than Level, so only InfoLevel, WarnLevel,
+// DebugLevel and ErrorLevel can be applied, the others have no effect.
 type HandlerOptions struct {
 	NoColor  bool  // is colorful outputting?
 	NoSource bool  // has caller info?

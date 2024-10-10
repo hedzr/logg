@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/hedzr/is/term/color"
+
 	"github.com/hedzr/logg/slog"
 )
 

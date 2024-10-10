@@ -49,25 +49,25 @@ func TestNewChildLogger(t *testing.T) {
 	l.Warn("l warn msg", "local", false, "n", l.Name())
 
 	lc1 := l.New("c1").WithAttrs(NewAttr("lc1", true))
-	llc1 := lc1.(*entry)
-	// assert.Equal(t, llc1.owner, ll.entry)
-	if llc1.owner != ll.entry {
-		t.Error("llc1.owner should equal with ll.entry")
+	llc1 := lc1 // lc1.(*Entry)
+	// assert.Equal(t, llc1.owner, ll.Entry)
+	if llc1.owner != ll.Entry {
+		t.Error("llc1.owner should equal with ll.Entry")
 	}
-	if llc1.Root() != ll.entry {
-		t.Errorf("llc1.Root() (%v) should equal with ll.entry (%v)", llc1.Root(), ll.entry)
+	if llc1.Root() != ll.Entry {
+		t.Errorf("llc1.Root() (%v) should equal with ll.Entry (%v)", llc1.Root(), ll.Entry)
 	}
 
 	lc1.Warn("lc1 warn msg", "local", false)
 
 	lc2 := lc1.New("c2").WithAttrs(NewAttr("lc2", true))
-	llc2 := lc2.(*entry)
-	// assert.Equal(t, llc2.owner, lc1.entry)
+	llc2 := lc2 // lc2.(*Entry)
+	// assert.Equal(t, llc2.owner, lc1.Entry)
 	if llc2.owner != llc1 {
-		t.Error("llc2.owner should equal with lc1.entry")
+		t.Error("llc2.owner should equal with lc1.Entry")
 	}
-	if llc2.Root() != ll.entry {
-		t.Errorf("llc2.Root() (%v) should equal with ll.entry (%v)", llc2.Root(), ll.entry)
+	if llc2.Root() != ll.Entry {
+		t.Errorf("llc2.Root() (%v) should equal with ll.Entry (%v)", llc2.Root(), ll.Entry)
 	}
 
 	lc2.Warn("lc2 warn msg", "local", false)
@@ -75,12 +75,12 @@ func TestNewChildLogger(t *testing.T) {
 	lc2.Warn("lc2 warn msg again", "local", false)
 
 	lc3 := lc1.New("c3").WithAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
-	llc3 := lc3.(*entry)
+	llc3 := lc3 // lc3.(*Entry)
 	if llc3.owner != llc1 {
-		t.Error("llc3.owner should equal with lc1.entry")
+		t.Error("llc3.owner should equal with lc1.Entry")
 	}
-	if llc3.Root() != ll.entry {
-		t.Errorf("llc3.Root() (%v) should equal with ll.entry (%v)", llc3.Root(), ll.entry)
+	if llc3.Root() != ll.Entry {
+		t.Errorf("llc3.Root() (%v) should equal with ll.Entry (%v)", llc3.Root(), ll.Entry)
 	}
 
 	lc3.Warn("lc3 warn msg", "local", false)

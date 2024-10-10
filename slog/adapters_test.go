@@ -84,7 +84,7 @@ func TestHandler4LogSlog_Log(t *testing.T) { //nolint:revive
 		{FailLevel, logslog.LevelDebug, true},
 		{MaxLevel, logslog.LevelDebug, true},
 	} {
-		if ll, ok := l.(interface{ WithLevel(l Level) Entry }); ok {
+		if ll, ok := l.(interface{ WithLevel(l Level) *Entry }); ok {
 			ll.WithLevel(c.holding)
 		}
 		if actual := h.Enabled(ctx, c.requesting); actual {
@@ -180,7 +180,7 @@ func TestHandler4LogSlog_Enabled(t *testing.T) { //nolint:revive
 		{FailLevel, logslog.LevelDebug, true},
 		{MaxLevel, logslog.LevelDebug, true},
 	} {
-		if ll, ok := l.(interface{ WithLevel(l Level) Entry }); ok {
+		if ll, ok := l.(interface{ WithLevel(l Level) *Entry }); ok {
 			ll.WithLevel(c.holding)
 		}
 		if actual := h.Enabled(ctx, c.requesting); actual != c.expect {

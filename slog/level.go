@@ -40,7 +40,7 @@ func SetLevel(lvl Level) {
 	lvlCurrent = lvl
 	if l, ok := defaultLog.(interface{ SetLevel(lvl Level) }); ok {
 		l.SetLevel(lvl)
-	} else if l, ok := defaultLog.(interface{ WithLevel(lvl Level) Entry }); ok {
+	} else if l, ok := defaultLog.(interface{ WithLevel(lvl Level) *Entry }); ok {
 		l.WithLevel(lvl)
 	}
 }

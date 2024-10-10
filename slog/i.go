@@ -9,19 +9,30 @@ import (
 type (
 	// Logger interface can be used for others logging kits or apps.
 	Logger interface {
-		Entry
+		EntryI
+		BuilderI
 	}
 
-	// Entry is a small and efficient tiny logger, which is the entity of real logger.
-	Entry interface {
+	// EntryI is a small and efficient tiny logger, which is the entity of real logger.
+	EntryI interface {
 		BasicLogger
 
 		Close() // Closeable interface
 
 		String() string // Stringer interface
 
-		Parent() Entry // parent logger of a sub-logger
-		Root() Entry   // root logger (always is Default) of a sub-logger
+		Parent() *Entry // parent logger of a sub-logger
+		Root() *Entry   // root logger (always is Default) of a sub-logger
+
+		// WithSkip create a new child logger with specified extra
+		// ignored stack frames, which will be plussed over the
+		// internal stack frames stripping tool.
+		//
+		// A child logger is super lite commonly. It'll take a little
+		// more resource usages only if you have LattrsR set globally.
+		// In that case, child logger looks up all its parents for
+		// collecting all attributes and logging them.
+		WithSkip(extraFrames int) *Entry
 
 		// Children() Entries
 
@@ -29,6 +40,60 @@ type (
 
 		// writeInternal(ctx context.Context, lvl Level, pc uintptr, buf []byte) (n int, err error)
 		// logContext(ctx context.Context, lvl Level, pc uintptr, msg string, args ...any)
+	}
+
+	// BuilderI is used for building a new logger
+	BuilderI interface {
+		New(args ...any) *Entry // 1st of args is name, the rest are k, v pairs
+
+		WithJSONMode(b ...bool) *Entry          // entering JSON mode, the output are json format
+		WithColorMode(b ...bool) *Entry         // entering Colorful mode for the modern terminal. false means using logfmt format.
+		WithUTCMode(b ...bool) *Entry           // default is local mode, true will switch to UTC mode
+		WithTimeFormat(layout ...string) *Entry // specify your timestamp format layout string
+		WithLevel(lvl Level) *Entry             //
+		WithAttrs(attrs ...Attr) *Entry         //
+		WithAttrs1(attrs Attrs) *Entry          //
+		With(args ...any) *Entry                // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
+
+		WithContextKeys(keys ...any) *Entry // given keys will be tried extracting from context.Context automatically
+
+		WithWriter(wr io.Writer) *Entry         // use the given writer
+		AddWriter(wr io.Writer) *Entry          // append more writers via this interface
+		AddErrorWriter(wr io.Writer) *Entry     //
+		ResetWriters() *Entry                   //
+		GetWriter() (wr LogWriter)              // return level-matched writer
+		GetWriterBy(level Level) (wr LogWriter) // return writer matched given level
+
+		AddLevelWriter(lvl Level, w io.Writer) *Entry
+		RemoveLevelWriter(lvl Level, w io.Writer) *Entry
+		ResetLevelWriter(lvl Level) *Entry
+		ResetLevelWriters() *Entry
+
+		WithValueStringer(vs ValueStringer) *Entry
+	}
+
+	// Entries collects many Entry objects as a map
+	Entries map[string]*Entry
+
+	// BasicLogger supplies basic logging apis.
+	BasicLogger interface {
+		Printer
+		PrinterWithContext
+
+		Enabled(requestingLevel Level) bool // to test the requesting logging level should be allowed.
+		EnabledContext(ctx context.Context, requestingLevel Level) bool
+
+		LogAttrs(ctx context.Context, level Level, msg string, args ...any) // Attr, Attrs in args will be recognized as is
+		Log(ctx context.Context, level Level, msg string, args ...any)      // Attr, Attrs in args will be recognized as is
+
+		// SetSkip is very similar with WithSkip but no child logger
+		// created, it modifies THIS logger.
+		//
+		// Use it when you know all what u want.
+		SetSkip(extraFrames int)
+		Skip() int // return current frames count should be ignored in addition. 0 for most cases.
+
+		Name() string // this logger's name
 	}
 
 	// LogLoggerAware for external adapters
@@ -39,38 +104,6 @@ type (
 	// LogSlogAware for external adapters
 	LogSlogAware interface {
 		WriteThru(ctx context.Context, lvl Level, timestamp time.Time, pc uintptr, msg string, attrs Attrs)
-	}
-
-	// BasicLogger supplies basic logging apis.
-	BasicLogger interface {
-		Printer
-		PrinterWithContext
-		Builder
-
-		Enabled(requestingLevel Level) bool // to test the requesting logging level should be allowed.
-		EnabledContext(ctx context.Context, requestingLevel Level) bool
-
-		LogAttrs(ctx context.Context, level Level, msg string, args ...any) // Attr, Attrs in args will be recognized as is
-		Log(ctx context.Context, level Level, msg string, args ...any)      // Attr, Attrs in args will be recognized as is
-
-		// WithSkip create a new child logger with specified extra
-		// ignored stack frames, which will be plussed over the
-		// internal stack frames stripping tool.
-		//
-		// A child logger is super lite commonly. It'll take a little
-		// more resource usages only if you have LattrsR set globally.
-		// In that case, child logger looks up all its parents for
-		// collecting all attributes and logging them.
-		WithSkip(extraFrames int) Entry
-
-		// SetSkip is very similar with WithSkip but no child logger
-		// created, it modifies THIS logger.
-		//
-		// Use it when you know all what u want.
-		SetSkip(extraFrames int)
-		Skip() int // return current frames count should be ignored in addition. 0 for most cases.
-
-		Name() string // this logger's name
 	}
 
 	// Printer supplies the printable apis
@@ -106,39 +139,6 @@ type (
 		SuccessContext(ctx context.Context, msg string, args ...any) // identify a successful operation done
 		FailContext(ctx context.Context, msg string, args ...any)    // identify a wrong occurs, default to stderr device
 	}
-
-	// Builder is used for building a new logger
-	Builder interface {
-		New(args ...any) BasicLogger // 1st of args is name, the rest are k, v pairs
-
-		WithJSONMode(b ...bool) Entry          // entering JSON mode, the output are json format
-		WithColorMode(b ...bool) Entry         // entering Colorful mode for the modern terminal. false means using logfmt format.
-		WithUTCMode(b ...bool) Entry           // default is local mode, true will switch to UTC mode
-		WithTimeFormat(layout ...string) Entry // specify your timestamp format layout string
-		WithLevel(lvl Level) Entry             //
-		WithAttrs(attrs ...Attr) Entry         //
-		WithAttrs1(attrs Attrs) Entry          //
-		With(args ...any) Entry                // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
-
-		WithContextKeys(keys ...any) Entry // given keys will be tried extracting from context.Context automatically
-
-		WithWriter(wr io.Writer) Entry          // use the given writer
-		AddWriter(wr io.Writer) Entry           // append more writers via this interface
-		AddErrorWriter(wr io.Writer) Entry      //
-		ResetWriters() Entry                    //
-		GetWriter() (wr LogWriter)              // return level-matched writer
-		GetWriterBy(level Level) (wr LogWriter) // return writer matched given level
-
-		AddLevelWriter(lvl Level, w io.Writer) Entry
-		RemoveLevelWriter(lvl Level, w io.Writer) Entry
-		ResetLevelWriter(lvl Level) Entry
-		ResetLevelWriters() Entry
-
-		WithValueStringer(vs ValueStringer) Entry
-	}
-
-	// Entries collects many entry objects as a map
-	Entries map[string]Entry
 )
 
 // LogWriter for external adapters

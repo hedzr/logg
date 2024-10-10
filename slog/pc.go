@@ -68,7 +68,7 @@ type PrintCtx struct {
 
 func (s *PrintCtx) source() Source { return getpcsource(s.stackFrame) }
 
-func (s *PrintCtx) setentry(e *entry) {
+func (s *PrintCtx) setentry(e *Entry) {
 	s.buf = s.buf[:0]
 
 	s.jsonMode = e.useJSON
@@ -86,7 +86,7 @@ func (s *PrintCtx) setentry(e *entry) {
 	s.kvps = e.attrs
 }
 
-func (s *PrintCtx) set(e *entry, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
+func (s *PrintCtx) set(e *Entry, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
 	s.setentry(e)
 
 	s.lvl = lvl
