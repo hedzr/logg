@@ -180,16 +180,23 @@ func WithJSONMode(b ...bool) Opt {
 	}
 }
 
-func (s *Entry) WithJSONMode(b ...bool) *Entry {
+func (s *Entry) SetJSONMode(b ...bool) *Entry {
 	mode := true
 	for _, bb := range b {
 		mode = bb
 	}
+
 	if mode {
 		s.useColor = false
 	}
 	s.useJSON = mode
 	return s
+}
+
+func (s *Entry) WithJSONMode(b ...bool) *Entry {
+	child := s.newChildLogger()
+	child.SetJSONMode(b...)
+	return child
 }
 
 func WithColorMode(b ...bool) Opt {
@@ -198,7 +205,7 @@ func WithColorMode(b ...bool) Opt {
 	}
 }
 
-func (s *Entry) WithColorMode(b ...bool) *Entry {
+func (s *Entry) SetColorMode(b ...bool) *Entry {
 	mode := true
 	for _, bb := range b {
 		mode = bb
@@ -210,13 +217,19 @@ func (s *Entry) WithColorMode(b ...bool) *Entry {
 	return s
 }
 
+func (s *Entry) WithColorMode(b ...bool) *Entry {
+	child := s.newChildLogger()
+	child.SetColorMode(b...)
+	return child
+}
+
 func WithUTCMode(b ...bool) Opt {
 	return func(s *Entry) {
 		s.WithUTCMode(b...)
 	}
 }
 
-func (s *Entry) WithUTCMode(b ...bool) *Entry {
+func (s *Entry) SetUTCMode(b ...bool) *Entry {
 	mode := 2
 	for _, bb := range b {
 		if bb {
@@ -229,13 +242,19 @@ func (s *Entry) WithUTCMode(b ...bool) *Entry {
 	return s
 }
 
+func (s *Entry) WithUTCMode(b ...bool) *Entry {
+	child := s.newChildLogger()
+	child.SetUTCMode(b...)
+	return child
+}
+
 func WithTimeFormat(layout ...string) Opt {
 	return func(s *Entry) {
 		s.WithTimeFormat(layout...)
 	}
 }
 
-func (s *Entry) WithTimeFormat(layout ...string) *Entry {
+func (s *Entry) SetTimeFormat(layout ...string) *Entry {
 	var lay = time.RFC3339Nano
 	for _, ll := range layout {
 		if ll != "" {
@@ -246,15 +265,37 @@ func (s *Entry) WithTimeFormat(layout ...string) *Entry {
 	return s
 }
 
+func (s *Entry) WithTimeFormat(layout ...string) *Entry {
+	child := s.newChildLogger()
+	child.SetTimeFormat(layout...)
+	return child
+}
+
 func WithLevel(lvl Level) Opt {
 	return func(s *Entry) {
 		s.WithLevel(lvl)
 	}
 }
 
-func (s *Entry) WithLevel(lvl Level) *Entry {
+func (s *Entry) SetLevel(lvl Level) *Entry {
 	s.level = lvl
+	switch lvl {
+	case DebugLevel:
+		if !is.DebugMode() {
+			is.SetDebugMode(true)
+		}
+	case TraceLevel:
+		if !is.TraceMode() {
+			is.SetTraceMode(true)
+		}
+	}
 	return s
+}
+
+func (s *Entry) WithLevel(lvl Level) *Entry {
+	child := s.newChildLogger()
+	child.SetLevel(lvl)
+	return child
 }
 
 func (s *Entry) Level() (lvl Level) {
@@ -289,15 +330,15 @@ func WithAttrs(attrs ...Attr) Opt {
 	}
 }
 
-// WithAttrs declares some common attributes bound to the
+// SetAttrs declares some common attributes bound to the
 // logger.
 //
 // When logging, attributes of the logger and its parents
 // will be merged together. If duplicated attr found, the
 // parent's will be overwritten.
 //
-//	lc1 := l.New("c1").WithAttrs(NewAttr("lc1", true))
-//	lc3 := lc1.New("c3").WithAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
+//	lc1 := l.New("c1").SetAttrs(NewAttr("lc1", true))
+//	lc3 := lc1.New("c3").SetAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
 //	lc3.Warn("lc3 warn msg", "local", false)
 //
 // In above case, attr 'lc1' will be rewritten while lc3.Warn, it looks like:
@@ -307,8 +348,15 @@ func WithAttrs(attrs ...Attr) Opt {
 // You can initialize attributes with different forms, try
 // using WithAttrs1(attrs Attrs) or With(args ...any) for
 // instead.
-func (s *Entry) WithAttrs(attrs ...Attr) *Entry {
+func (s *Entry) SetAttrs(attrs ...Attr) *Entry {
 	s.attrs = append(s.attrs, attrs...)
+	return s
+}
+
+func (s *Entry) WithAttrs(attrs ...Attr) *Entry {
+	child := s.newChildLogger()
+	child.SetAttrs(attrs...)
+	return child
 	return s
 }
 
@@ -325,16 +373,22 @@ func WithAttrs1(attrs Attrs) Opt {
 	}
 }
 
-// WithAttrs1 allows an Attrs passed into New. Sample is:
+// SetAttrs1 allows an Attrs passed into New. Sample is:
 //
-//	lc1 := l.New("c1").WithAttrs1(NewAttrs("a1", 1, "a2", 2.7, NewAttr("a3", "string")))
+//	lc1 := l.New("c1").SetAttrs1(NewAttrs("a1", 1, "a2", 2.7, NewAttr("a3", "string")))
 //
 // NewAttrs receives a freeform args list.
 //
 // You can use With(...) to simplify WithAttrs1+NewAttrs1 calling.
-func (s *Entry) WithAttrs1(attrs Attrs) *Entry {
+func (s *Entry) SetAttrs1(attrs Attrs) *Entry {
 	s.attrs = append(s.attrs, attrs...)
 	return s
+}
+
+func (s *Entry) WithAttrs1(attrs Attrs) *Entry {
+	child := s.newChildLogger()
+	child.SetAttrs1(attrs)
+	return child
 }
 
 // With allows an freeform arg list passed into New. Sample is:
@@ -348,14 +402,20 @@ func With(args ...any) Opt {
 	}
 }
 
-// With allows an freeform arg list passed into New. Sample is:
+// Set allows an freeform arg list passed into New. Sample is:
 //
-//	lc1 := l.New("c1").With("a1", 1, "a2", 2.7, NewAttr("a3", "string"))
+//	lc1 := l.New("c1").Set("a1", 1, "a2", 2.7, NewAttr("a3", "string"))
 //
 // More samples can be found at New.
-func (s *Entry) With(args ...any) *Entry { // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
+func (s *Entry) Set(args ...any) *Entry { // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
 	s.attrs = append(s.attrs, argsToAttrs(nil, args...)...)
 	return s
+}
+
+func (s *Entry) With(args ...any) *Entry { // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
+	child := s.newChildLogger()
+	child.Set(args...)
+	return child
 }
 
 type ValueStringer interface {
@@ -363,9 +423,15 @@ type ValueStringer interface {
 	WriteValue(value any)
 }
 
-func (s *Entry) WithValueStringer(vs ValueStringer) *Entry {
+func (s *Entry) SetValueStringer(vs ValueStringer) *Entry {
 	s.valueStringer = vs
 	return s
+}
+
+func (s *Entry) WithValueStringer(vs ValueStringer) *Entry {
+	child := s.newChildLogger()
+	child.SetValueStringer(vs)
+	return child
 }
 
 func GetDefaultWriter() (wr io.Writer)        { return defaultWriter }          // return package-level default writer
@@ -392,13 +458,19 @@ func WithWriter(wr io.Writer) Opt {
 	}
 }
 
-func (s *Entry) WithWriter(wr io.Writer) *Entry {
+func (s *Entry) SetWriter(wr io.Writer) *Entry {
 	if s.writer == nil {
 		s.writer = newDualWriter()
 	}
 	s.writer.SetWriter(wr)
 	// s.writer.SetLogWriter(wr)
 	return s
+}
+
+func (s *Entry) WithWriter(wr io.Writer) *Entry {
+	child := s.newChildLogger()
+	child.SetWriter(wr)
+	return child
 }
 
 // AddWriter adds a stdout writers to Default logger.
@@ -426,13 +498,19 @@ func WithErrorWriter(wr io.Writer) Opt {
 	}
 }
 
-func (s *Entry) WithErrorWriter(wr io.Writer) *Entry {
+func (s *Entry) SetErrorWriter(wr io.Writer) *Entry {
 	if s.writer == nil {
 		s.writer = newDualWriter()
 	}
 	s.writer.SetErrorWriter(wr)
 	// s.writer.SetLogWriter(wr)
 	return s
+}
+
+func (s *Entry) WithErrorWriter(wr io.Writer) *Entry {
+	child := s.newChildLogger()
+	child.SetErrorWriter(wr)
+	return child
 }
 
 // AddErrorWriter adds a stderr writers to Default logger.
@@ -574,8 +652,13 @@ func (s *Entry) withSkip(extraFrames int) *Entry {
 	return s
 }
 
-func (s *Entry) SetSkip(extraFrames int) { s.extraFrames = extraFrames } // set extra frames ignored
-func (s *Entry) Skip() int               { return s.extraFrames }        // return extra frames ignored
+// SetSkip sets the extra ignoring frames
+func (s *Entry) SetSkip(extraFrames int) {
+	s.extraFrames = extraFrames
+	// return s
+}
+
+func (s *Entry) Skip() int { return s.extraFrames } // return extra frames ignored
 
 //
 //

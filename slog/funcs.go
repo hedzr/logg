@@ -68,30 +68,31 @@ func Println(args ...any) {
 
 func logctx(lvl Level, msg string, args ...any) {
 	ctx := context.Background()
-	switch s := defaultLog.(type) {
-	case *logimp:
-		if s.EnabledContext(ctx, lvl) {
-			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
-			s.logContext(ctx, lvl, pc, msg, args...)
-		}
-	case *Entry:
-		if s.EnabledContext(ctx, lvl) {
-			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
-			s.logContext(ctx, lvl, pc, msg, args...)
-		}
-	}
+	logctxctx(ctx, 1, lvl, msg, args...)
+	// switch s := defaultLog.(type) {
+	// case *logimp:
+	// 	if s.EnabledContext(ctx, lvl) {
+	// 		pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
+	// 		s.logContext(ctx, lvl, pc, msg, args...)
+	// 	}
+	// case *Entry:
+	// 	if s.EnabledContext(ctx, lvl) {
+	// 		pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
+	// 		s.logContext(ctx, lvl, pc, msg, args...)
+	// 	}
+	// }
 }
 
-func logctxctx(ctx context.Context, lvl Level, msg string, args ...any) {
+func logctxctx(ctx context.Context, inc int, lvl Level, msg string, args ...any) {
 	switch s := defaultLog.(type) {
 	case *logimp:
 		if s.EnabledContext(ctx, lvl) {
-			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
+			pc := getpc(3+inc, s.extraFrames) // caller -> slog.Info -> logctx (this func)
 			s.logContext(ctx, lvl, pc, msg, args...)
 		}
 	case *Entry:
 		if s.EnabledContext(ctx, lvl) {
-			pc := getpc(3, s.extraFrames) // caller -> slog.Info -> logctx (this func)
+			pc := getpc(3+inc, s.extraFrames) // caller -> slog.Info -> logctx (this func)
 			s.logContext(ctx, lvl, pc, msg, args...)
 		}
 	}
@@ -101,62 +102,62 @@ func logctxctx(ctx context.Context, lvl Level, msg string, args ...any) {
 
 // PanicContext with Default Logger.
 func PanicContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, PanicLevel, msg, args...)
+	logctxctx(ctx, 0, PanicLevel, msg, args...)
 }
 
 // FatalContext with Default Logger.
 func FatalContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, FatalLevel, msg, args...)
+	logctxctx(ctx, 0, FatalLevel, msg, args...)
 }
 
 // ErrorContext with Default Logger.
 func ErrorContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, ErrorLevel, msg, args...)
+	logctxctx(ctx, 0, ErrorLevel, msg, args...)
 }
 
 // WarnContext with Default Logger.
 func WarnContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, WarnLevel, msg, args...)
+	logctxctx(ctx, 0, WarnLevel, msg, args...)
 }
 
 // InfoContext with Default Logger.
 func InfoContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, InfoLevel, msg, args...)
+	logctxctx(ctx, 0, InfoLevel, msg, args...)
 }
 
 // DebugContext with Default Logger.
 func DebugContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, DebugLevel, msg, args...)
+	logctxctx(ctx, 0, DebugLevel, msg, args...)
 }
 
 // TraceContext with Default Logger.
 func TraceContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, TraceLevel, msg, args...)
+	logctxctx(ctx, 0, TraceLevel, msg, args...)
 }
 
 // PrintContext with Default Logger.
 func PrintContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, AlwaysLevel, msg, args...)
+	logctxctx(ctx, 0, AlwaysLevel, msg, args...)
 }
 
 // PrintlnContext with Default Logger.
 func PrintlnContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, AlwaysLevel, msg, args...)
+	logctxctx(ctx, 0, AlwaysLevel, msg, args...)
 }
 
 // OKContext with Default Logger.
 func OKContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, OKLevel, msg, args...)
+	logctxctx(ctx, 0, OKLevel, msg, args...)
 }
 
 // SuccessContext with Default Logger.
 func SuccessContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, SuccessLevel, msg, args...)
+	logctxctx(ctx, 0, SuccessLevel, msg, args...)
 }
 
 // FailContext with Default Logger.
 func FailContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, FailLevel, msg, args...)
+	logctxctx(ctx, 0, FailLevel, msg, args...)
 }
 
 //

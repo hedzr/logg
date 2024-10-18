@@ -43,9 +43,15 @@ type (
 	}
 
 	// BuilderI is used for building a new logger
+	//
+	// // WithXXX apis: make a child logger and apply the new settings.
+	// _
+	// // SetXXX apis: apply the new settings on this logger
+	// _
 	BuilderI interface {
 		New(args ...any) *Entry // 1st of args is name, the rest are k, v pairs
 
+		// WithJSONMode and WithColorMode sets output format to json or logfmt(+color).
 		WithJSONMode(b ...bool) *Entry          // entering JSON mode, the output are json format
 		WithColorMode(b ...bool) *Entry         // entering Colorful mode for the modern terminal. false means using logfmt format.
 		WithUTCMode(b ...bool) *Entry           // default is local mode, true will switch to UTC mode
@@ -54,6 +60,15 @@ type (
 		WithAttrs(attrs ...Attr) *Entry         //
 		WithAttrs1(attrs Attrs) *Entry          //
 		With(args ...any) *Entry                // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
+
+		SetJSONMode(b ...bool) *Entry          // entering JSON mode, the output are json format
+		SetColorMode(b ...bool) *Entry         // entering Colorful mode for the modern terminal. false means using logfmt format.
+		SetUTCMode(b ...bool) *Entry           // default is local mode, true will switch to UTC mode
+		SetTimeFormat(layout ...string) *Entry // specify your timestamp format layout string
+		SetLevel(lvl Level) *Entry             //
+		SetAttrs(attrs ...Attr) *Entry         //
+		SetAttrs1(attrs Attrs) *Entry          //
+		Set(args ...any) *Entry                // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
 
 		WithContextKeys(keys ...any) *Entry // given keys will be tried extracting from context.Context automatically
 
