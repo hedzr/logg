@@ -286,7 +286,7 @@ func TestWithWriter(t *testing.T) {
 	var ss strings.Builder
 	ss.WriteString("val")
 
-	l.WithContextKeys(&ss, "from") // set two keys here: one is a Stringer, another is a string
+	l.SetContextKeys(&ss, "from") // set two keys here: one is a Stringer, another is a string
 
 	ctx := context.WithValue(
 		context.WithValue(context.Background(), "from", "consul-center"),

@@ -484,7 +484,7 @@ func TestSlogNewWithAttrs(t *testing.T) {
 func TestSlogWithContext(t *testing.T) {
 	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
 	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh") //nolint:staticcheck
-	logger.WithContextKeys("ctx").InfoContext(ctx, "info msg",
+	logger.SetContextKeys("ctx").InfoContext(ctx, "info msg",
 		"attr1", 111333,
 		slog.Group("memory",
 			slog.Int("current", 50),

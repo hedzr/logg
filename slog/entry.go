@@ -975,9 +975,15 @@ func (s *Entry) leadingTags(roughSize int, lvl Level, stackFrame uintptr, msg st
 	return
 }
 
-func (s *Entry) WithContextKeys(keys ...any) *Entry {
+func (s *Entry) SetContextKeys(keys ...any) *Entry {
 	s.contextKeys = append(s.contextKeys, keys...)
 	return s
+}
+
+func (s *Entry) WithContextKeys(keys ...any) *Entry {
+	l := s.newChildLogger()
+	l.SetContextKeys(keys...)
+	return l
 }
 
 func (s *Entry) ctxKeysWanted() bool { return len(s.contextKeys) > 0 }

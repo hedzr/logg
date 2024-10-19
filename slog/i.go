@@ -76,10 +76,14 @@ type (
 		SetAttrs1(attrs Attrs) *Entry          //
 		Set(args ...any) *Entry                // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
 
+		SetContextKeys(keys ...any) *Entry  // given keys will be tried extracting from context.Context automatically
 		WithContextKeys(keys ...any) *Entry // given keys will be tried extracting from context.Context automatically
 
+		SetWriter(wr io.Writer) *Entry          // use the given writer
 		WithWriter(wr io.Writer) *Entry         // use the given writer
 		AddWriter(wr io.Writer) *Entry          // append more writers via this interface
+		SetErrorWriter(wr io.Writer) *Entry     //
+		WithErrorWriter(wr io.Writer) *Entry    //
 		AddErrorWriter(wr io.Writer) *Entry     //
 		ResetWriters() *Entry                   //
 		GetWriter() (wr LogWriter)              // return level-matched writer
