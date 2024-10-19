@@ -19,7 +19,7 @@ type Level int // logging level
 //
 //	func A() {
 //	    defer slog.SaveLevelAndSet(slog.PanicLevel)()
-//	    l := slog.New().WithLevel(slog.WarnLevel)
+//	    l := slog.New().SetLevel(slog.WarnLevel)
 //	    ...
 //	}
 //
@@ -38,11 +38,14 @@ func GetLevel() Level { return lvlCurrent }
 // SetLevel sets the default logger level
 func SetLevel(lvl Level) {
 	lvlCurrent = lvl
-	if l, ok := defaultLog.(interface{ SetLevel(lvl Level) }); ok {
-		l.SetLevel(lvl)
-	} else if l, ok := defaultLog.(interface{ WithLevel(lvl Level) *Entry }); ok {
-		l.WithLevel(lvl)
-	}
+	defaultLog.SetLevel(lvl)
+	// if l, ok := defaultLog.(interface{ SetLevel(lvl Level) *Entry }); ok {
+	// 	l.SetLevel(lvl)
+	// } else if l, ok := defaultLog.(interface{ SetLevel(lvl Level) }); ok {
+	// 	l.SetLevel(lvl)
+	// } else if l, ok := defaultLog.(interface{ WithLevel(lvl Level) *Entry }); ok {
+	// 	l.WithLevel(lvl)
+	// }
 }
 
 // ResetLevel restore the default logger level to factory value (WarnLevel).
@@ -168,6 +171,16 @@ func RegWithPrintToErrorDevice(b ...bool) RegOpt {
 
 //
 
+// Enabled tests the requesting level is denied or allowed.
+//
+// 1. hold OffLevel: any request levels are denied
+// 2. hold AlwaysLevel: any request levels are allowed
+// 3. in testing/debugging mode, requesting DebugLevel are always allowed.
+// 4. an internal table built by the RegWithTreatedAsLevel RegOpt
+// in RegisterLevel() will be checked and mapped on the requesting level.
+//
+// Note that the levels are ordinal: PanicLevel (0) .. DebugLevel (5)
+// .. OffLevel (7), AlwaysLevel (8), OKLevel (9) .. MaxLevel (dyn).
 func (level Level) Enabled(ctx context.Context, testingLevel Level) bool {
 	if level == OffLevel || testingLevel == OffLevel {
 		return false
