@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	logslog "log/slog"
 	"os"
 	"strings"
 	"testing"
@@ -12,7 +13,8 @@ import (
 )
 
 func TestNewLogger(t *testing.T) {
-	l := New(WithJSONMode(false, false),
+	l := New(
+		WithJSONMode(false, false),
 		WithColorMode(false),
 		WithUTCMode(false, true, false),
 		WithTimeFormat("", "", time.RFC3339Nano),
@@ -48,7 +50,7 @@ func TestNewChildLogger(t *testing.T) {
 
 	l.Warn("l warn msg", "local", false, "n", l.Name())
 
-	lc1 := l.New("c1").WithAttrs(NewAttr("lc1", true))
+	lc1 := l.New("c1").SetAttrs(NewAttr("lc1", true))
 	llc1 := lc1 // lc1.(*Entry)
 	// assert.Equal(t, llc1.owner, ll.Entry)
 	if llc1.owner != ll.Entry {
@@ -60,7 +62,7 @@ func TestNewChildLogger(t *testing.T) {
 
 	lc1.Warn("lc1 warn msg", "local", false)
 
-	lc2 := lc1.New("c2").WithAttrs(NewAttr("lc2", true))
+	lc2 := lc1.New("c2").SetAttrs(NewAttr("lc2", true))
 	llc2 := lc2 // lc2.(*Entry)
 	// assert.Equal(t, llc2.owner, lc1.Entry)
 	if llc2.owner != llc1 {
@@ -74,7 +76,7 @@ func TestNewChildLogger(t *testing.T) {
 	lc1.Warn("lc1 warn msg again", "local", false)
 	lc2.Warn("lc2 warn msg again", "local", false)
 
-	lc3 := lc1.New("c3").WithAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
+	lc3 := lc1.New("c3").SetAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
 	llc3 := lc3 // lc3.(*Entry)
 	if llc3.owner != llc1 {
 		t.Error("llc3.owner should equal with lc1.Entry")
@@ -302,7 +304,8 @@ func TestWithWriter(t *testing.T) {
 	l.OKContext(ctx, "ok")
 	l.SuccessContext(ctx, "success")
 	l.FailContext(ctx, "fail")
-	l.Log(ctx, AlwaysLevel, "log")
+	l.Logit(ctx, AlwaysLevel, "log")
+	l.Log(ctx, logslog.LevelError, "log")
 }
 
 //

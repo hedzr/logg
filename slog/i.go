@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"io"
+	stdlog "log/slog"
 	"time"
 )
 
@@ -11,6 +12,11 @@ type (
 	Logger interface {
 		EntryI
 		BuilderI
+
+		// Log(ctx context.Context, level Level, msg string, args ...any)
+
+		// Log to log/slog
+		Log(ctx context.Context, level stdlog.Level, msg string, args ...any)
 	}
 
 	// EntryI is a small and efficient tiny logger, which is the entity of real logger.
@@ -99,7 +105,7 @@ type (
 		EnabledContext(ctx context.Context, requestingLevel Level) bool
 
 		LogAttrs(ctx context.Context, level Level, msg string, args ...any) // Attr, Attrs in args will be recognized as is
-		Log(ctx context.Context, level Level, msg string, args ...any)      // Attr, Attrs in args will be recognized as is
+		Logit(ctx context.Context, level Level, msg string, args ...any)    // Attr, Attrs in args will be recognized as is
 
 		// SetSkip is very similar with WithSkip but no child logger
 		// created, it modifies THIS logger.

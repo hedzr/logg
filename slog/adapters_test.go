@@ -165,11 +165,11 @@ func TestHandler4LogSlog_Enabled(t *testing.T) { //nolint:revive
 		{FailLevel, logslog.LevelInfo, true},
 		{MaxLevel, logslog.LevelInfo, true},
 
-		{PanicLevel, logslog.LevelDebug, false},
-		{FatalLevel, logslog.LevelDebug, false},
-		{ErrorLevel, logslog.LevelDebug, false},
-		{WarnLevel, logslog.LevelDebug, false},
-		{InfoLevel, logslog.LevelDebug, false},
+		{PanicLevel, logslog.LevelDebug, true},
+		{FatalLevel, logslog.LevelDebug, true},
+		{ErrorLevel, logslog.LevelDebug, true},
+		{WarnLevel, logslog.LevelDebug, true},
+		{InfoLevel, logslog.LevelDebug, true},
 		{DebugLevel, logslog.LevelDebug, true},
 		{TraceLevel, logslog.LevelDebug, true},
 
@@ -180,8 +180,11 @@ func TestHandler4LogSlog_Enabled(t *testing.T) { //nolint:revive
 		{FailLevel, logslog.LevelDebug, true},
 		{MaxLevel, logslog.LevelDebug, true},
 	} {
-		if ll, ok := l.(interface{ WithLevel(l Level) *Entry }); ok {
-			ll.WithLevel(c.holding)
+		// 1. hold OffLevel: any request levels are denied
+		// 2. hold AlwaysLevel: any request levels are allowed
+		// 3. in testing/debugging mode, requesting DebugLevel are always allowed.
+		if ll, ok := l.(interface{ SetLevel(l Level) *Entry }); ok {
+			ll.SetLevel(c.holding)
 		}
 		if actual := h.Enabled(ctx, c.requesting); actual != c.expect {
 			t.Fatalf("%5d. h[%v].Enable(ctx, %v) => expect %v, but got %v, FAILED!", i+1, l.Level(), c.requesting, c.expect, actual)

@@ -176,7 +176,7 @@ func (s *Entry) String() string {
 
 func WithJSONMode(b ...bool) Opt {
 	return func(s *Entry) {
-		s.WithJSONMode(b...)
+		s.SetJSONMode(b...)
 	}
 }
 
@@ -201,7 +201,7 @@ func (s *Entry) WithJSONMode(b ...bool) *Entry {
 
 func WithColorMode(b ...bool) Opt {
 	return func(s *Entry) {
-		s.WithColorMode(b...)
+		s.SetColorMode(b...)
 	}
 }
 
@@ -225,7 +225,7 @@ func (s *Entry) WithColorMode(b ...bool) *Entry {
 
 func WithUTCMode(b ...bool) Opt {
 	return func(s *Entry) {
-		s.WithUTCMode(b...)
+		s.SetUTCMode(b...)
 	}
 }
 
@@ -250,7 +250,7 @@ func (s *Entry) WithUTCMode(b ...bool) *Entry {
 
 func WithTimeFormat(layout ...string) Opt {
 	return func(s *Entry) {
-		s.WithTimeFormat(layout...)
+		s.SetTimeFormat(layout...)
 	}
 }
 
@@ -273,7 +273,7 @@ func (s *Entry) WithTimeFormat(layout ...string) *Entry {
 
 func WithLevel(lvl Level) Opt {
 	return func(s *Entry) {
-		s.WithLevel(lvl)
+		s.SetLevel(lvl)
 	}
 }
 
@@ -326,7 +326,7 @@ func (s *Entry) Level() (lvl Level) {
 // instead.
 func WithAttrs(attrs ...Attr) Opt {
 	return func(s *Entry) {
-		s.WithAttrs(attrs...)
+		s.SetAttrs(attrs...)
 	}
 }
 
@@ -362,14 +362,18 @@ func (s *Entry) WithAttrs(attrs ...Attr) *Entry {
 
 // WithAttrs1 allows an Attrs passed into New. Sample is:
 //
-//	lc1 := l.New("c1").WithAttrs1(NewAttrs("a1", 1, "a2", 2.7, NewAttr("a3", "string")))
+//	lc1 := l.New("c1", WithAttrs1(NewAttrs("a1", 1, "a2", 2.7, NewAttr("a3", "string"))))
+//
+// Package level WitAttrs1 can be passed into l.New(...). It takes
+// effects into the logger right here. But l.WithXXX() will make a
+// new child logger instance.
 //
 // NewAttrs receives a freeform args list.
 //
-// You can use With(...) to simplify WithAttrs1+NewAttrs1 calling.
+// You can also use With(...) to simplify WithAttrs1+NewAttrs1 calling.
 func WithAttrs1(attrs Attrs) Opt {
 	return func(s *Entry) {
-		s.WithAttrs1(attrs)
+		s.SetAttrs1(attrs)
 	}
 }
 
@@ -398,7 +402,7 @@ func (s *Entry) WithAttrs1(attrs Attrs) *Entry {
 // More samples can be found at New.
 func With(args ...any) Opt {
 	return func(s *Entry) {
-		s.With(args...)
+		s.Set(args...)
 	}
 }
 
@@ -454,7 +458,7 @@ func (s *Entry) GetWriterBy(level Level) (wr LogWriter) {
 // For each child loggers, uses their method [Entry.WithWriter],
 func WithWriter(wr io.Writer) Opt {
 	return func(s *Entry) {
-		s.WithWriter(wr)
+		s.SetWriter(wr)
 	}
 }
 
@@ -494,7 +498,7 @@ func (s *Entry) AddWriter(wr io.Writer) *Entry {
 
 func WithErrorWriter(wr io.Writer) Opt {
 	return func(s *Entry) {
-		s.WithWriter(wr)
+		s.SetErrorWriter(wr)
 	}
 }
 
@@ -793,11 +797,54 @@ func (s *Entry) LogAttrs(ctx context.Context, level Level, msg string, args ...a
 }
 
 // Log implements Logger.
-func (s *Entry) Log(ctx context.Context, level Level, msg string, args ...any) {
+func (s *Entry) Logit(ctx context.Context, level Level, msg string, args ...any) {
 	if s.EnabledContext(ctx, level) {
 		pc := getpc(2, s.extraFrames)
 		s.logContext(ctx, level, pc, msg, args...)
 	}
+}
+
+func (s *Entry) Log(ctx context.Context, level logslog.Level, msg string, args ...any) {
+	lvl := logsloglevel2Level(level)
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, pc, msg, args...)
+	}
+}
+
+const (
+	LevelVerbose = logslog.Level(-16)
+	LevelTrace   = logslog.Level(-8)
+	LevelNotice  = logslog.Level(2)
+	LevelHint    = logslog.Level(3)
+	LevelFatal   = logslog.Level(16)
+	LevelPanic   = logslog.Level(17)
+)
+
+func logsloglevel2Level(level logslog.Level) Level {
+	switch level {
+	case logslog.LevelDebug:
+		return DebugLevel
+	case logslog.LevelInfo:
+		return InfoLevel
+	case logslog.LevelWarn:
+		return WarnLevel
+	case logslog.LevelError:
+		return ErrorLevel
+	case LevelVerbose:
+		return TraceLevel
+	case LevelTrace:
+		return TraceLevel
+	case LevelNotice:
+		return InfoLevel
+	case LevelHint:
+		return InfoLevel
+	case LevelFatal:
+		return FatalLevel
+	case LevelPanic:
+		return PanicLevel
+	}
+	return FatalLevel
 }
 
 //

@@ -35,10 +35,10 @@ func NewSlogHandler(logger Logger, config *HandlerOptions) logslog.Handler {
 	}
 
 	if config.Level != PanicLevel {
-		logger.WithLevel(config.Level)
+		logger.SetLevel(config.Level)
 	}
 
-	return &handler4LogSlog{logger.WithColorMode(!config.NoColor).WithJSONMode(config.JSON)}
+	return &handler4LogSlog{logger.SetColorMode(!config.NoColor).SetJSONMode(config.JSON)}
 }
 
 // HandlerOptions is used for our log/slog Handler.

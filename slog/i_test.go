@@ -83,7 +83,7 @@ func TestSlogBasic2(t *testing.T) {
 
 func newMyLogger() *mylogger {
 	s := &mylogger{
-		slog.New("mylogger").WithLevel(slog.InfoLevel),
+		slog.New("mylogger").SetLevel(slog.InfoLevel),
 		true,
 		1, // for ur own Infof, another 1 frame need to be ignored.
 	}
@@ -120,7 +120,7 @@ func TestSlogBasic3CustomVerbsInUrOwnLogger(t *testing.T) {
 }
 
 func newMyLogger2() *mylogger2 {
-	l := slog.New("mylogger").WithLevel(slog.InfoLevel)
+	l := slog.New("mylogger").SetLevel(slog.InfoLevel)
 	s := &mylogger2{
 		l,
 		true,
@@ -197,6 +197,14 @@ func TestSlogJSON(t *testing.T) {
 		"method", "GET",
 		"time_taken_ms", // the value for this key is missing
 	)
+
+	logger1 := slog.New().SetJSONMode(true).SetLevel(slog.DebugLevel)
+
+	logger1.Debug("Debug message") //
+	logger1.Info("Info message")   //
+	logger1.Warn("Warning message")
+	logger1.Error("Error message")
+
 }
 
 func TestSlogLogfmt(t *testing.T) {
@@ -249,13 +257,16 @@ func TestSlogSetDefault(t *testing.T) {
 	defer slog.SaveLevelAndSet(slog.WarnLevel)
 	defer slog.SaveFlagsAndMod(slog.LattrsR)() // add, remove, or set flags
 
-	logger := slog.New().WithJSONMode().WithLevel(slog.InfoLevel).With(m2AttrsAsAnySlice()...)
+	logger := slog.New().SetJSONMode().SetLevel(slog.InfoLevel).Set(m2AttrsAsAnySlice()...)
 
 	slog.SetDefault(logger)
 
 	slog.Info("Info message") // JSON mode here
 
-	logger.WithColorMode()      // modify logger settings, and reacting into Default()
+	l := logger.WithColorMode() // make a child logger,
+	l.Error("Error message")    // and apply to color format
+
+	logger.SetColorMode()
 	slog.Error("Error message") // now it's in colorful mode.
 }
 

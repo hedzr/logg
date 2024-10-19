@@ -27,7 +27,10 @@ package slog
 //	    slog.NewAttrs("attr2", 3, "attr3", 4.1),
 //	    "attr4", true, "attr3", "string",
 //	    slog.WithLevel(slog.DebugLevel), // an Opt here is allowed
-//	)
+//	).SetLevel(slog.DebugLevel) // Both SetXXX and WithXXX can be used
+//
+// In using streaming calls, both SetXXX and WithXXX can be
+// used. But WithXXX will make a new child logger instance.
 //
 // The logger name is a unique name. Reusing a used name will
 // pick the exact child.

@@ -9,7 +9,7 @@
 //
 //	import "github.com/hedzr/logg/slog"
 //
-//	var logger = slog.New("my-app").WithLevel(slog.Debug).WithJSONMode()
+//	var logger = slog.New("my-app").SetLevel(slog.Debug).SetJSONMode()
 //	logger.Info("info message here", "attr1", 3, "attr2", false, "attr3", "text details")
 //	logger.Println() // just an empty line
 //	logger.Println("text message", attrs...)
@@ -25,7 +25,7 @@
 //	logger.Fail("fail message", attrs...)
 //	logger.Verbose("verbose message", attrs...) // only work for build tag 'verbose' defined
 //
-//	var subl = logger.New("child1").With(attrs...)
+//	var subl = logger.New("child1").Set(attrs...)
 //	subl.Debug("debug")
 //
 // For more detail, please take a look at:
