@@ -94,7 +94,8 @@ type (
 		ResetLevelWriter(lvl Level) *Entry
 		ResetLevelWriters() *Entry
 
-		WithValueStringer(vs ValueStringer) *Entry
+		SetValueStringer(vs ValueStringer) *Entry  //
+		WithValueStringer(vs ValueStringer) *Entry //
 	}
 
 	// Entries collects many Entry objects as a map
