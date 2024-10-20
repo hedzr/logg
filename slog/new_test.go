@@ -89,7 +89,7 @@ func TestNewChildLogger(t *testing.T) {
 }
 
 func TestLogOneTwoThree(t *testing.T) {
-	l := New().WithLevel(InfoLevel)
+	l := New().SetLevel(InfoLevel)
 	l.Info("info msg", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
 }
 
@@ -109,9 +109,9 @@ func TestLogAllVerbs(t *testing.T) {
 		name   string
 		logger Logger
 	}{
-		{"json", New(" JSON ").WithLevel(AlwaysLevel).WithJSONMode(true)},     // json format
-		{"logfmt", New("LOGFMT").WithLevel(AlwaysLevel).WithColorMode(false)}, // logfmt
-		{"colorful", New("COLOUR").WithLevel(AlwaysLevel).WithColorMode()},    // colorful mode
+		{"json", New(" JSON ").SetLevel(AlwaysLevel).SetJSONMode(true)},     // json format
+		{"logfmt", New("LOGFMT").SetLevel(AlwaysLevel).SetColorMode(false)}, // logfmt
+		{"colorful", New("COLOUR").SetLevel(AlwaysLevel).SetColorMode()},    // colorful mode
 	} {
 		t.Log("")
 		t.Log("")
@@ -145,7 +145,7 @@ func TestLogAllVerbs(t *testing.T) {
 		l.Info("DEEP info msg", attrsDeep...)
 		l.Debug("DEEP debug msg", attrsDeep...)
 
-		// l2 := New().WithLevel(AlwaysLevel).WithColorMode(false)
+		// l2 := New().SetLevel(AlwaysLevel).SetColorMode(false)
 		// l2.Println()
 		// l2.Warn("DEEP warn msg", attrsDeep...)
 		// // time="09:59:47.464235+08:00" level="warning" msg="warn msg" Attr1=3.13 Aa=1 Bbb="a string" Cc=3.732 D=(2.71828+5.3571i) Time1="2023-10-22T09:59:47.46414+08:00" Dur1="2.069589s" Bool=true BoolFalse=false
@@ -160,7 +160,7 @@ func TestLogDefault(t *testing.T) {
 	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
 	defer SaveLevelAndSet(TraceLevel)()
 
-	l := New().WithLevel(AlwaysLevel)
+	l := New().SetLevel(AlwaysLevel)
 
 	l.Print("print msg", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
 	l.Verbose("verbose msg", "Aa", 1, "Bbb", "a string", "Cc", 3.732, "D", 2.71828+5.3571i)
@@ -187,12 +187,12 @@ func TestLogDefault(t *testing.T) {
 	l.Debug("debug msg", attrs...)
 	// 2023-10-22T09:59:47.464221+08:00 [DBG] debug msg                                               Attr1=3.13 group1.Aa=1 group1.Bbb="a string" group1.Cc=3.732 group1.D=(2.71828+5.3571i) Time1="2023-10-22T09:59:47.46414+08:00" Dur1="2.069589s" Bool=true BoolFalse=false
 
-	l2 := New().WithLevel(AlwaysLevel).WithColorMode(false)
+	l2 := New().SetLevel(AlwaysLevel).SetColorMode(false)
 	l2.Println()
 	l2.Warn("warn msg", attrs...)
 	// time="09:59:47.464235+08:00" level="warning" msg="warn msg" Attr1=3.13 Aa=1 Bbb="a string" Cc=3.732 D=(2.71828+5.3571i) Time1="2023-10-22T09:59:47.46414+08:00" Dur1="2.069589s" Bool=true BoolFalse=false
 
-	l3 := New().WithLevel(AlwaysLevel).WithJSONMode()
+	l3 := New().SetLevel(AlwaysLevel).SetJSONMode()
 	l3.Println()
 	l3.Warn("warn msg", attrs...)
 	// {"time":"09:59:47.464267+08:00","level":"warning","msg":"warn msg","Attr1":3.13,"group1":{"Aa":1,"Bbb":"a string","Cc":3.732,"D":"(2.71828+5.3571i)"},"Time1":"2023-10-22T09:59:47.46414+08:00","Dur1":"2.069589s","Bool":true,"BoolFalse":false}
@@ -226,13 +226,13 @@ func (s *decorated) Write(p []byte) (n int, err error) {
 
 func TestDisabledWithoutFields(t *testing.T) {
 	defer SaveLevelAndSet(WarnLevel)()
-	logger := New().WithLevel(WarnLevel).WithColorMode(false)
+	logger := New().SetLevel(WarnLevel).SetColorMode(false)
 	logger.Info(getMessage(0))
 	logger.Debug(getMessage(0))
 }
 
 func TestWithoutFields(t *testing.T) {
-	logger := New().WithLevel(DebugLevel).WithColorMode(false)
+	logger := New().SetLevel(DebugLevel).SetColorMode(false)
 	logger.Info(getMessage(0))
 	logger.Debug(getMessage(0))
 }
@@ -241,7 +241,8 @@ func TestWithWriter(t *testing.T) {
 	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
 	defer SaveLevelAndSet(TraceLevel)()
 
-	l := New(WithJSONMode(false, false),
+	l := New(
+		WithJSONMode(false, false),
 		WithColorMode(false),
 		WithUTCMode(false, true, false),
 		WithTimeFormat("", "", time.RFC3339Nano),
@@ -271,6 +272,7 @@ func TestWithWriter(t *testing.T) {
 
 	SetSkip(0)
 
+	l.SetValueStringer(nil)
 	l.WithValueStringer(nil)
 	l.Println("")
 
@@ -328,14 +330,14 @@ func BenchmarkWithoutFields(b *testing.B) {
 }
 
 func newLoggTextMode(fields ...Attr) Logger {
-	return New().WithLevel(DebugLevel).WithAttrs(fields...).
-		// WithLevel(slogg.OffLevel)
-		// WithWriter(io.Discard).
-		WithColorMode(false)
+	return New().SetLevel(DebugLevel).SetAttrs(fields...).
+		// SetLevel(slogg.OffLevel)
+		// SetWriter(io.Discard).
+		SetColorMode(false)
 }
 
 func TestAccumulatedContext(t *testing.T) {
-	logger := New().WithAttrs(fakeLoggFields()...).WithColorMode(false)
+	logger := New().SetAttrs(fakeLoggFields()...).SetColorMode(false)
 	logger.Info(getMessage(0))
 	logger.Debug(getMessage(0))
 }
@@ -345,9 +347,9 @@ func TestAccumulatedContextAll(t *testing.T) {
 		name   string
 		logger Logger
 	}{
-		{"json", New(" json ").WithAttrs(fakeLoggFields()...).WithJSONMode(true)},     // json format
-		{"logfmt", New("logfmt").WithAttrs(fakeLoggFields()...).WithColorMode(false)}, // logfmt
-		{"colorful", New("color ").WithAttrs(fakeLoggFields()...).WithColorMode()},    // colorful mode
+		{"json", New(" json ").SetAttrs(fakeLoggFields()...).SetJSONMode(true)},     // json format
+		{"logfmt", New("logfmt").SetAttrs(fakeLoggFields()...).SetColorMode(false)}, // logfmt
+		{"colorful", New("color ").SetAttrs(fakeLoggFields()...).SetColorMode()},    // colorful mode
 	} {
 		cas.logger.Info(getMessage(0))
 		cas.logger.Println()

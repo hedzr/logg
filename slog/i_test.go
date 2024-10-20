@@ -105,9 +105,11 @@ func (s *mylogger) Infof(msg string, args ...any) {
 
 			var data []byte
 			data = fmt.Appendf(data, msg, args...)
-			s.Logger.WithSkip(s.mySkip).Info(string(data))
+			s.Logger.SetSkip(s.mySkip)
+			s.Logger.Info(string(data))
 		} else {
-			s.Logger.WithSkip(s.mySkip).Info(msg)
+			s.Logger.SetSkip(s.mySkip)
+			s.Info(msg)
 		}
 	}
 }
@@ -174,7 +176,7 @@ func TestSlogBasic5(t *testing.T) {
 }
 
 func TestSlogJSON(t *testing.T) {
-	logger := slog.New().WithJSONMode().WithLevel(slog.DebugLevel)
+	logger := slog.New().SetJSONMode().SetLevel(slog.DebugLevel)
 
 	logger.Debug("Debug message") //
 	logger.Info("Info message")   //
@@ -208,7 +210,7 @@ func TestSlogJSON(t *testing.T) {
 }
 
 func TestSlogLogfmt(t *testing.T) {
-	logger := slog.New().WithLevel(slog.TraceLevel).WithColorMode(false)
+	logger := slog.New().SetLevel(slog.TraceLevel).SetColorMode(false)
 
 	logger.Debug("Debug message")
 	logger.Info("Info message")
@@ -327,7 +329,7 @@ func testSlogAndHTTPServer(t testing.TB) { //nolint:unused
 
 		idleConnsClosed := make(chan struct{})
 
-		logger := slog.New().WithJSONMode()
+		logger := slog.New().SetJSONMode()
 		srv.ErrorLog = slog.NewLogLogger(logger, slog.ErrorLevel)
 
 		go func() {
@@ -365,9 +367,9 @@ func testSlogAndHTTPServer(t testing.TB) { //nolint:unused
 func TestSlogStrongTypedAttrs(t *testing.T) {
 	// slog.SetLevel(slog.InfoLevel)
 	for _, logger := range []slog.Logger{
-		slog.New(),
-		slog.New().WithColorMode(false),
-		slog.New().WithJSONMode(),
+		slog.New(),                      // color mode
+		slog.New().WithColorMode(false), // logfmt
+		slog.New().WithJSONMode(),       // json mode
 	} {
 		logger.Println()
 		logger.Info(
@@ -409,9 +411,9 @@ func TestSlogStrongTypedAttrs(t *testing.T) {
 
 func TestSlogGrouping(t *testing.T) {
 	for _, logger := range []slog.Logger{
-		slog.New(),
-		slog.New().WithColorMode(false),
-		slog.New().WithJSONMode(),
+		slog.New(),                      // color mode
+		slog.New().WithColorMode(false), // logfmt
+		slog.New().WithJSONMode(),       // json mode
 	} {
 		logger.LogAttrs(
 			context.Background(),
@@ -435,13 +437,13 @@ func TestSlogGrouping(t *testing.T) {
 
 func TestSlogChildLogger(t *testing.T) {
 	for _, logger := range []slog.Logger{
-		slog.New(),
-		slog.New().WithColorMode(false),
-		slog.New().WithJSONMode(),
+		slog.New(),                      // color mode
+		slog.New().WithColorMode(false), // logfmt
+		slog.New().WithJSONMode(),       // json mode
 	} {
 		buildInfo, _ := debug.ReadBuildInfo()
 
-		child := logger.New("child").WithAttrs(
+		child := logger.New("child").SetAttrs(
 			slog.Group("program_info",
 				slog.Int("pid", os.Getpid()),
 				slog.String("go_version", buildInfo.GoVersion),
@@ -482,7 +484,7 @@ func TestSlogNewWithAttrs(t *testing.T) {
 }
 
 func TestSlogWithContext(t *testing.T) {
-	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
+	logger := slog.New().SetAttrs(slog.String("app-version", "v0.0.1-beta"))
 	ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh") //nolint:staticcheck
 	logger.SetContextKeys("ctx").InfoContext(ctx, "info msg",
 		"attr1", 111333,
@@ -495,7 +497,7 @@ func TestSlogWithContext(t *testing.T) {
 }
 
 func TestSlogPassLoggerWithContext(t *testing.T) {
-	logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
+	logger := slog.New().SetAttrs(slog.String("app-version", "v0.0.1-beta"))
 	ctx := context.WithValue(context.Background(), LoggerKey, logger) //nolint:staticcheck // 👈 context containing logger
 	sendUsageStatus(ctx)
 }
@@ -516,23 +518,25 @@ func sendUsageStatus(ctx context.Context) {
 func TestSlogSetLevel(t *testing.T) {
 	slog.SetLevel(slog.InfoLevel)
 	for _, parent := range []slog.Logger{
-		slog.New(),
-		slog.New().WithColorMode(false),
-		slog.New().WithJSONMode(),
+		slog.New(),                      // color mode
+		slog.New().WithColorMode(false), // logfmt
+		slog.New().WithJSONMode(),       // json mode
 	} {
 		// you can change the level anytime like this
-		// parent.WithLevel(slog.TraceLevel)
+		// parent.SetLevel(slog.TraceLevel)
 
-		parent.Debug("Debug message", "lvl", parent.Level()) // this line is invisible in logging outputs
+		parent.Warn("Warn message --------", "lvl", parent.Level()) // this line is invisible in logging outputs
 
 		// or, create a child logger with different level
-		logger := parent.New("child").WithLevel(slog.DebugLevel)
+		logger := parent.New("child").SetLevel(slog.DebugLevel)
 
-		logger.Trace("Trace message") // invisible
-		logger.Debug("Debug message")
-		logger.Info("Info message")
-		logger.Warn("Warning message")
-		logger.Error("Error message")
+		logger.Trace("Trace message/c") // invisible
+		logger.Debug("Debug message/c")
+		logger.Info("Info message/c")
+		logger.Warn("Warning message/c")
+		logger.Error("Error message/c")
+
+		logger.Close()
 	}
 }
 
@@ -608,8 +612,8 @@ func TestSlogAdapter(t *testing.T) {
 	)
 	defer l.Close()
 
-	sub1 := l.New("sub1").With("logger", "sub1")
-	sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
+	sub1 := l.New("sub1").Set("logger", "sub1")
+	sub2 := l.New("sub2").Set("logger", "sub2").SetLevel(slog.InfoLevel)
 
 	// create a log/slog logger HERE
 	logger := logslog.New(slog.NewSlogHandler(l, &slog.HandlerOptions{
@@ -646,8 +650,8 @@ func TestSlogUsedForLogSlog(t *testing.T) {
 	)
 	defer l.Close()
 
-	sub1 := l.New("sub1").With("logger", "sub1")
-	sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
+	sub1 := l.New("sub1").Set("logger", "sub1")
+	sub2 := l.New("sub2").Set("logger", "sub2").SetLevel(slog.InfoLevel)
 
 	// create a log/slog logger HERE
 	logger := logslog.New(slog.NewSlogHandler(l, nil))
@@ -690,14 +694,14 @@ func TestDisabledLog(t *testing.T) {
 	slog.SetLevel(slog.WarnLevel)
 
 	// And, create a detached logger with WarnLevel
-	logger := slog.New().With("attr", "parent").WithLevel(slog.WarnLevel)
+	logger := slog.New().Set("attr", "parent").SetLevel(slog.WarnLevel)
 
 	// Now the Info request should not print out anything
 	logger.Info("info msg", "root-level", slog.GetLevel())
 }
 
 func TestSlogAttrsR(t *testing.T) {
-	logger := slog.New("parent-logger").With("attr", "parent").WithLevel(slog.InfoLevel)
+	logger := slog.New("parent-logger").Set("attr", "parent").SetLevel(slog.InfoLevel)
 	sl := logger.New("child-logger")
 
 	logger.Info("info", "attr1", 1)

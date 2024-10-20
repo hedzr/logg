@@ -120,7 +120,7 @@ func (s *handler4LogSlog) WithGroup(name string) logslog.Handler {
 // withFields returns a cloned Handler with the given fields.
 func (s *handler4LogSlog) withFields(fields ...Attr) *handler4LogSlog {
 	cloned := &handler4LogSlog{
-		New().WithAttrs(fields...),
+		New().SetAttrs(fields...),
 	}
 	return cloned
 }
