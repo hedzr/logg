@@ -56,7 +56,7 @@ type PrintCtx struct {
 	kvps       Attrs
 	clr, bg    color.Color
 	now        time.Time
-	stackFrame uintptr
+	stackFrame uintptr // the caller's stack frames
 
 	prefix        string
 	inGroupedMode bool

@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	logslog "log/slog"
+	"runtime"
 )
 
 // NewSlogHandler makes a log/slog Handler to adapt into standard slog.
@@ -93,6 +94,16 @@ func (s *handler4LogSlog) Handle(ctx context.Context, rec logslog.Record) error 
 	lvl := convertLogSlogLevel(rec.Level)
 	if wi, ok := s.Logger.(LogSlogAware); ok {
 		fields := convertLogSlogRecordAttrs(rec)
+
+		// rec.PC would be abandoned because we want skip the extra frames
+		ei := 0
+		if sa, ok := s.Logger.(interface{ Skip() int }); ok {
+			ei = sa.Skip()
+		}
+		var pcs [1]uintptr
+		runtime.Callers(3+1+ei, pcs[:])
+		rec.PC = pcs[0]
+
 		wi.WriteThru(ctx, lvl, rec.Time, rec.PC, rec.Message, fields)
 	} else {
 		fields := convertLogSlogRecordAttrs(rec)
