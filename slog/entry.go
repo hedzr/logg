@@ -16,14 +16,15 @@ import (
 )
 
 func newentry(parent *Entry, args ...any) *Entry {
-	level := GetLevel()
+	js, color, level := false, true, GetLevel()
 	if parent != nil {
-		level = parent.Level()
+		js, color, level = parent.useJSON, parent.useColor, parent.Level()
 	}
 
 	s := &Entry{
 		owner:    parent,
-		useColor: true,
+		useColor: color,
+		useJSON:  js,
 		level:    level,
 	}
 
@@ -313,8 +314,8 @@ func (s *Entry) Level() (lvl Level) {
 // will be merged together. If duplicated attr found, the
 // parent's will be overwritten.
 //
-//	lc1 := l.New("c1").WithAttrs(NewAttr("lc1", true))
-//	lc3 := lc1.New("c3").WithAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
+//	lc1 := l.New("c1").SetAttrs(NewAttr("lc1", true))
+//	lc3 := lc1.New("c3").SetAttrs(NewAttr("lc3", true), NewAttr("lc1", 1))
 //	lc3.Warn("lc3 warn msg", "local", false)
 //
 // In above case, attr 'lc1' will be rewritten while lc3.Warn, it looks like:
