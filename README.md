@@ -31,6 +31,9 @@ The abilities are:
 
 See also [CHANGELOG](CHANGELOG).
 
+> Since v1.0.0, the streaming calls changed their behaviour: `.WithXXX` will make a new instance as a child logger and apply the settings; `.SetXXX` will take the effects on the place.
+> > NOTE: v0.7.0 is pre-release version of v1.0.0.
+>
 > Since v0.5.7, `logg/slog` enables privacy hardening flags by default now.
 
 ## Motivation
@@ -140,7 +143,7 @@ By creating and managing a sublogger, make your own logger might be dead simple:
 
 ```go
 func newMyLogger2() *mylogger2 {
-    l := slog.New("mylogger").WithLevel(slog.InfoLevel)
+    l := slog.New("mylogger").SetLevel(slog.InfoLevel)
     s := &mylogger2{
         l, // Provides basic Logger interface such as Info, Debug, etc.
     true, // enable Infof()
@@ -187,9 +190,9 @@ logg/slog has tree builtin optput formats: logfmt, json and colorful mode.
 The default output is colorful to fit for debug console. But you can switch to the other two easily:
 
 ```go
-slog.WithJSONMode()       // to get JSON format
-slog.WithColorMode(false) // to get logfmt format
-slog.WithColorMode()      // return to colorful mode
+slog.SetJSONMode()       // to get JSON format
+slog.SetColorMode(false) // to get logfmt format
+slog.SetColorMode()      // return to colorful mode
 ```
 
 The above settings modify and apply effects to all loggers globally.
@@ -240,25 +243,28 @@ Creating a detached logger is possible. Different from default logger, the logge
 
 ```go
 logger := slog.New() // colorful logger
-logger := slog.New().WithJSONMode() // json format logger
-logger := slog.New().WithColorMode(false) // logfmt logger
-logger := slog.New().With("attr1", v1, "attr2", v2))
+logger := slog.New().SetJSONMode() // json format logger
+logger := slog.New().SetColorMode(false) // logfmt logger
+logger := slog.New().Set("attr1", v1, "attr2", v2))
 
 logger := slog.New("name")
 logger := slog.New("name", slog.WithAttrs(args...))
 logger := slog.New("name", slog.NewAttr("attr1", v1))
 logger := slog.New("name", slog.Int("attr1", i1))
 logger := slog.New("name", slog.Group("group1", slog.Int("attr1", i1)))
-logger := slog.New("name", "attr1", v1, "attr2", v2).WithAttrs(args...)
+logger := slog.New("name", "attr1", v1, "attr2", v2).SetAttrs(args...)
 ```
 
 Sublogger should derive from Default() or a detached logger.
 
 ```go
-logger := slog.New(args...).WithLevel(slog.InfoLevel)
+logger := slog.New(args...).SetLevel(slog.InfoLevel)
 
-sl1 := logger.New().WithLevel(slog.TraceLevel)
+// .New() makes a child logger,
+sl1 := logger.New().SetLevel(slog.TraceLevel)
 sl2 := Default().New() // keep the parent's level
+// .WithXXX() makes a child logger
+sl3 := logger.WithLevel(slog.TraceLevel)
 ```
 
 By default, parent shares his features (level and other settings) to children, so `sl2` get `InfoLevel` same with `logger`.
@@ -266,7 +272,7 @@ By default, parent shares his features (level and other settings) to children, s
 If `LattrsR` is set, the parent's attributes will be inherited to. For performance reason, it's unset by default.
 
 ```go
-logger := slog.New("parent-logger").With("attr", "parent").WithLevel(slog.InfoLevel)
+logger := slog.New("parent-logger").Set("attr", "parent").SetLevel(slog.InfoLevel)
 sl := logger.New("child-logger")
 
 slog.AddFlags(slog.LattrsR)
@@ -295,8 +301,8 @@ And attributes and WithOpts can follow the logger name. `New(...)` parses all of
     )
     defer l.Close()
 
-    sub1 := l.New("sub1").With("logger", "sub1")
-    sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
+    sub1 := l.New("sub1").Set("logger", "sub1")
+    sub2 := l.New("sub2").Set("logger", "sub2").SetLevel(slog.InfoLevel)
 
     sub1.Debug("hi debug", "AA", 1.23456789)
 ```
@@ -406,7 +412,7 @@ See above of above.
 Same to standard `log/slog`, `logg/slog` has LogAttrs() to log attributes contextually.
 
 ```go
-    logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
+    logger := slog.New().SetAttrs(slog.String("app-version", "v0.0.1-beta"))
     ctx := context.Background()
     logger.InfoContext(ctx, "info msg", "attr1", 111333,
         slog.Group("memory",
@@ -423,9 +429,10 @@ Sometimes the attributes can be extracted from context.Context.
 
 ```go
 func TestSlogWithContext(t *testing.T) {
-    logger := slog.New().WithAttrs(slog.String("app-version", "v0.0.1-beta"))
+    logger := slog.New().SetAttrs(slog.String("app-version", "v0.0.1-beta"))
     ctx := context.WithValue(context.Background(), "ctx", "oh,oh,oh")
-    logger.WithContextKeys("ctx").InfoContext(ctx, "info msg",
+    logger.SetContextKeys("ctx").
+      InfoContext(ctx, "info msg",
         "attr1", 111333,
         slog.Group("memory",
             slog.Int("current", 50),
