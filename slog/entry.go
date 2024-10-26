@@ -175,6 +175,9 @@ func (s *Entry) String() string {
 //
 //
 
+func (s *Entry) JSONMode() bool  { return s.useJSON }
+func (s *Entry) ColorMode() bool { return s.useColor }
+
 func WithJSONMode(b ...bool) Opt {
 	return func(s *Entry) {
 		s.SetJSONMode(b...)

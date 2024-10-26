@@ -119,7 +119,9 @@ type (
 		SetSkip(extraFrames int)
 		Skip() int // return current frames count should be ignored in addition. 0 for most cases.
 
-		Name() string // this logger's name
+		Name() string    // this logger's name
+		JSONMode() bool  // return the mode
+		ColorMode() bool // return the mode
 	}
 
 	// LogLoggerAware for external adapters
