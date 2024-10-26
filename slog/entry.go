@@ -830,6 +830,39 @@ func (s *Entry) Log(ctx context.Context, level logslog.Level, msg string, args .
 	}
 }
 
+func (s *Entry) Infof(format string, a ...interface{}) error {
+	lvl := InfoLevel
+	ctx := context.Background()
+	msg := fmt.Sprintf(format, a...)
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, pc, msg)
+	}
+	return nil
+}
+
+func (s *Entry) Warnf(format string, a ...interface{}) error {
+	lvl := WarnLevel
+	ctx := context.Background()
+	msg := fmt.Sprintf(format, a...)
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, pc, msg)
+	}
+	return nil
+}
+
+func (s *Entry) Errorf(format string, a ...interface{}) error {
+	lvl := ErrorLevel
+	ctx := context.Background()
+	msg := fmt.Sprintf(format, a...)
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, pc, msg)
+	}
+	return nil
+}
+
 const (
 	LevelVerbose = logslog.Level(-16)
 	LevelTrace   = logslog.Level(-8)
