@@ -114,6 +114,21 @@ func (s *dualWriter) Add(w io.Writer) {
 	}
 }
 
+func (s *dualWriter) Remove(w io.Writer) {
+	if w != nil {
+		for i, x := range s.Normal {
+			if xl, ok := x.(*logwr); ok && xl == w {
+				s.Normal = append(s.Normal[:i], s.Normal[i+1:]...)
+				return
+			}
+			if x == w {
+				s.Normal = append(s.Normal[:i], s.Normal[i+1:]...)
+				return
+			}
+		}
+	}
+}
+
 func (s *dualWriter) AddErrorWriter(w io.Writer) {
 	if w != nil {
 		if lw, ok := w.(LogWriter); ok {
@@ -121,6 +136,21 @@ func (s *dualWriter) AddErrorWriter(w io.Writer) {
 			return
 		}
 		s.Error = append(s.Error, &logwr{w})
+	}
+}
+
+func (s *dualWriter) RemoveErrorWriter(w io.Writer) {
+	if w != nil {
+		for i, x := range s.Error {
+			if xl, ok := x.(*logwr); ok && xl == w {
+				s.Error = append(s.Error[:i], s.Error[i+1:]...)
+				return
+			}
+			if x == w {
+				s.Error = append(s.Error[:i], s.Error[i+1:]...)
+				return
+			}
+		}
 	}
 }
 

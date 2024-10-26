@@ -79,20 +79,25 @@ type (
 		SetContextKeys(keys ...any) *Entry  // given keys will be tried extracting from context.Context automatically
 		WithContextKeys(keys ...any) *Entry // given keys will be tried extracting from context.Context automatically
 
-		SetWriter(wr io.Writer) *Entry          // use the given writer
-		WithWriter(wr io.Writer) *Entry         // use the given writer
-		AddWriter(wr io.Writer) *Entry          // append more writers via this interface
-		SetErrorWriter(wr io.Writer) *Entry     //
-		WithErrorWriter(wr io.Writer) *Entry    //
-		AddErrorWriter(wr io.Writer) *Entry     //
-		ResetWriters() *Entry                   //
+		SetWriter(wr io.Writer) *Entry    // use the given writer
+		WithWriter(wr io.Writer) *Entry   // use the given writer
+		AddWriter(wr io.Writer) *Entry    // append more writers via this interface
+		RemoveWriter(wr io.Writer) *Entry // remove a writer
+
+		SetErrorWriter(wr io.Writer) *Entry    //
+		WithErrorWriter(wr io.Writer) *Entry   //
+		AddErrorWriter(wr io.Writer) *Entry    //
+		RemoveErrorWriter(wr io.Writer) *Entry //
+
+		ResetWriters() *Entry // reset std and error writers
+
 		GetWriter() (wr LogWriter)              // return level-matched writer
 		GetWriterBy(level Level) (wr LogWriter) // return writer matched given level
 
-		AddLevelWriter(lvl Level, w io.Writer) *Entry
-		RemoveLevelWriter(lvl Level, w io.Writer) *Entry
-		ResetLevelWriter(lvl Level) *Entry
-		ResetLevelWriters() *Entry
+		AddLevelWriter(lvl Level, w io.Writer) *Entry    //
+		RemoveLevelWriter(lvl Level, w io.Writer) *Entry //
+		ResetLevelWriter(lvl Level) *Entry               // reset the writers in a level
+		ResetLevelWriters() *Entry                       // reset all leveled writers
 
 		SetValueStringer(vs ValueStringer) *Entry  //
 		WithValueStringer(vs ValueStringer) *Entry //

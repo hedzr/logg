@@ -500,6 +500,13 @@ func (s *Entry) AddWriter(wr io.Writer) *Entry {
 	return s
 }
 
+func (s *Entry) RemoveWriter(wr io.Writer) *Entry {
+	if s.writer != nil {
+		s.writer.Remove(wr)
+	}
+	return s
+}
+
 func WithErrorWriter(wr io.Writer) Opt {
 	return func(s *Entry) {
 		s.SetErrorWriter(wr)
@@ -537,6 +544,13 @@ func (s *Entry) AddErrorWriter(wr io.Writer) *Entry {
 	}
 	s.writer.AddErrorWriter(wr)
 	// s.writer.SetLogWriter(wr)
+	return s
+}
+
+func (s *Entry) RemoveErrorWriter(wr io.Writer) *Entry {
+	if s.writer == nil {
+		s.writer.RemoveErrorWriter(wr)
+	}
 	return s
 }
 
