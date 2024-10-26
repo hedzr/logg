@@ -12,6 +12,12 @@ import (
 
 type Level int // logging level
 
+// LevelSettable interface can be used when a user-defined writer
+// needs update its internal level lively before writing.
+type LevelSettable interface {
+	SetLevel(level Level)
+}
+
 // SaveLevelAndSet sets Default logger's level and default logger level.
 //
 // SaveLevelAndSet saves old level and return a functor to restore it. So
