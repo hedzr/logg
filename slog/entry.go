@@ -289,6 +289,7 @@ func (s *Entry) SetLevel(lvl Level) *Entry {
 		if !is.TraceMode() {
 			is.SetTraceMode(true)
 		}
+	default:
 	}
 	return s
 }
@@ -358,7 +359,6 @@ func (s *Entry) WithAttrs(attrs ...Attr) *Entry {
 	child := s.newChildLogger()
 	child.SetAttrs(attrs...)
 	return child
-	return s
 }
 
 // WithAttrs1 allows an Attrs passed into New. Sample is:
