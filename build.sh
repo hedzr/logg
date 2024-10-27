@@ -19,6 +19,10 @@ APPS=(wzstore loop)
 
 # LDFLAGS = -s -w -X 'github.com/hedzr/cmdr/v2/conf.Buildstamp=2024-10-25T18:09:06+08:00' -X 'github.com/hedzr/cmdr/v2/conf.GIT_HASH=580ca50' -X 'github.com/hedzr/cmdr/v2/conf.GitSummary=580ca50-dirty' -X 'github.com/hedzr/cmdr/v2/conf.GitDesc=580ca50 upgrade deps' -X 'github.com/hedzr/cmdr/v2/conf.BuilderComments=' -X 'github.com/hedzr/cmdr/v2/conf.GoVersion=go version go1.22.7 darwin/arm64' -X 'github.com/hedzr/cmdr/v2/conf.Version=0.5.1'
 
+boot-cov() {
+	go test ./... -v -race -cover -coverprofile=./logs/coverage-cl.txt -covermode=atomic -test.short -vet=off 2>&1 | tee ./logs/cover-cl.log
+}
+
 extract-app-version() {
 	local DEFAULT_DOC_NAME="${DEFAULT_DOC_NAME:-${1:-slog/doc.go}}"
 	APPNAME="$(grep -E "appName[ \t]+=[ \t]+" ${DEFAULT_DOC_NAME} | grep -Eo "\\\".+\\\"")"
@@ -83,7 +87,7 @@ test-all-platforms() {
 	done
 }
 
-cov() {
+cov1() {
 	for GOOS in darwin linux windows; do
 		go test -v -race -coverprofile=coverage-$GOOS.txt ./...
 		go tool cover -html=coverage-$GOOS.txt -o cover-$GOOS.html
