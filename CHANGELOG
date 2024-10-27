@@ -1,7 +1,22 @@
 # HISTORY / CHANGELOG
 
+- v0.7.1
+  - added ExtraPrintersI interface
+  - added RemoveWriter() apis
+  - added apis - JSONMode(), ColorMode()
+  - added LevelSettable interface to enable more awarenesses for user's writer
+  - added small example app
+  - added a top-level test
+  - added the missing go.work
+  - added some helper scripts
+  - upgraded hedzr/is
+
+- v0.7.0
+  - [BREAK] Some interfaces CHANGED but userland operations almost keep unchanged.
+  - upgraded hedzr/is
+
 - v0.6.0
-  - BREAK: Some interfaces CHANGED but userland operations almost keep unchanged.
+  - [BREAK] Some interfaces CHANGED but userland operations almost keep unchanged.
   - upgraded hedzr/is
 
 - v0.5.26
