@@ -455,17 +455,49 @@ logg/slog uses a `dualWriter` to serialize the logging contents.
 
 A `dualWriter` sends contents to stdout or stderr in accord to the requesting logging level. For example, a `Info(...)` calling will be dispatched to stdout and a `Warn`, `Error`, `Panic`, or `Fatal` to stderr.
 
-Not only for those, the dualWriter allows you stack many writers as its `Normal` or `Error` output devices. That means, a console `os.Stdout` and a file writer can be bundled into `Normal` at once. How to do it? Simple:
+Not only for those, the dualWriter allows you stack many writers as its `Normal` or `Error` output devices. That means, a console `os.Stdout` and a file writer can be bundled into `Normal` at once. How to do it? It's simple:
 
 ```go
 logger := New("tty+file").AddWriter(slog.NewFileWriter("/tmp/app-stdout.log"))
 ```
 
-Using `WithWriter` to replace our stocked version, which is stdout+stderr by default.
+Using `WithWriter` to replace the stocked version, which is stdout+stderr by default.
 
-Or `AddErrorWrite(w)` can append to the `Error` device.
+`AddWriter(w)`/`RemoveWriter`/`ResetWriter` can append/remove/reset the stdout device.
+
+`AddErrorWriter(w)`/`RemoveErrorWriter`/`ResetErrorWriter` can append/remove/reset to the stderr device.
 
 Of course, `ResetWriters` works so we can always back to default state.
+
+A standard `io.Writer` is needed when using AddWriter/WithWriter:
+
+```go
+// Simple file
+tf, _ := os.CreateTempFile("", "stdout.log")
+logger.AddWriter(tf)
+```
+
+Your writer can implement `LevelSettable` to handling the requesting logging level.
+
+```go
+package mywriter
+import (
+	"logz" "github.com/hedzr/logg/slog"
+)
+type myWriter struct {
+	level logz.Level
+}
+func (s *myWriter) SetLevel(level logz.Level) { s.level = level } // logz.LevelSettable
+func (s *myWriter) Write(data []byte) (n int, err error) {
+	switch(s.level) {
+	case logz.DebugLevel:
+	// ...
+	}
+	return
+}
+```
+
+In this scene, logg/slog will call Write following SetLevel. It's safe in many cases, but you can take more safety for it by using locked mechanism: go build tags `-tags=logglock` will enable a special version with wrapping the two calls in a sync.Mutex. See the source code in entry_lock.go.
 
 #### Leveled Writers
 
