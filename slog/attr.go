@@ -97,7 +97,7 @@ func (s Attrs) SerializeValueTo(pc *PrintCtx) {
 	serializeAttrs(pc, s)
 }
 
-func serializeAttrs(pc *PrintCtx, kvps Attrs) { //nolint:revive
+func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 	prefix := pc.prefix
 	for _, v := range kvps {
 		if pc.noColor {
@@ -157,6 +157,9 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) { //nolint:revive
 			pc.valueStringer.WriteValue(val)
 		} else {
 			pc.appendValue(val)
+			if e, ok := val.(error); ok && e != nil {
+				err = e
+			}
 		}
 		pc.prefix = prefix
 	}
@@ -164,6 +167,7 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) { //nolint:revive
 	if !pc.noColor {
 		ct.echoResetColor(pc)
 	}
+	return
 }
 
 // type canSerializeValue interface {

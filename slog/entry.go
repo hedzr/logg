@@ -1121,13 +1121,37 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) (ret []byte) {
 		s.printFirstLineOfMsg(ctx, pc)
 	}
 
-	serializeAttrs(pc, pc.kvps)
+	holded := serializeAttrs(pc, pc.kvps)
 
 	if IsAnyBitsSet(Lcaller) {
 		s.printPC(ctx, pc)
 	}
 
 	s.printRestLinesOfMsg(ctx, pc)
+
+	if pc.lvl <= ErrorLevel && holded != nil && (is.DebugMode() || is.DebugBuild()) {
+		var stackInfo string
+		if _, ok := holded.(interface{ Format(s fmt.State, verb rune) }); ok {
+			stackInfo = fmt.Sprintf("%+v", holded)
+		} else {
+			var x Stringer
+			if x, ok = holded.(Stringer); ok {
+				stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+			} else {
+				stackInfo = fmt.Sprintf("%v", holded)
+			}
+		}
+		if pc.jsonMode {
+			pc.pcAppendStringKey("errDetail")
+			pc.pcAppendColon()
+			pc.pcAppendStringValue(stackInfo)
+			pc.pcAppendComma()
+		} else {
+			pc.pcAppendByte('\n')
+			txt := ct.pad(stackInfo, "    ", 1)
+			ct.wrapColorAndBgTo(pc, red, clrLoggerNameBg, txt)
+		}
+	}
 
 	if pc.jsonMode {
 		pc.pcAppendByte('}')
@@ -1159,12 +1183,15 @@ func (s *Entry) printTimestamp(ctx context.Context, pc *PrintCtx) {
 func (s *Entry) printLoggerName(ctx context.Context, pc *PrintCtx) {
 	if s.name != "" {
 		if pc.noColor { // json or logfmt
-			pc.AddString("logger", s.name)
-			// pc.pcAppendStringKey("logger")
-			// pc.pcAppendColon()
-			// pc.pcAppendByte('"')
-			// pc.pcAppendStringValue(s.name)
-			// pc.pcAppendByte('"')
+			if pc.jsonMode {
+				pc.pcAppendStringKey("logger")
+				pc.pcAppendColon()
+				pc.pcAppendByte('"')
+				pc.pcAppendStringValue(s.name)
+				pc.pcAppendByte('"')
+			} else {
+				pc.AddString("logger", s.name)
+			}
 			pc.pcAppendComma()
 		} else {
 			ct.wrapColorAndBgTo(pc, clrLoggerName, clrLoggerNameBg, s.name)
