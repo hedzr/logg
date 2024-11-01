@@ -5,7 +5,7 @@ go 1.22.7
 replace github.com/hedzr/logg => ../../
 
 require (
-	github.com/hedzr/is v0.5.29
+	github.com/hedzr/is v0.6.0
 	github.com/hedzr/logg v0.7.1
 )
 
