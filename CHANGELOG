@@ -1,5 +1,10 @@
 # HISTORY / CHANGELOG
 
+- v0.7.3
+  - improved error dumping in attrs
+  - [logg/slog] a special locked version for entry printOut
+  - upgraded hedzr/is
+
 - v0.7.1
   - added ExtraPrintersI interface
   - added RemoveWriter() apis

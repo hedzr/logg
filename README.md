@@ -25,6 +25,8 @@ The abilities are:
 - privacy enough: harden filepath, shorten package name (by `Lprivacypath` and `Lprivacypathregexp`); and implement `LogObjectMarshaller` or `LogArrayMarshaller` to security sensitive fields.
 - better multiline outputs.
 
+Since v0.7.3, a locking version of printOut added. This would take more safeties to splitted writer (if your writer had implemented `LevelSettable` interface to compliant with logg/slog's log level).
+
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
 
 ### Chanages
@@ -482,18 +484,18 @@ Your writer can implement `LevelSettable` to handling the requesting logging lev
 ```go
 package mywriter
 import (
-	"logz" "github.com/hedzr/logg/slog"
+ "logz" "github.com/hedzr/logg/slog"
 )
 type myWriter struct {
-	level logz.Level
+ level logz.Level
 }
 func (s *myWriter) SetLevel(level logz.Level) { s.level = level } // logz.LevelSettable
 func (s *myWriter) Write(data []byte) (n int, err error) {
-	switch(s.level) {
-	case logz.DebugLevel:
-	// ...
-	}
-	return
+ switch(s.level) {
+ case logz.DebugLevel:
+ // ...
+ }
+ return
 }
 ```
 
