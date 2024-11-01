@@ -6,7 +6,7 @@ replace github.com/hedzr/logg => ../../
 
 require (
 	github.com/hedzr/is v0.6.0
-	github.com/hedzr/logg v0.7.1
+	github.com/hedzr/logg v0.7.3
 )
 
 require (
