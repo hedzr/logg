@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/hedzr/is"
+
 	"github.com/hedzr/logg/slog/internal/strings"
 )
 
@@ -19,19 +20,27 @@ func init() {
 			"bitbucket.com": "BB",
 		}
 
+		// for hardening your privacy,
 		homeDir, _ = os.UserHomeDir()
 		currDir, _ = os.Getwd()
 		knownPathMap = map[string]string{
-			homeDir: "~",
-			currDir: ".",
+			homeDir: "~", // convert $homeDir to '~'
+			currDir: ".", // convert abs-path currDir prefix to relative-path (started with '.')
 		}
+		// A tilde directory can be represented as `~work/...` if `work`
+		// was defined by:
+		//    hash -d work="/Volumes/VolWork/work"
+		//    ls -la ~work/
 		knownPathRegexpMap = append(knownPathRegexpMap, regRepl{
 			expr: regexp.MustCompile(`/Volumes/[^/]+/`),
-			repl: `~`,
+			repl: `~`, // convert tilde folder (in bash/zsh) to abbreviate mode.
 		})
 
-		if is.InDebugging() || is.InTesting() || strings.StringToBool(os.Getenv("DEBUG")) {
+		if is.Tracing() || is.TraceMode() {
+			lvlCurrent = TraceLevel
+		} else if is.DebuggerAttached() || is.InTesting() || is.DebugBuild() || is.DebugMode() || strings.StringToBool(os.Getenv("DEBUG")) {
 			lvlCurrent = DebugLevel
+			RemoveFlags(Lprivacypathregexp) // disable tilde directory to make the logging msg clickable
 		}
 
 		defaultWriter = newDualWriter()
