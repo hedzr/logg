@@ -24,12 +24,37 @@ func AddCodeHostingProviders(provider, repl string) { codeHostingProvidersMap[pr
 //   - pwd -> "." (current directory -> '.', that means any abs-path will be converted to rel-path)
 func AddKnownPathMapping(pathname, repl string) { knownPathMap[pathname] = repl }
 
+// RemoveKnownPathMapping _
+func RemoveKnownPathMapping(pathname string) {
+	delete(knownPathMap, pathname)
+}
+
+// ResetKnownPathMapping _
+func ResetKnownPathMapping() {
+	clear(knownPathMap) // just for go1.21+
+}
+
 // AddKnownPathRegexpMapping adds regexp pattern, repl pair to reduce the called filepath width.
 func AddKnownPathRegexpMapping(pathnameRegexpExpr, repl string) {
 	knownPathRegexpMap = append(knownPathRegexpMap, regRepl{
 		expr: regexp.MustCompile(pathnameRegexpExpr),
 		repl: repl,
 	})
+}
+
+// RemoveKnownPathRegexpMapping _
+func RemoveKnownPathRegexpMapping(pathnameRegexpExpr string) {
+	for i, vv := range knownPathRegexpMap {
+		if vv.expr.String() == pathnameRegexpExpr {
+			knownPathRegexpMap = append(knownPathRegexpMap[:i], knownPathRegexpMap[i+1:]...)
+			return
+		}
+	}
+}
+
+// ResetKnownPathRegexpMapping clears all rules in knownPathRegexpMap.
+func ResetKnownPathRegexpMapping() {
+	knownPathRegexpMap = nil
 }
 
 // SetLevelOutputWidth sets how many characters of level string should
