@@ -126,7 +126,7 @@ func newMyLogger2() *mylogger2 {
 	s := &mylogger2{
 		l,
 		true,
-		l.WithSkip(1),
+		l.WithSkip(1), // a sublogger here with different skip-frames
 	}
 	return s
 }
@@ -367,9 +367,9 @@ func testSlogAndHTTPServer(t testing.TB) { //nolint:unused
 func TestSlogStrongTypedAttrs(t *testing.T) {
 	// slog.SetLevel(slog.InfoLevel)
 	for _, logger := range []slog.Logger{
-		slog.New(),                      // color mode
-		slog.New().WithColorMode(false), // logfmt
-		slog.New().WithJSONMode(),       // json mode
+		slog.New(),                     // color mode
+		slog.New().SetColorMode(false), // logfmt
+		slog.New().SetJSONMode(),       // json mode
 	} {
 		logger.Println()
 		logger.Info(
@@ -411,9 +411,9 @@ func TestSlogStrongTypedAttrs(t *testing.T) {
 
 func TestSlogGrouping(t *testing.T) {
 	for _, logger := range []slog.Logger{
-		slog.New(),                      // color mode
-		slog.New().WithColorMode(false), // logfmt
-		slog.New().WithJSONMode(),       // json mode
+		slog.New(),                     // color mode
+		slog.New().SetColorMode(false), // logfmt
+		slog.New().SetJSONMode(),       // json mode
 	} {
 		logger.LogAttrs(
 			context.Background(),
@@ -437,9 +437,9 @@ func TestSlogGrouping(t *testing.T) {
 
 func TestSlogChildLogger(t *testing.T) {
 	for _, logger := range []slog.Logger{
-		slog.New(),                      // color mode
-		slog.New().WithColorMode(false), // logfmt
-		slog.New().WithJSONMode(),       // json mode
+		slog.New(),                     // color mode
+		slog.New().SetColorMode(false), // logfmt
+		slog.New().SetJSONMode(),       // json mode
 	} {
 		buildInfo, _ := debug.ReadBuildInfo()
 

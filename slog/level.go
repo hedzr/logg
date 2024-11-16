@@ -205,9 +205,12 @@ func (level Level) Enabled(ctx context.Context, testingLevel Level) bool {
 
 // Convert the Level to a string. eg. PanicLevel becomes "panic".
 func (level Level) String() string {
-	if b, err := level.MarshalText(); err == nil {
-		return string(b)
+	if str, ok := levelToString[level]; ok {
+		return str
 	}
+	// if b, err := level.MarshalText(); err == nil {
+	// 	return string(b)
+	// }
 	return fmt.Sprintf("L#%d", int(level))
 }
 
