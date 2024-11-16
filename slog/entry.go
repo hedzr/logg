@@ -1130,26 +1130,42 @@ func (s *Entry) WithContextKeys(keys ...any) *Entry {
 func (s *Entry) ctxKeysWanted() bool { return len(s.contextKeys) > 0 }
 func (s *Entry) ctxKeys() []any      { return s.contextKeys }
 func (s *Entry) fromCtx(ctx context.Context) (ret Attrs) {
-	mu := make(map[string]struct{})
-	for _, k := range s.ctxKeys() {
-		if v := ctx.Value(k); v != nil {
-			switch key := k.(type) {
-			case Stringer:
-				kk := key.String()
-				if _, ok := mu[kk]; !ok {
-					ret = append(ret, &kvp{kk, v})
-					mu[kk] = struct{}{}
+	if ctxKeysUnify {
+		mu := make(map[string]struct{})
+		for _, k := range s.ctxKeys() {
+			if v := ctx.Value(k); v != nil {
+				switch key := k.(type) {
+				case Stringer:
+					kk := key.String()
+					if _, ok := mu[kk]; !ok {
+						ret = append(ret, &kvp{kk, v})
+						mu[kk] = struct{}{}
+					}
+				case string:
+					if _, ok := mu[key]; !ok {
+						ret = append(ret, &kvp{key, v})
+						mu[key] = struct{}{}
+					}
 				}
-			case string:
-				if _, ok := mu[key]; !ok {
+			}
+		}
+	} else {
+		for _, k := range s.ctxKeys() {
+			if v := ctx.Value(k); v != nil {
+				switch key := k.(type) {
+				case Stringer:
+					kk := key.String()
+					ret = append(ret, &kvp{kk, v})
+				case string:
 					ret = append(ret, &kvp{key, v})
-					mu[key] = struct{}{}
 				}
 			}
 		}
 	}
 	return
 }
+
+const ctxKeysUnify = false
 
 // var poolHelper = Pool(
 // 	newPrintCtx,
