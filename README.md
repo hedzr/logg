@@ -14,18 +14,18 @@ A golang logging library with log/slog style APIs, with colorful console output.
 
 The abilities are:
 
-- fast enough: performance is not our unique aim, and this one is enough quick.
+- fast enough: performance is not our unique aim, but quick enough.
 - colorful console output by default.
-- switch to logfmt or json format dynamically.
-- interfaces and abilities similar with log/slog.
-- adapted into log/slog to enable color logging, here some our verbs (such as Fatal, Panic) cannot work directly.
-- cascade child logger and dump attrs of parent recursively (need enable `LattrsR` to avoid taking more cpu usages).
-- very lite child loggers.
+- switch to logging format (eg. color, logfmt or json) dynamically.
+- interfaces and abilities similar with `log/slog`.
+- adapted into `log/slog` to enable color logging out of the box. note that some our verbs (such as Fatal, Panic) can't work at this time.
+- manage a cascade of child loggers and dump attrs of parent recursively optionally (need enable `LattrsR`).
+- super lightweight child loggers.
 - user-defined levels, writer, and value stringer.
-- privacy enough: harden filepath, shorten package name (by `Lprivacypath` and `Lprivacypathregexp`); and implement `LogObjectMarshaller` or `LogArrayMarshaller` to security sensitive fields.
+- privacy enough: hardening filepath(s), shortening package name(s) (by `Lprivacypath` and `Lprivacypathregexp`); and implementing `LogObjectMarshaller` or `LogArrayMarshaller` to safe guard the sensitive fields.
 - better multiline outputs.
 
-Since v0.7.3, a locking version of printOut added. This would take more safeties to splitted writer (if your writer had implemented `LevelSettable` interface to compliant with logg/slog's log level).
+Since v0.7.3, a locking version of printOut added. It would give more safeties to splitted writer (if your writer had implemented `LevelSettable` interface to compliant with logg/slog's log level).
 
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
 
@@ -33,24 +33,23 @@ Since v0.7.3, a locking version of printOut added. This would take more safeties
 
 See also [CHANGELOG](CHANGELOG).
 
-> Since v1.0.0, the streaming calls changed their behaviour: `.WithXXX` will make a new instance as a child logger and apply the settings; `.SetXXX` will take the effects on the place.
-> > NOTE: v0.7.0 is pre-release version of v1.0.0.
+> Since v1 (soon), the streaming calls changed their behaviour: `.WithXXX` will make a new instance as a child logger and apply the settings; `.SetXXX` will take the effects on the place.
+> > NOTE: v0.7.x is pre-release version of v1.
 >
 > Since v0.5.7, `logg/slog` enables privacy hardening flags by default now.
 
 ## Motivation
 
-As an opt-in copy of `log/slog`, we provide an out-of-box colored text outputting logger with more verbs.
+As an opt-in copy of `log/slog`, we provide an out-of-the-box colored text outputting logger with more verbs (fatal, trace, verbose, ...).
 
-And an auto-optimized Verb: `Verbose(msg, args...)`
-would print logging contents only if build tag `verbose` defined.
+And an auto-optimized Verb: `Verbose(msg, args...)` would print logging contents only if build tag `verbose` defined.
 The point is it will be optimized completely in a default build.
 
 ## Guide
 
 ### Basics
 
-`logg/slog` provides package-level functions for logging, `Info`, `Error`, and so on They will be mapped to the builtin default logger.
+`logg/slog` has package-level functions for logging: `Info`, `Error`, and so on. They will be mapped to the builtin default logger (can be accessed by `Default()`).
 
 `Default()` returns the default logger and `SetDefult()` replaces it.
 
@@ -115,7 +114,9 @@ The sub-loggers are also supported, see [SubLogger](#sublogger).
 
 #### Println
 
-A `Println(args ...any)` has slight differences with other verbs like `Print(msg string, args ...any)`. But you are using it with same form like others. That is, the first of the args passing to Println is indeed a msg string. Just a little benefit, you can pass nothing to Println. If you're doing with this way, a complete blank line prints by `slog.Println()`, no timestamp, no serverity, and no caller info.
+A `Println(args ...any)` has slight differences with other verbs like `Print(msg string, args ...any)`. But you are using it with same form like others. That is, the first of the args passing to Println is indeed a msg string.
+
+Just a little benefit, you can pass nothing to Println. If you're doing with this way, a complete blank line printed by `slog.Println()`, no timestamp, no serverity, and no caller info. `Println("")` has same behaviour.
 
 ```go
 slog.Info("1")
@@ -127,63 +128,28 @@ In a large long logging outputs, one and more blank line(s) maybe help your focu
 
 ### Customizing Your Verbs
 
-Like `OK`, `Success` and `Fail`, you could wrap logg/slogg package-level predicates/verbs for giving more features.
+You could wrap logg/slogg package-level predicates/verbs to provide more features, just like what to do with  `OK`, `Success` and `Fail`. For example, the following sample demonstrates how to implement a `Tip` verb:
 
 ```go
 func Tip(msg string, args...any) {
   if myConditionSatisfied {
-    slog.WithSkip(1).OK(msg, args...)
+    tipper.OK(msg, args...)
   }
 }
+
+var tipper logz.Logger // import "logz" "github.com/hedzr/logg/slog"
+var onceTipper sync.Once
+
+func init(){
+  onceTipper.Do(func(){
+    tipper = slog.WithSkip(1)
+  })
+}
 ```
 
-`WithSkip(n)` tells log/slog to strip extra 1 level(s) from caller stack frames so the logged message can hook to the caller of Tip(), rather than Line 3 in Tip().
+`WithSkip(n)` tells log/slog to strip extra n frames from caller stack so the logged message can hook to the caller of Tip(), rather than Line 3 in `Tip()`.
 
 Also, using a custom level is a not-bad idea. See the [Customizing the Level](#customizing-the-level).
-
-By creating and managing a sublogger, make your own logger might be dead simple:
-
-```go
-func newMyLogger2() *mylogger2 {
-    l := slog.New("mylogger").SetLevel(slog.InfoLevel)
-    s := &mylogger2{
-        l, // Provides basic Logger interface such as Info, Debug, etc.
-    true, // enable Infof()
-        l.WithSkip(1), // A sublogger created here. specially for Infof
-    }
-    return s
-}
-
-type mylogger2 struct {
-    slog.Logger
-    SprintfLikeLoggingIsEnabled bool
-    sl                          slog.Logger
-}
-
-func (s *mylogger2) Close() { s.Logger.Close() }
-
-func (s *mylogger2) Infof(msg string, args ...any) {
-    if s.SprintfLikeLoggingIsEnabled {
-        if len(args) > 0 {
-            // msg = fmt.Sprintf(msg, args...)
-
-            var data []byte
-            data = fmt.Appendf(data, msg, args...)
-            s.sl.Info(string(data))
-        }
-        s.sl.Info(msg)
-    }
-}
-
-func TestSlogBasic4(t *testing.T) {
-    l := newMyLogger2()
-    l.Infof("what's wrong with %v", "him")
-    l.Info("no matter")
-    // l.Infof("what's wrong with %v, %v, %v, %v, %v, %v", m1AttrsAsAnySlice()...)
-}
-```
-
-That is it.
 
 ### Builtin Output Formats
 
@@ -241,23 +207,76 @@ func TestSlogBasic2(t *testing.T) {
 
 ### Sublogger
 
-Creating a detached logger is possible. Different from default logger, the logger's methods are used to log your message.
+`logger.WithXXX` can return a new sub logger, or get it by `New`.
 
 ```go
-logger := slog.New() // colorful logger
-logger := slog.New().SetJSONMode() // json format logger
-logger := slog.New().SetColorMode(false) // logfmt logger
-logger := slog.New().Set("attr1", v1, "attr2", v2))
+import "logz" "github.com/hedzr/logg/slog"
 
+sub1 := logz.New("sub1")
+sub2 := logz.Default().WithLevel(logz.TraceLevel)
+sub3 := logz.Default().New("sub3")
+sub4 := New(
+  WithJSONMode(false, false),
+  WithColorMode(false),
+  WithUTCMode(false, true, false),
+  WithTimeFormat("", "", time.RFC3339Nano),
+  WithAttrs(Int("a", 1)),
+  WithAttrs1(NewAttrs("a", 1)),
+  With("b", 2),
+)
+
+ss1 := sub3.New("sub3-ss1")
+ss2 := sub3.New("sub3-ss2")
+
+ss3 := sub4.WithSkip(1)
+
+_ = `
+............. tree .............
+- (Default)
+  - sub2
+  - sub3
+    - sub3-ss1
+    - sub3-ss2
+- sub1 (detached logger)
+- sub4 (detached logger)
+  - ss3
+`
+```
+
+Passing a sublogger name as first arg to `New()` is useful. It is optional.
+
+#### Detached Logger
+
+A detached logger means that is splitted from `Default()` tree. `Default().New()` will make a tree of its child sub loggers. But package-level `New()` can build a clean sub logger detached with `Default()`.
+
+```go
+logger := slog.New() // colorful logger, detached
+logger := slog.New().SetJSONMode() // json format logger, detached
+logger := slog.New().SetColorMode(false) // logfmt logger, detached
+logger := slog.New().Set("attr1", v1, "attr2", v2)) // detached
+
+// sublogger name is optional:
 logger := slog.New("name")
 logger := slog.New("name", slog.WithAttrs(args...))
 logger := slog.New("name", slog.NewAttr("attr1", v1))
 logger := slog.New("name", slog.Int("attr1", i1))
 logger := slog.New("name", slog.Group("group1", slog.Int("attr1", i1)))
 logger := slog.New("name", "attr1", v1, "attr2", v2).SetAttrs(args...)
+
+// child of child
+sl := logger.New()
+sl1 = logger.New("grandson")
+sl2 = logger.WithLevel(slog.InfoLevel) // another child, since v0.7,x and v1
+
+// since v0.7 and v1, WithXXX can get a new sublogger, SetXXX not.
+
+// as a compasion, children of Default()
+logger = slog.Default().New()
+sl1 := logger.New()
+sl2 := logger.WithLevel(slog.InfoLevel)
 ```
 
-Sublogger should derive from Default() or a detached logger.
+Sublogger is lightweight,
 
 ```go
 logger := slog.New(args...).SetLevel(slog.InfoLevel)
@@ -271,16 +290,18 @@ sl3 := logger.WithLevel(slog.TraceLevel)
 
 By default, parent shares his features (level and other settings) to children, so `sl2` get `InfoLevel` same with `logger`.
 
-If `LattrsR` is set, the parent's attributes will be inherited to. For performance reason, it's unset by default.
+#### Inheritance
+
+If `LattrsR` is set, the parent's attributes will be inherited to. For performance reason, it ism't enable by default.
 
 ```go
 logger := slog.New("parent-logger").Set("attr", "parent").SetLevel(slog.InfoLevel)
 sl := logger.New("child-logger")
 
 slog.AddFlags(slog.LattrsR)
-sl.Info("info", "attr1", 1)
+sl.Info("info", "attr1", 1)    // also dumping "attr=parent" from logger
 slog.RemoveFlags(slog.LattrsR)
-sl.Info("info", "attr1", 1)
+sl.Info("info", "attr1", 1)    // just dumping attrs in sl.
 ```
 
 The outputs looks like:
@@ -292,7 +313,7 @@ The outputs looks like:
 
 A logger or a sublogger could be identify by a unique name. Passing a string as first parameter to `New(...)`, it's assumed the logger name.
 
-And attributes and WithOpts can follow the logger name. `New(...)` parses all of them and process them. For examples:
+Passing common attributes and WithOpts following the sublogger name to `New()`, which will parse and interpret all of them. For examples:
 
 ```go
     l := slog.New("standalone-logger-for-app",
@@ -309,7 +330,57 @@ And attributes and WithOpts can follow the logger name. `New(...)` parses all of
     sub1.Debug("hi debug", "AA", 1.23456789)
 ```
 
-Making children loggers is possible.
+Making children loggers is low-cost.
+
+
+
+### Holding a Logger
+
+By creating and managing a sublogger, making your own logger might be dead simple:
+
+```go
+func newMyLogger2() *mylogger2 {
+    l := slog.New("mylogger").SetLevel(slog.InfoLevel)
+    s := &mylogger2{
+        l, // Provides basic Logger interface such as Info, Debug, etc.
+    true, // enable Infof()
+        l.WithSkip(1), // A sublogger created here. specially for Infof
+    }
+    return s
+}
+
+type mylogger2 struct {
+    slog.Logger
+    SprintfLikeLoggingIsEnabled bool
+    sl                          slog.Logger
+}
+
+func (s *mylogger2) Close() { s.Logger.Close() }
+
+func (s *mylogger2) Infof(msg string, args ...any) {
+    if s.SprintfLikeLoggingIsEnabled {
+        if len(args) > 0 {
+            // msg = fmt.Sprintf(msg, args...)
+
+            var data []byte
+            data = fmt.Appendf(data, msg, args...)
+            s.sl.Info(string(data))
+        }
+        s.sl.Info(msg)
+    }
+}
+
+func TestSlogBasic4(t *testing.T) {
+    l := newMyLogger2()
+    l.Infof("what's wrong with %v", "him")
+    l.Info("no matter")
+    // l.Infof("what's wrong with %v, %v, %v, %v, %v, %v", m1AttrsAsAnySlice()...)
+}
+```
+
+That is it.
+
+
 
 ### Logging with Attributes
 
@@ -337,7 +408,7 @@ logger.Info("info message",
     ) // use NewAttr, NewGroupedAttrs
 ```
 
-#### Int, Float, String, Any, ..., Group
+#### Int, Float, String, Any, ..., and Group
 
 logg/slog supports strong typed attributes:
 
@@ -453,23 +524,23 @@ As you seen, the value in context was been extracted and printed out.
 
 ### Set Writer
 
-logg/slog uses a `dualWriter` to serialize the logging contents.
+`logg/slog` uses a internal `dualWriter` to serialize the logging contents.
 
-A `dualWriter` sends contents to stdout or stderr in accord to the requesting logging level. For example, a `Info(...)` calling will be dispatched to stdout and a `Warn`, `Error`, `Panic`, or `Fatal` to stderr.
+A `dualWriter` holds two output devices: `Normal`, and `Error`. `dualWriter` sends contents to stdout or stderr in accord to the requesting logging level. For example, a `Info(...)` calling will be dispatched to stdout and a `Warn`, `Error`, `Panic`, and `Fatal` to stderr. 
 
-Not only for those, the dualWriter allows you stack many writers as its `Normal` or `Error` output devices. That means, a console `os.Stdout` and a file writer can be bundled into `Normal` at once. How to do it? It's simple:
+Not only for those, the dualWriter allows you stack mutiple writers as its `Normal` or `Error` output devices. That means, a console `os.Stdout` and a file writer can be combined into `Normal` at once. How to do it? It's simple:
 
 ```go
 logger := New("tty+file").AddWriter(slog.NewFileWriter("/tmp/app-stdout.log"))
 ```
 
-Using `WithWriter` to replace the stocked version, which is stdout+stderr by default.
+Calling AddWriter on `Default()` would enable the above assembly into the default logger.
 
-`AddWriter(w)`/`RemoveWriter`/`ResetWriter` can append/remove/reset the stdout device.
+In shortly, `AddWriter(w)`/`RemoveWriter`/`ResetWriter` can append/remove/reset the stdout device. `AddErrorWriter(w)`/`RemoveErrorWriter`/`ResetErrorWriter` can append/remove/reset to the stderr device.
 
-`AddErrorWriter(w)`/`RemoveErrorWriter`/`ResetErrorWriter` can append/remove/reset to the stderr device.
+Also, `ResetWriters` works so we can always back to default state.
 
-Of course, `ResetWriters` works so we can always back to default state.
+#### io.Writer
 
 A standard `io.Writer` is needed when using AddWriter/WithWriter:
 
@@ -478,6 +549,8 @@ A standard `io.Writer` is needed when using AddWriter/WithWriter:
 tf, _ := os.CreateTempFile("", "stdout.log")
 logger.AddWriter(tf)
 ```
+
+### Leveled Writers
 
 Your writer can implement `LevelSettable` to handling the requesting logging level.
 
@@ -500,8 +573,6 @@ func (s *myWriter) Write(data []byte) (n int, err error) {
 ```
 
 In this scene, logg/slog will call Write following SetLevel. It's safe in many cases, but you can take more safety for it by using locked mechanism: go build tags `-tags=logglock` will enable a special version with wrapping the two calls in a sync.Mutex. See the source code in entry_lock.go.
-
-#### Leveled Writers
 
 Also we provides sub-feature to allow you specify special writer for a special logging level:
 
@@ -541,7 +612,7 @@ The result is similar with:
 
 ```
 
-#### Close()
+#### Close() and Closables
 
 In most cases, Logger's `Close()` has no more attentions to you.
 
@@ -562,7 +633,11 @@ func main() {
 
 The file writer will get a chance to shutdown itself gracefully.
 
+`Closables` is a concept from is/basics.Closables, see it at [hedzr/is/basics](https://github.com/hedzr/is/blob/master/basics/closers.go).
+
 ### Set Handler
+
+..
 
 ### Customizing the Level
 
@@ -643,28 +718,28 @@ const NoColor = color.Color(-1)
 
 [`hedzr/is`](https://github.com/hedzr/is) provides a color Translator to format your html-like string to ansi colored text for terminal outputting. For more information see hedzr/is doc.
 
-### Adapt into `log/slog`
+### Adapting into `log/slog`
 
-If you are using unified `log/slog` interfaces, put logg/slog into it:
+If you are using unified `log/slog` interfaces, just put `logg/slog` into it:
 
 ```go
-import "log/slog"
-import logslog "github.com/hedzr/logg/slog"
+import logslog "log/slog"
+import logz "github.com/hedzr/logg/slog"
 
 func TestSlogUsedForLogSlog(t *testing.T) {
-    l := slog.New("standalone-logger-for-app",
-        slog.NewAttr("attr1", 2),
-        slog.NewAttrs("attr2", 3, "attr3", 4.1),
+    l := logz.New("standalone-logger-for-app",
+        logz.NewAttr("attr1", 2),
+        logz.NewAttrs("attr2", 3, "attr3", 4.1),
         "attr4", true, "attr3", "string",
-        slog.WithLevel(slog.AlwaysLevel),
+        logz.WithLevel(slog.AlwaysLevel),
     )
     defer l.Close()
 
     sub1 := l.New("sub1").With("logger", "sub1")
-    sub2 := l.New("sub2").With("logger", "sub2").WithLevel(slog.InfoLevel)
+    sub2 := l.New("sub2").With("logger", "sub2").WithLevel(logz.InfoLevel)
 
     // create a log/slog logger HERE
-    logger := logslog.New(slog.NewSlogHandler(l, nil))
+    logger := logslog.New(logz.NewSlogHandler(l, nil))
 
     t.Logf("logger: %v", logger)
     t.Logf("l: %v", l)
@@ -760,7 +835,7 @@ To integrete `go-spew` is similar and simple.
 
 ### Hide the sensitive fields
 
-Your struct can implement `LogObjectMashaller` or `LogArrayMashaller` so that the sensitive fields can be harden.
+Your struct can implement `LogObjectMashaller` or `LogArrayMashaller` so that the sensitive fields can be hardened.
 
 ```go
 type users []*user
@@ -795,11 +870,11 @@ func (u *user) MarshalLogObject(enc *slog.PrintCtx) (err error) {
 
 `*slog.PrintCtx` is our value encoder.
 
-### Harden filepath, shorten package name
+### Hardening filepath, shorten package name
 
-The caller information could leak the user's name, disk volumes, directory structure and others sensitive contents.
+The caller information could leak the user's names, disk volumes, directory structure and others sensitive contents.
 
-#### Harden filepath
+#### Hardening filepath(s)
 
 For this test case:
 
@@ -813,16 +888,16 @@ func TestLogOneTwoThree(t *testing.T) {
 It may print out:
 
 ```go
-20:20:01.697577+08:00 [INF] info msg                             Aa=1 Bbb=a string Cc=3.732 D=(2.71828+5.3571i) /Volumes/VolHack/work/go.work/libs.log/bench/logg_test.go:17 bench.TestLogOneTwoThree
+20:20:01.697577+08:00 [INF] info msg                             Aa=1 Bbb=a string Cc=3.732 D=(2.71828+5.3571i) /Volumes/VolWork/go.work/libs.log/bench/logg_test.go:17 bench.TestLogOneTwoThree
 ```
 
-Now we enable privacy flags, a builtin regexp rule (`/Volumes/.*/(.*)` -> `~$1`) will take effects:
+Now we enable privacy flags, a builtin regexp rule (`/Volumes/.*/(.*)` -> `~$1`) will take effects (see the [Tilde Directory](#tilde-directory):
 
 ```bash
 20:22:33.688847+08:00 [INF] info msg                             Aa=1 Bbb=a string Cc=3.732 D=(2.71828+5.3571i) ~work/go.work/libs.log/bench/logg_test.go:17 bench.TestLogOneTwoThree
 `````
 
-The codes looks like:
+The code looks like:
 
 ```go
 func init() {
@@ -832,10 +907,23 @@ func init() {
 
 The builtin rules includes truncate homdir to `~`, disable absolute pathname, and using relative path, and so on.
 
-You may make calls to `AddKnownPathMapping(path,repl)` and `AddKnownPathRegexpMapping(expr, repl)` to setup
+You may make calls to `AddKnownPathMapping(path, repl)` and `AddKnownPathRegexpMapping(expr, repl)` to setup
 them.
 
-#### Shorten package name
+##### Tilde Directory
+
+In zsh/bash, you can create tilde directory as a folder alias. For a instance,
+
+```bash
+hash -d work=/Volumes/VolWork
+ls -la ~work/go.work/
+```
+
+The builtin rules of `logg/slog` can do this translate in call info in logging message.
+
+See also `AddKnownPathRegexpMapping/RemoveKnownPathRegexpMapping` and `ResetKnownPathRegexpMapping`.
+
+#### Shortening package name(s)
 
 In outputs, package name in caller information has form `github.com/user/repo/offset.object.function`, By enabling `Lcallerpackagename`, `github.com` will be shortened to `GH`. The other well-known code-hosting providers are converted too:
 
@@ -862,13 +950,19 @@ If `Lprivacypathregexp` and `Lprivacypath` is not present (this is default behav
 
 And, `AddCodeHostingProviders(provider, repl string)` do similar things and need `Lcallerpackagename` is enabled.
 
+See also `AddKnownPathRegexpMapping`. `RemoveKnownPathRegexpMapping` and `ResetKnownPathRegexpMapping`, `AddKnownPathMapping`. `RemoveKnownPathMapping` and `ResetKnownPathMapping`,
+
 ### Other Helpers
 
-Here are two saver so that you can write codes easiler:
+Here are two savers so that you can write codes easiler:
 
 ```go
 // Save global Level and set to new, and restore original
-defer slog.SaveLevelAndSet(slog.WarnLevel)
+defer slog.SaveLevelAndSet(slog.WarnLevel)()
+
+
+	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
+	defer SaveLevelAndSet(TraceLevel)()
 
 // Save global Flags and modify it for local logic, and restore it after going back to up level
 defer slog.SaveFlagsAnd(func() {
