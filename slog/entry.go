@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -986,6 +988,26 @@ func (s *Entry) writeInternal(ctx context.Context, lvl Level, stackFrame uintptr
 	return
 }
 
+var poolAttrs = sync.Pool{New: func() any {
+	return newFixedAttrs()
+
+	// return &PrintCtx{
+	// 	buf:      make([]byte, 0, 1024),
+	// 	noQuoted: true,
+	// 	clr:      clrBasic,
+	// 	bg:       clrNone,
+	// }
+}}
+var fixedSize int32 = 1
+
+const maxFixedSize = 1 << 10
+
+func newFixedAttrs() (kvps Attrs) {
+	var size = int(atomic.LoadInt32(&fixedSize))
+	kvps = make(Attrs, 0, size)
+	return kvps
+}
+
 func (s *Entry) parseArgs(ctx context.Context, lvl Level, stackFrame uintptr, msg string, args ...any) (kvps Attrs) {
 	var roughSize = 4 + len(s.attrs) + len(args)
 	// var key string
@@ -1085,7 +1107,11 @@ func (s *Entry) leadingTags(roughSize int, lvl Level, stackFrame uintptr, msg st
 	// 	}
 	// }
 	if kvps == nil && roughSize > 0 {
-		kvps = make(Attrs, 0, roughSize) // pre-alloc slice spaces roughly
+		if roughSize > int(atomic.LoadInt32(&fixedSize)) && roughSize < maxFixedSize {
+			atomic.StoreInt32(&fixedSize, int32(roughSize))
+		}
+		kvps = poolAttrs.Get().(Attrs)
+		// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
 	}
 	return
 }
@@ -1138,9 +1164,9 @@ func (s *Entry) fromCtx(ctx context.Context) (ret Attrs) {
 // 	return cb(ctx, pc)
 // })
 
-func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) (ret []byte) {
+func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
 	pc := printCtxPool.Get().(*PrintCtx)
-	defer func() { printCtxPool.Put(pc) }()
+	// defer func() { printCtxPool.Put(pc) }()
 
 	// pc := newPrintCtx(s, lvl, timestamp, stackFrame, msg, kvps)
 
@@ -1149,14 +1175,17 @@ func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stack
 	// takes wasted bytes.
 	pc.set(s, lvl, timestamp, stackFrame, msg, kvps)
 
-	return s.printImpl(ctx, pc)
+	s.printImpl(ctx, pc)
+
+	printCtxPool.Put(pc)
+	return
 }
 
-func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) (ret []byte) {
+func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 	if pc.lvl == AlwaysLevel && strings.Trim(pc.msg, "\n\r \t") == "" {
 		pc.pcAppendByte('\n')
-		ret = pc.Bytes()
-		s.printOut(pc.lvl, ret)
+		msg := pc.Bytes()
+		s.printOut(pc.lvl, msg)
 		return
 	}
 
@@ -1223,8 +1252,8 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) (ret []byte) {
 
 	// ret = pc.String()
 	// s.printOut(pc.lvl, []byte(ret))
-	ret = pc.Bytes()
-	s.printOut(pc.lvl, ret)
+	msg := pc.Bytes()
+	s.printOut(pc.lvl, msg)
 	return
 }
 
@@ -1321,7 +1350,11 @@ func (s *Entry) printPC(ctx context.Context, pc *PrintCtx) {
 }
 
 func (s *Entry) printMsg(ctx context.Context, pc *PrintCtx) {
-	pc.AddString(messageFieldName, ct.translate(pc.msg))
+	if pc.noColor {
+		pc.AddString(levelFieldName, pc.msg)
+	} else {
+		pc.AddString(messageFieldName, ct.translate(pc.msg))
+	}
 	// pc.pcAppendComma()
 }
 
@@ -1380,31 +1413,35 @@ func (s *Entry) logContext(ctx context.Context, lvl Level, stackFrame uintptr, m
 		ctx = context.TODO()
 	}
 
-	// if s.EnabledContext(ctx, lvl) {
 	now := time.Now()
 	kvps := s.parseArgs(ctx, lvl, stackFrame, msg, args...)
 	s.print(ctx, lvl, now, stackFrame, msg, kvps)
+	poolAttrs.Put(kvps)
 
-	if !is.InTesting() || IsAnyBitsSet(Linterruptalways) {
-		if !IsAllBitsSet(LnoInterrupt) {
-			if lvl == PanicLevel {
-				panic(msg)
-			}
-			if lvl == FatalLevel {
-				os.Exit(-3)
-			}
+	if !inTesting || IsAnyBitsSet(Linterruptalways) {
+		if IsAllBitsSet(LnoInterrupt) {
+			return
+		}
+
+		if lvl == PanicLevel {
+			panic(msg)
+		}
+		if lvl == FatalLevel {
+			os.Exit(-3)
 		}
 	}
-	// }
 }
 
-func (s *Entry) findWriter(lvl Level) LogWriter {
+func (s *Entry) findWriter(lvl Level) (lw LogWriter) {
 	if s.writer != nil {
-		if r := s.writer.Get(lvl); r != nil {
-			return r
-		}
+		lw = s.writer.Get(lvl)
 	}
-	return defaultWriter.Get(lvl)
+	if lw == nil {
+		lw = defaultWriter.Get(lvl)
+	}
+	return
 }
+
+var inTesting = is.InTesting()
 
 const BADKEY = "!BADKEY"

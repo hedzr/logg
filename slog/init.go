@@ -38,7 +38,7 @@ func init() {
 
 		if is.Tracing() || is.TraceMode() {
 			lvlCurrent = TraceLevel
-		} else if is.DebuggerAttached() || is.InTesting() || is.DebugBuild() || is.DebugMode() || strings.StringToBool(os.Getenv("DEBUG")) {
+		} else if is.DebuggerAttached() || inTesting || is.DebugBuild() || is.DebugMode() || strings.StringToBool(os.Getenv("DEBUG")) {
 			lvlCurrent = DebugLevel
 			RemoveFlags(Lprivacypathregexp) // disable tilde directory to make the logging msg clickable
 		}
