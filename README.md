@@ -21,7 +21,7 @@ The abilities are:
 - adapted into `log/slog` to enable color logging out of the box. note that some our verbs (such as Fatal, Panic) can't work at this time.
 - manage a cascade of child loggers and dump attrs of parent recursively optionally (need enable `LattrsR`).
 - super lightweight child loggers.
-- user-defined levels, writer, and value stringer.
+- user-defined levels, writers, and value stringers.
 - privacy enough: hardening filepath(s), shortening package name(s) (by `Lprivacypath` and `Lprivacypathregexp`); and implementing `LogObjectMarshaller` or `LogArrayMarshaller` to safe guard the sensitive fields.
 - better multiline outputs.
 
@@ -973,9 +973,9 @@ defer slog.SaveFlagsAnd(func() {
 
 ## Others
 
-### What meaning the Multiline print?
+### What meaning is the Multiline print?
 
-In colorful print mode, one logging output starts with timestamp and serverity, and ends with attributes and caller info. So the message is put at center of one line with limited width.
+In colorful print mode, one of logging output line starts with timestamp and serverity, and ends with attributes and caller info. So the message is put at middle part of one line with limited width.
 
 A very long message will be wrapped to next line(s), right?
 
@@ -992,7 +992,7 @@ It prints:
 
 ![image-20231106234956844](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231106234956844.png)
 
-As you seen, a message will be splitted to first line (as a title) and rest lines (as a details text). So you can avoid write a long message. Instead, you write a title with some details to describe a logging line better clearly. By the way, its json or logfmt format is still a message field with key name "msg".
+As you seen, a message will be splitted to first line (as a title) and the rest lines (as a details text). So you can avoid write a long message. Instead, you write a title with some details to describe a logging line better clearly. By the way, its json or logfmt format is still a message field with key name "msg".
 
 ## LICENSE
 
