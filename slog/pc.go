@@ -794,18 +794,20 @@ func (s *PrintCtx) pcTryQuoteValue(val string) {
 	s.preCheck()
 	if s.noColor {
 		// return strconv.Quote(val)
-		s.pcAppendByte('"')
-		s.appendEscapedJSONString(val)
-		s.pcAppendByte('"')
+		s.appendQuotedString(val)
+		// s.pcAppendByte('"')
+		// s.appendEscapedJSONString(val)
+		// s.pcAppendByte('"')
 	} else {
 		s.pcAppendStringValue(val)
 	}
 }
 
 func (s *PrintCtx) pcQuoteValue(val string) {
-	s.pcAppendByte('"')
-	s.appendEscapedJSONString(val)
-	s.pcAppendByte('"')
+	// s.pcAppendByte('"')
+	// s.appendEscapedJSONString(val)
+	// s.pcAppendByte('"')
+	s.appendQuotedString(val)
 }
 
 func (s *PrintCtx) pcAppendColon() {
@@ -836,15 +838,173 @@ func (s *PrintCtx) pcAppendString(str string) {
 // pcAppendStringValue append string without quotes, the string represents a value
 func (s *PrintCtx) pcAppendStringValue(str string) {
 	s.preCheck()
-	s.WriteString(str)
+	_, _ = s.WriteString(str)
 }
 
 // pcAppendQuotedStringValue append string with quotes always, the string represents a value
 func (s *PrintCtx) pcAppendQuotedStringValue(str string) {
 	s.preCheck()
-	s.WriteRune('"')
-	s.appendEscapedJSONString(str)
-	s.WriteRune('"')
+	// _, _ = s.WriteRune('"')
+	// s.appendEscapedJSONString(str)
+	// _, _ = s.WriteRune('"')
+	s.appendQuotedString(str)
+}
+
+func (s *PrintCtx) appendQuotedString(str string) {
+	s.buf = appendQuotedWith(s.buf, str, '"', false, false)
+}
+
+func appendQuotedWith(buf []byte, s string, quote byte, ASCIIonly, graphicOnly bool) []byte {
+	// Often called with big strings, so preallocate. If there's quoting,
+	// this is conservative but still helps a lot.
+	if cap(buf)-len(buf) < len(s) {
+		nBuf := make([]byte, len(buf), len(buf)+1+len(s)+1)
+		copy(nBuf, buf)
+		buf = nBuf
+	}
+	buf = append(buf, quote)
+	for width := 0; len(s) > 0; s = s[width:] {
+		r := rune(s[0])
+		width = 1
+		if r >= utf8.RuneSelf {
+			r, width = utf8.DecodeRuneInString(s)
+		}
+		if width == 1 && r == utf8.RuneError {
+			buf = append(buf, `\x`...)
+			buf = append(buf, hex[s[0]>>4])
+			buf = append(buf, hex[s[0]&0xF])
+			continue
+		}
+		buf = appendEscapedRune(buf, r, quote, ASCIIonly, graphicOnly)
+	}
+	buf = append(buf, quote)
+	return buf
+}
+
+func appendQuotedRuneWith(buf []byte, r rune, quote byte, ASCIIonly, graphicOnly bool) []byte {
+	buf = append(buf, quote)
+	if !utf8.ValidRune(r) {
+		r = utf8.RuneError
+	}
+	buf = appendEscapedRune(buf, r, quote, ASCIIonly, graphicOnly)
+	buf = append(buf, quote)
+	return buf
+}
+
+func appendEscapedRune(buf []byte, r rune, quote byte, ASCIIonly, graphicOnly bool) []byte {
+	if r == rune(quote) || r == '\\' { // always backslashed
+		buf = append(buf, '\\')
+		buf = append(buf, byte(r))
+		return buf
+	}
+	if ASCIIonly {
+		if r < utf8.RuneSelf && strconv.IsPrint(r) {
+			buf = append(buf, byte(r))
+			return buf
+		}
+	} else if strconv.IsPrint(r) || graphicOnly && isInGraphicList(r) {
+		return utf8.AppendRune(buf, r)
+	}
+	switch r {
+	case '\a':
+		buf = append(buf, `\a`...)
+	case '\b':
+		buf = append(buf, `\b`...)
+	case '\f':
+		buf = append(buf, `\f`...)
+	case '\n':
+		buf = append(buf, `\n`...)
+	case '\r':
+		buf = append(buf, `\r`...)
+	case '\t':
+		buf = append(buf, `\t`...)
+	case '\v':
+		buf = append(buf, `\v`...)
+	default:
+		switch {
+		case r < ' ' || r == 0x7f:
+			buf = append(buf, `\x`...)
+			buf = append(buf, hex[byte(r)>>4])
+			buf = append(buf, hex[byte(r)&0xF])
+		case !utf8.ValidRune(r):
+			r = 0xFFFD
+			fallthrough
+		case r < 0x10000:
+			buf = append(buf, `\u`...)
+			for s := 12; s >= 0; s -= 4 {
+				buf = append(buf, hex[r>>uint(s)&0xF])
+			}
+		default:
+			buf = append(buf, `\U`...)
+			for s := 28; s >= 0; s -= 4 {
+				buf = append(buf, hex[r>>uint(s)&0xF])
+			}
+		}
+	}
+	return buf
+}
+
+// isInGraphicList reports whether the rune is in the isGraphic list. This separation
+// from IsGraphic allows quoteWith to avoid two calls to IsPrint.
+// Should be called only if IsPrint fails.
+func isInGraphicList(r rune) bool {
+	// We know r must fit in 16 bits - see makeisprint.go.
+	if r > 0xFFFF {
+		return false
+	}
+	rr := uint16(r)
+	i := bsearch16(isGraphic, rr)
+	return i < len(isGraphic) && rr == isGraphic[i]
+}
+
+// isGraphic lists the graphic runes not matched by IsPrint.
+var isGraphic = []uint16{
+	0x00a0,
+	0x1680,
+	0x2000,
+	0x2001,
+	0x2002,
+	0x2003,
+	0x2004,
+	0x2005,
+	0x2006,
+	0x2007,
+	0x2008,
+	0x2009,
+	0x200a,
+	0x202f,
+	0x205f,
+	0x3000,
+}
+
+// bsearch16 returns the smallest i such that a[i] >= x.
+// If there is no such i, bsearch16 returns len(a).
+func bsearch16(a []uint16, x uint16) int {
+	i, j := 0, len(a)
+	for i < j {
+		h := i + (j-i)>>1
+		if a[h] < x {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	return i
+}
+
+// bsearch32 returns the smallest i such that a[i] >= x.
+// If there is no such i, bsearch32 returns len(a).
+func bsearch32(a []uint32, x uint32) int {
+	i, j := 0, len(a)
+	for i < j {
+		h := i + (j-i)>>1
+		if a[h] < x {
+			i = h + 1
+		} else {
+			j = h
+		}
+	}
+	return i
 }
 
 // pcAppendStringKey appends string with quotes (in json mode), the string represents a key.
@@ -856,10 +1016,10 @@ func (s *PrintCtx) pcAppendStringKey(str string) {
 		// s.WriteString(strconv.Quote(str))
 		// s.Grow(2 + len([]byte(str)))
 		s.checkerr(s.WriteByte('"'))
-		s.WriteString(str)
+		_, _ = s.WriteString(str)
 		s.checkerr(s.WriteByte('"'))
 	} else {
-		s.WriteString(str)
+		_, _ = s.WriteString(str)
 	}
 }
 
@@ -869,14 +1029,14 @@ func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 		// s.WriteString(strconv.Quote(str))
 		// s.Grow(2 + len([]byte(str)))
 		s.checkerr(s.WriteByte('"'))
-		s.WriteString(prefix)
+		_, _ = s.WriteString(prefix)
 		s.checkerr(s.WriteByte('.'))
-		s.WriteString(str)
+		_, _ = s.WriteString(str)
 		s.checkerr(s.WriteByte('"'))
 	} else {
-		s.WriteString(prefix)
+		_, _ = s.WriteString(prefix)
 		s.checkerr(s.WriteByte('.'))
-		s.WriteString(str)
+		_, _ = s.WriteString(str)
 	}
 }
 
@@ -1339,9 +1499,10 @@ func (s *PrintCtx) appendStringSlice(val []string) {
 			s.buf = append(s.buf, ',')
 		}
 		// s.buf = strconv.AppendQuote(s.buf, val[i])
-		s.buf = append(s.buf, '"')
-		s.appendEscapedJSONString(val[i])
-		s.buf = append(s.buf, '"')
+		s.appendQuotedString(val[i])
+		// s.buf = append(s.buf, '"')
+		// s.appendEscapedJSONString(val[i])
+		// s.buf = append(s.buf, '"')
 	}
 	s.buf = append(s.buf, ']')
 }
@@ -1402,9 +1563,10 @@ func complexSliceTo[T Complexes](s *PrintCtx, val ComplexSlice[T]) {
 }
 
 func (s *PrintCtx) appendDuration(z time.Duration) {
-	s.pcAppendByte('"')
-	s.appendEscapedJSONString(z.String())
-	s.pcAppendByte('"')
+	// s.pcAppendByte('"')
+	// s.appendEscapedJSONString(z.String())
+	// s.pcAppendByte('"')
+	s.appendQuotedString(z.String())
 }
 
 func (s *PrintCtx) appendDurationSlice(z []time.Duration) {
