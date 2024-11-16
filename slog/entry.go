@@ -1205,9 +1205,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 		return
 	}
 
-	if pc.jsonMode {
-		pc.pcAppendByte('{')
-	}
+	pc.Begin()
 
 	if pc.noColor { // json or logfmt
 		s.printTimestamp(ctx, pc)
@@ -1260,11 +1258,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 		}
 	}
 
-	if pc.jsonMode {
-		pc.pcAppendByte('}')
-	}
-
-	pc.pcAppendByte('\n')
+	pc.End(true)
 
 	// ret = pc.String()
 	// s.printOut(pc.lvl, []byte(ret))

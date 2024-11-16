@@ -172,7 +172,7 @@ func TestSlogBasic5(t *testing.T) {
 	}()
 
 	l := slog.New()
-	l.Panic("test a panic logging")
+	l.Panic("test a panic logging") // in testing mode, Panic worked
 }
 
 func TestSlogJSON(t *testing.T) {

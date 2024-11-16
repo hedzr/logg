@@ -492,11 +492,16 @@ type users []*user
 
 func (uu users) MarshalSlogArray(enc *slogg.PrintCtx) error {
 	var err error
+	enc.BeginArray()
 	for i := range uu {
+		if i > 0 {
+			enc.AddComma()
+		}
 		if e := uu[i].MarshalSlogObject(enc); e != nil {
 			err = errors.Join(err, e)
 		}
 	}
+	enc.EndArray(false)
 	return err
 }
 
@@ -507,8 +512,12 @@ type user struct {
 }
 
 func (u *user) MarshalSlogObject(enc *slogg.PrintCtx) error {
+	enc.Begin()
 	enc.AddString("name", u.Name)
+	enc.AddComma()
 	enc.AddString("email", u.Email)
+	enc.AddComma()
 	enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
+	enc.End(false)
 	return nil
 }

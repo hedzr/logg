@@ -713,11 +713,11 @@ func (s *PrintCtx) AddString(name string, value string) {
 	s.pcAppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
-	if s.noColor {
-		s.pcAppendQuotedStringValue(value)
-	} else {
-		s.pcAppendString(value)
-	}
+	// if s.noColor {
+	s.pcAppendQuotedStringValue(value)
+	// } else {
+	// 	s.pcAppendString(value)
+	// }
 }
 
 func (s *PrintCtx) AddPrefixedString(prefix, name string, value string) {
@@ -824,6 +824,40 @@ func (s *PrintCtx) pcAppendComma() {
 		s.pcAppendByte(',')
 	} else {
 		s.pcAppendByte(' ')
+	}
+}
+
+func (s *PrintCtx) AddComma() {
+	s.pcAppendComma()
+}
+
+func (s *PrintCtx) Begin() {
+	if s.jsonMode {
+		s.pcAppendByte('{')
+	}
+}
+
+func (s *PrintCtx) End(newline bool) {
+	if s.jsonMode {
+		s.pcAppendByte('}')
+	}
+	if newline {
+		s.pcAppendByte('\n')
+	}
+}
+
+func (s *PrintCtx) BeginArray() {
+	if s.jsonMode {
+		s.pcAppendByte('[')
+	}
+}
+
+func (s *PrintCtx) EndArray(newline bool) {
+	if s.jsonMode {
+		s.pcAppendByte(']')
+	}
+	if newline {
+		s.pcAppendByte('\n')
 	}
 }
 
@@ -1645,9 +1679,9 @@ func itoaS[T Integers](s *PrintCtx, val T) {
 	// s.pcAppendStringValue(intToString(value))
 
 	if s.jsonMode {
-		s.checkerr(s.WriteByte('"'))
+		// s.checkerr(s.WriteByte('"'))
 		itoasimple[T](s, val, 10)
-		s.checkerr(s.WriteByte('"'))
+		// s.checkerr(s.WriteByte('"'))
 	} else {
 		itoasimple[T](s, val, 10)
 	}
