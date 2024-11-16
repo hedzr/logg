@@ -121,6 +121,63 @@ func (s *Entry) newChildLogger(args ...any) *Entry {
 	return s.items[name]
 }
 
+func (s *Entry) Each(cb func(l *Entry, depth int)) {
+	s.forEachLogger(cb, 0)
+}
+
+func (s *Entry) forEachLogger(cb func(l *Entry, depth int), lvl int) {
+	cb(s, lvl)
+	lvl++
+	for _, o := range s.items {
+		o.forEachLogger(cb, lvl)
+	}
+}
+
+func (s *Entry) Sublogger(name string) *Entry {
+	return s.findSublogger(name)
+}
+
+func (s *Entry) findSublogger(name string) *Entry {
+	if s.name == name {
+		return s
+	}
+	for _, o := range s.items {
+		ret := o.findSublogger(name)
+		if ret != nil {
+			return ret
+		}
+	}
+	return nil
+}
+
+func (s *Entry) DumpSubloggers() string { return s.dumpSubloggers() }
+func (s *Entry) dumpSubloggers() string {
+	var sb strings.Builder
+	s.dumpSubloggersR(&sb, 0)
+	return sb.String()
+}
+
+func (s *Entry) dumpSubloggersR(sb *strings.Builder, lvl int) {
+	if lvl > 0 {
+		sb.WriteString(strings.Repeat("  ", lvl))
+	}
+	sb.WriteRune('-')
+	sb.WriteRune(' ')
+	if s.name != "" {
+		sb.WriteString(s.name)
+	} else if lvl == 0 {
+		sb.WriteString("(root)")
+	} else {
+		sb.WriteString("(noname)")
+	}
+	sb.WriteRune('\n')
+
+	lvl++
+	for _, o := range s.items {
+		o.dumpSubloggersR(sb, lvl)
+	}
+}
+
 // func (s *Entry) children() map[string]*Entry { return s.items } //nolint:unused // to be
 // func (s *Entry) parent() *Entry              { return s.owner } //nolint:unused // to be
 

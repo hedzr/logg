@@ -35,6 +35,14 @@ func TestNewLogger(t *testing.T) {
 	t.Logf("%v", GetDefaultLoggersWriter())
 }
 
+func TestNewChildLogger1(t *testing.T) {
+	sub1 := New("sub1")
+	sub2 := Default().WithLevel(TraceLevel)
+	sub3 := Default().New("sub3")
+
+	_, _, _ = sub1, sub2, sub3
+}
+
 func TestNewChildLogger(t *testing.T) {
 	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
 	defer SaveLevelAndSet(TraceLevel)()

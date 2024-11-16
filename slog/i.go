@@ -39,8 +39,10 @@ type (
 
 		String() string // Stringer interface
 
-		Parent() *Entry // parent logger of a sub-logger
-		Root() *Entry   // root logger (always is Default) of a sub-logger
+		Parent() *Entry                    // parent logger of a sub-logger
+		Root() *Entry                      // root logger (always is Default) of a sub-logger
+		Sublogger(name string) *Entry      // find a sublogger by name
+		Each(cb func(l *Entry, depth int)) // walk for all subloggers
 
 		// WithSkip create a new child logger with specified extra
 		// ignored stack frames, which will be plussed over the
