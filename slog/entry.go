@@ -55,8 +55,15 @@ func newentry(parent *Entry, args ...any) *Entry {
 		s.attrs = argsToAttrs(nil, todo...)
 	}
 
+	if namedAlways || parent != nil { // if not a detached logger (parent == nil means detached)
+		if s.name == "" {
+			s.name = stringtool.RandomStringPure(6)
+		}
+	}
 	return s
 }
+
+const namedAlways = false
 
 type Entry struct {
 	name  string
@@ -100,13 +107,11 @@ func (s *Entry) newChildLogger(args ...any) *Entry {
 	}
 
 	var name string
+	var ok bool
 	if len(args) == 0 {
 		name = stringtool.RandomStringPure(6)
-	} else {
-		name = args[0].(string)
-		if name == "" {
-			name = stringtool.RandomStringPure(6)
-		}
+	} else if name, ok = args[0].(string); !ok || name == "" {
+		name = stringtool.RandomStringPure(6)
 	}
 	if l, ok := s.items[name]; ok {
 		return l
