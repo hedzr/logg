@@ -86,10 +86,10 @@ func (s *dualWriter) SetWriter(w io.Writer) {
 	if w != nil {
 		s.Normal = nil
 		if lw, ok := w.(LogWriter); ok {
-			s.Normal = append(s.Normal, lw)
+			s.Normal = LWs{lw} // append(s.Normal, lw)
 			return
 		}
-		s.Normal = append(s.Normal, &logwr{w})
+		s.Normal = LWs{&logwr{w}} // append(s.Normal, &logwr{w})
 	}
 }
 
@@ -97,10 +97,10 @@ func (s *dualWriter) SetErrorWriter(w io.Writer) {
 	if w != nil {
 		s.Error = nil
 		if lw, ok := w.(LogWriter); ok {
-			s.Error = append(s.Error, lw)
+			s.Error = LWs{lw} // append(s.Error, lw)
 			return
 		}
-		s.Error = append(s.Error, &logwr{w})
+		s.Error = LWs{&logwr{w}} // append(s.Error, &logwr{w})
 	}
 }
 
@@ -284,6 +284,14 @@ type logwr struct {
 
 func (s *logwr) Close() error {
 	if c, ok := s.Writer.(io.Closer); ok {
+		if testing.CoverMode() != "" {
+			if xf, ok := c.(*os.File); ok {
+				if xf == os.Stdout || xf == os.Stderr {
+					// println("ignore close | ", c)
+					return nil
+				}
+			}
+		}
 		return c.Close()
 	}
 	if c, ok := s.Writer.(interface{ Close() }); ok {
@@ -298,6 +306,11 @@ type filewr struct {
 
 func (s *filewr) Close() (err error) {
 	if s.File != nil {
+		if c := s.File; c == os.Stdout || c == os.Stderr {
+			// println("ignore close | ", c)
+			s.File = nil
+			return nil
+		}
 		err = s.File.Close()
 		s.File = nil
 	}
