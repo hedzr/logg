@@ -280,9 +280,9 @@ func (s *Entry) SetColorMode(b ...bool) *Entry {
 	for _, bb := range b {
 		mode = bb
 	}
-	if mode {
-		s.useJSON = false
-	}
+	// if mode {
+	s.useJSON = false
+	// }
 	s.useColor = mode
 	return s
 }
