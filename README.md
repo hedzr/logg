@@ -128,7 +128,7 @@ In a large long logging outputs, one and more blank line(s) maybe help your focu
 
 ### Customizing Your Verbs
 
-You could wrap logg/slogg package-level predicates/verbs to provide more features, just like what to do with  `OK`, `Success` and `Fail`. For example, the following sample demonstrates how to implement a `Tip` verb:
+You could wrap `logg/slog` package-level predicates/verbs to provide more features, just like what to do with  `OK`, `Success` and `Fail`. For example, the following sample demonstrates how to implement a `Tip` verb:
 
 ```go
 func Tip(msg string, args...any) {
@@ -163,9 +163,11 @@ slog.SetColorMode(false) // to get logfmt format
 slog.SetColorMode()      // return to colorful mode
 ```
 
-The above settings modify and apply effects to all loggers globally.
+~~The above settings modify and apply effects to all loggers globally~~.
 
-`logg/slog` has no way to modify formats for certain a logger or sub-logger. We do believe that's normal action to keep a uniform output format.
+~~`logg/slog` has no way to modify formats for certain a logger or sub-logger. We do believe that's normal action to keep a uniform output format~~.
+
+Each sub logger or detached loggers keep their own output formats, which can be changed dynamically.
 
 The outputs:
 
@@ -210,12 +212,12 @@ func TestSlogBasic2(t *testing.T) {
 `logger.WithXXX` can return a new sub logger, or get it by `New`.
 
 ```go
-import "logz" "github.com/hedzr/logg/slog"
+import logz "github.com/hedzr/logg/slog"
 
 sub1 := logz.New("sub1")
 sub2 := logz.Default().WithLevel(logz.TraceLevel)
 sub3 := logz.Default().New("sub3")
-sub4 := New(
+sub4 := logz.New(
   WithJSONMode(false, false),
   WithColorMode(false),
   WithUTCMode(false, true, false),
@@ -292,7 +294,7 @@ By default, parent shares his features (level and other settings) to children, s
 
 #### Inheritance
 
-If `LattrsR` is set, the parent's attributes will be inherited to. For performance reason, it ism't enable by default.
+If `LattrsR` is set, the parent's attributes will be inherited to. For performance reason, it isn't enabled by default.
 
 ```go
 logger := slog.New("parent-logger").Set("attr", "parent").SetLevel(slog.InfoLevel)
@@ -311,7 +313,7 @@ The outputs looks like:
 13:35:31.524276+08:00 child-logger [INF] info                                                    attr1=1 /Volumes/VolHack/work/godev/cmdr.v2/libs.logg/slog/i_test.go:456 slog_test.TestSlogAttrsR
 ```
 
-A logger or a sublogger could be identify by a unique name. Passing a string as first parameter to `New(...)`, it's assumed the logger name.
+A logger or a sublogger could be identify by a unique name. Passing a string as first parameter to `New(...)`, it's assumed the logger name. Be careful that New() with a existed name will get the existed logger, sometimes it perhaps bad although we still kept this feature. Foutunately, `Sublogger(name)` can query a sub logger by name, this would be a guard when you really need many sub loggers.
 
 Passing common attributes and WithOpts following the sublogger name to `New()`, which will parse and interpret all of them. For examples:
 
@@ -455,10 +457,7 @@ logger.Info("image uploaded",
 
 #### Work with common Attributes
 
-While creating a sublogger, you could specify some common attributes.
-They are no more effects for performance reason by default.
-`log.Info` and others printers will check out and print all of
-parents' common attributes while `LattrsR` is set.
+While creating a sublogger, you could specify some common attributes. They are no more effects for performance reason by default. `log.Info` and others printers will check out and print all of parents' common attributes while `LattrsR` is set.
 
 Both of the following forms are valid:
 
@@ -470,6 +469,7 @@ logger := slog.New("logger-name", slog.NewAttr("attr1", v1))
 logger := slog.New("logger-name", slog.Int("attr1", i1))
 logger := slog.New("logger-name", slog.Group("group1", slog.Int("attr1", i1)))
 logger := slog.New("logger-name", "attr1", v1, "attr2", v2).WithAttrs(args...)
+logger := slog.New("attr1", v1, "attr2", v2).WithAttrs(args...) // no name is ok
 
 // the attributes will be printed out if LattrsR set,
 slog.AddFlags(slog.LattrsR)
@@ -572,7 +572,7 @@ func (s *myWriter) Write(data []byte) (n int, err error) {
 }
 ```
 
-In this scene, logg/slog will call Write following SetLevel. It's safe in many cases, but you can take more safety for it by using locked mechanism: go build tags `-tags=logglock` will enable a special version with wrapping the two calls in a sync.Mutex. See the source code in entry_lock.go.
+In this scene, `logg/slog` will call `Write` following `SetLevel`. It's safe in many cases, but you can take more safety for it by using locked mechanism: go build tags `-tags=logglock` will enable a special version with wrapping the two calls in a sync.Mutex. See the source code in entry_lock.go.
 
 Also we provides sub-feature to allow you specify special writer for a special logging level:
 
@@ -641,7 +641,7 @@ The file writer will get a chance to shutdown itself gracefully.
 
 ### Customizing the Level
 
-In logg/slog, using your own logging level is enough simple:
+In `logg/slog`, using your own logging level is enough simple> The following fragments sample you how to make 3 new levels,
 
 ```go
 const (
@@ -698,7 +698,7 @@ Its outputs looks like
 
 The ansi color representations relyes on your terminal settings.
 
-`SetLevelOutputWidth(n)` lets you can control the level serverity's display width (from 1 to 5). At customizing you should pass a array (`[6]string`) for each levels. For example, HintLevel can be displayed as "HINT" when output width is 4, or as "H" when width is 1. You could change it globally at any time. Just like the snapshot above, it was changed to 5 at last time, so HintLevel has width 5.
+`SetLevelOutputWidth(n)` lets you can control the level serverity's display width (from 1 to 5). At customizing you should pass an array (`[6]string`) for each levels. For example, HintLevel can be displayed as "HINT" when output width is 4, or as "H" when width is 1. You could change it globally at any time. Just like the snapshot above, it was changed to 5 at last time, so HintLevel has width 5.
 
 ### Customizing the Colors
 
