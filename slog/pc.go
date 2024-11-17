@@ -12,9 +12,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/hedzr/is/term/color"
+	errorsv3 "gopkg.in/hedzr/errors.v3"
 )
 
-var printCtxPool = sync.Pool{New: func() any {
+var poolPrintCtx = sync.Pool{New: func() any {
 	return newPrintCtx()
 
 	// return &PrintCtx{
@@ -1091,6 +1092,45 @@ func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 // 	s.pcAppendStringValue(string(val))
 // }
 
+func (s *PrintCtx) appendError(err error) {
+	if s.jsonMode {
+		s.Begin()
+		s.pcAppendStringKey("message")
+		s.pcAppendColon()
+		s.pcTryQuoteValue(err.Error())
+		// ee := errorsv3.New("")
+		var e3 errorsv3.Error
+		if errors.As(err, &e3) {
+			if f, ok := e3.(*errorsv3.WithStackInfo); ok {
+				if st := f.Stack.StackTrace(); st != nil {
+					s.pcAppendComma()
+					s.pcAppendStringKey("trace")
+					s.pcAppendColon()
+
+					frame := st[0]
+					src := getpcsource(uintptr(frame))
+					s.Begin()
+					s.pcAppendStringKey("file")
+					s.pcAppendColon()
+					s.pcAppendQuotedStringValue(src.File)
+					s.pcAppendComma()
+					s.pcAppendStringKey("line")
+					s.pcAppendColon()
+					s.appendValue(src.Line)
+					s.pcAppendComma()
+					s.pcAppendStringKey("func")
+					s.pcAppendColon()
+					s.pcAppendQuotedStringValue(src.Function)
+					s.End(false)
+				}
+			}
+		}
+		s.End(false)
+	} else {
+		s.pcTryQuoteValue(err.Error())
+	}
+}
+
 func (s *PrintCtx) appendValue(val any) {
 	switch z := val.(type) {
 	case nil:
@@ -1128,7 +1168,7 @@ func (s *PrintCtx) appendValue(val any) {
 		s.pcQuoteValue(z.String())
 
 	case error:
-		s.pcTryQuoteValue(z.Error())
+		s.appendError(z)
 
 	case ToString:
 		s.pcQuoteValue(z.ToString())
@@ -1224,6 +1264,8 @@ func (s *PrintCtx) appendValue(val any) {
 				}
 				s.pcAppendStringValue(string(data))
 				break
+			} else {
+				// json
 			}
 		} else {
 			if m, ok := val.(encoding.TextMarshaler); ok {

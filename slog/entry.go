@@ -1234,7 +1234,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 
 	s.printRestLinesOfMsg(ctx, pc)
 
-	if pc.lvl <= ErrorLevel && holded != nil && (is.DebugMode() || is.DebugBuild()) {
+	if holded != nil && (is.DebugMode() || is.DebugBuild()) {
 		var stackInfo string
 		if _, ok := holded.(interface{ Format(s fmt.State, verb rune) }); ok {
 			stackInfo = fmt.Sprintf("%+v", holded)
@@ -1247,10 +1247,10 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 			}
 		}
 		if pc.jsonMode {
-			pc.pcAppendStringKey("errDetail")
-			pc.pcAppendColon()
-			pc.pcAppendStringValue(stackInfo)
-			pc.pcAppendComma()
+			// pc.pcAppendStringKey("errDetail")
+			// pc.pcAppendColon()
+			// pc.pcAppendStringValue(stackInfo)
+			// pc.pcAppendComma()
 		} else {
 			pc.pcAppendByte('\n')
 			txt := ct.pad(stackInfo, "    ", 1)
