@@ -2,7 +2,6 @@ package bench
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,6 +11,8 @@ import (
 	"time"
 
 	slogg "github.com/hedzr/logg/slog"
+
+	"gopkg.in/hedzr/errors.v3"
 )
 
 func BenchmarkDisabledWithoutFields(b *testing.B) {
@@ -129,8 +130,28 @@ func BenchmarkWithoutFields(b *testing.B) {
 	b.Logf("Logging without any structured context. [BenchmarkWithoutFields]")
 	elapsedTimes := make(map[string]time.Duration)
 
-	b.Run("hedzr/logg/slog", func(b *testing.B) {
+	b.Run("hedzr/logg/slog TEXT", func(b *testing.B) {
 		logger := newLoggTextMode()
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				logger.InfoContext(ctx, getMessage(0))
+			}
+		})
+		elapsedTimes[b.Name()] = b.Elapsed()
+	})
+	b.Run("hedzr/logg/slog COLOR", func(b *testing.B) {
+		logger := newLoggColorMode()
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				logger.InfoContext(ctx, getMessage(0))
+			}
+		})
+		elapsedTimes[b.Name()] = b.Elapsed()
+	})
+	b.Run("hedzr/logg/slog JSON", func(b *testing.B) {
+		logger := newLogg()
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
@@ -378,7 +399,7 @@ var loggAttrs = []slogg.Attr{
 	slogg.NewAttr("ints", _tenInts),
 	slogg.NewAttr("string", _tenStrings[0]),
 	slogg.NewAttr("strings", _tenStrings),
-	slogg.NewAttr("time", _tenTimes[0]),
+	slogg.NewAttr("time1", _tenTimes[0]),
 	slogg.NewAttr("times", _tenTimes),
 	slogg.NewAttr("user1", _oneUser),
 	slogg.NewAttr("user2", _oneUser),
@@ -393,7 +414,7 @@ var loggArgs = []any{
 	"ints", _tenInts,
 	"string", _tenStrings[0],
 	"strings", _tenStrings,
-	"time", _tenTimes[0],
+	"time1", _tenTimes[0],
 	"times", _tenTimes,
 	"user1", _oneUser,
 	"user2", _oneUser,
@@ -418,7 +439,7 @@ var slogAttrs = []slog.Attr{
 	slog.Any("ints", _tenInts),
 	slog.String("string", _tenStrings[0]),
 	slog.Any("strings", _tenStrings),
-	slog.Time("time", _tenTimes[0]),
+	slog.Time("time1", _tenTimes[0]),
 	slog.Any("times", _tenTimes),
 	slog.Any("user1", _oneUser),
 	slog.Any("user2", _oneUser),
@@ -431,7 +452,7 @@ var slogArgs = []any{
 	"ints", _tenInts,
 	"string", _tenStrings[0],
 	"strings", _tenStrings,
-	"time", _tenTimes[0],
+	"time1", _tenTimes[0],
 	"times", _tenTimes,
 	"user1", _oneUser,
 	"user2", _oneUser,
@@ -440,7 +461,7 @@ var slogArgs = []any{
 }
 
 var (
-	errExample = errors.New("fail")
+	errExample = errors.New("fail sample")
 
 	_messages   = fakeMessages(1000)
 	_tenInts    = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}

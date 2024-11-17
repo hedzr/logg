@@ -1,6 +1,7 @@
 package bench
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -24,6 +25,16 @@ func TestUseJSON(t *testing.T) {
 	msg, attrs := getMessage(0), fakeLoggArgs()
 	logger.Info(msg, attrs...)
 
-	logger.WithJSONMode(false)
+	logger.SetJSONMode(false)
 	logger.Info(msg, attrs...)
+
+	logger.SetColorMode()
+	logger.Info(msg, attrs...)
+}
+
+func Test3(t *testing.T) {
+	ctx, msg, attrs := context.Background(), getMessage(0), fakeLoggArgs()
+	logger := newLoggTextMode().Set(attrs...).
+		SetWriter(os.Stdout).SetLevel(slogg.InfoLevel)
+	logger.InfoContext(ctx, msg)
 }
