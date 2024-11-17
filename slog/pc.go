@@ -828,16 +828,40 @@ func (s *PrintCtx) pcAppendComma() {
 	}
 }
 
+// AddComma shall be inserted at middle of two fields.
+//
+// See Begin and End, BeginArray and EndArray.
 func (s *PrintCtx) AddComma() {
 	s.pcAppendComma()
 }
 
+// Begin begins dumping an object and End ends it.
+//
+// Inserting AddComma between two fields.
+// Using BeginArray and EndArray to dump a slice.
+//
+// Here's a sample for user struct,
+//
+//	func (u user) MarshalSlogObject(enc *slogg.PrintCtx) error {
+//		enc.Begin()
+//		enc.AddString("name", u.Name)
+//		enc.AddComma()
+//		enc.AddString("email", u.Email)
+//		enc.AddComma()
+//		enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
+//		enc.End(false)
+//		return nil
+//	}
 func (s *PrintCtx) Begin() {
 	if s.jsonMode {
 		s.pcAppendByte('{')
 	}
 }
 
+// End ends dumping an object and Begin begins it.
+//
+// Inserting AddComma between two fields.
+// Using BeginArray and EndArray to dump a slice.
 func (s *PrintCtx) End(newline bool) {
 	if s.jsonMode {
 		s.pcAppendByte('}')
@@ -847,12 +871,31 @@ func (s *PrintCtx) End(newline bool) {
 	}
 }
 
+// BeginArray starts dumping a slice and EndArray ends it.
+//
+// Here's a sample for users slice:
+//
+//	func (uu users) MarshalSlogArray(enc *slogg.PrintCtx) error {
+//		var err error
+//		enc.BeginArray()
+//		for i := range uu {
+//			if i > 0 {
+//				enc.AddComma()
+//			}
+//			if e := uu[i].MarshalSlogObject(enc); e != nil {
+//				err = errors.Join(err, e)
+//			}
+//		}
+//		enc.EndArray(false)
+//		return err
+//	}
 func (s *PrintCtx) BeginArray() {
 	if s.jsonMode {
 		s.pcAppendByte('[')
 	}
 }
 
+// EndArray ends dumping a slice and BeginArray begins it.
 func (s *PrintCtx) EndArray(newline bool) {
 	if s.jsonMode {
 		s.pcAppendByte(']')
