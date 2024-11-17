@@ -10,7 +10,10 @@ go 1.22.7
 
 // replace github.com/hedzr/go-utils/v2 => ./
 
-require github.com/hedzr/is v0.6.1
+require (
+	github.com/hedzr/is v0.6.1
+	gopkg.in/hedzr/errors.v3 v3.3.5
+)
 
 require (
 	golang.org/x/crypto v0.29.0 // indirect
