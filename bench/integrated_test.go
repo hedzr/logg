@@ -18,13 +18,14 @@ import (
 func BenchmarkDisabledWithoutFields(b *testing.B) {
 	b.Logf("Logging at a disabled level without any structured context.")
 	elapsedTimes := make(map[string]time.Duration)
+	ctx := context.Background()
 
 	b.Run("hedzr/logg/slog", func(b *testing.B) {
 		logger := newDisabledLogg()
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -34,7 +35,7 @@ func BenchmarkDisabledWithoutFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -44,7 +45,7 @@ func BenchmarkDisabledWithoutFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, getMessage(0))
+				logger.LogAttrs(ctx, slog.LevelInfo, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -55,13 +56,14 @@ func BenchmarkDisabledWithoutFields(b *testing.B) {
 func BenchmarkDisabledAccumulatedContext(b *testing.B) {
 	b.Logf("Logging at a disabled level with some accumulated context.")
 	elapsedTimes := make(map[string]time.Duration)
+	ctx := context.Background()
 
 	b.Run("hedzr/logg/slog", func(b *testing.B) {
 		logger := newDisabledLogg(fakeLoggFields()...)
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -71,7 +73,7 @@ func BenchmarkDisabledAccumulatedContext(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -81,7 +83,7 @@ func BenchmarkDisabledAccumulatedContext(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, getMessage(0))
+				logger.LogAttrs(ctx, slog.LevelInfo, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -92,13 +94,14 @@ func BenchmarkDisabledAccumulatedContext(b *testing.B) {
 func BenchmarkDisabledAddingFields(b *testing.B) {
 	b.Logf("Logging at a disabled level, adding context at each log site.")
 	elapsedTimes := make(map[string]time.Duration)
+	ctx := context.Background()
 
 	b.Run("hedzr/logg/slog", func(b *testing.B) {
 		logger := newDisabledLogg()
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0), fakeLoggArgs()...)
+				logger.InfoContext(ctx, getMessage(0), fakeLoggArgs()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -108,7 +111,7 @@ func BenchmarkDisabledAddingFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0), fakeSlogArgs()...)
+				logger.InfoContext(ctx, getMessage(0), fakeSlogArgs()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -118,7 +121,7 @@ func BenchmarkDisabledAddingFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, getMessage(0), fakeSlogFields()...)
+				logger.LogAttrs(ctx, slog.LevelInfo, getMessage(0), fakeSlogFields()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -129,6 +132,7 @@ func BenchmarkDisabledAddingFields(b *testing.B) {
 func BenchmarkWithoutFields(b *testing.B) {
 	b.Logf("Logging without any structured context. [BenchmarkWithoutFields]")
 	elapsedTimes := make(map[string]time.Duration)
+	ctx := context.Background()
 
 	b.Run("hedzr/logg/slog TEXT", func(b *testing.B) {
 		logger := newLoggTextMode()
@@ -155,7 +159,7 @@ func BenchmarkWithoutFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -165,7 +169,7 @@ func BenchmarkWithoutFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -175,7 +179,7 @@ func BenchmarkWithoutFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, getMessage(0))
+				logger.LogAttrs(ctx, slog.LevelInfo, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -186,33 +190,34 @@ func BenchmarkWithoutFields(b *testing.B) {
 func BenchmarkAccumulatedContext(b *testing.B) {
 	b.Logf("Logging with some accumulated context. [BenchmarkAccumulatedContext]")
 	elapsedTimes := make(map[string]time.Duration)
+	ctx := context.Background()
 
 	b.Run("hedzr/logg/slog TEXT", func(b *testing.B) {
-		logger := newLoggTextMode().With(fakeLoggArgs()...)
+		logger := newLoggTextMode().Set(fakeLoggArgs()...)
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
 	})
 	b.Run("hedzr/logg/slog COLOR", func(b *testing.B) {
-		logger := newLoggColorMode().With(fakeLoggArgs()...)
+		logger := newLoggColorMode().Set(fakeLoggArgs()...)
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
 	})
 	b.Run("hedzr/logg/slog JSON", func(b *testing.B) {
-		logger := newLogg().With(fakeLoggArgs()...)
+		logger := newLogg().Set(fakeLoggArgs()...)
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -222,7 +227,7 @@ func BenchmarkAccumulatedContext(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0))
+				logger.InfoContext(ctx, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -232,27 +237,7 @@ func BenchmarkAccumulatedContext(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, getMessage(0))
-			}
-		})
-		elapsedTimes[b.Name()] = b.Elapsed()
-	})
-	dumpElapsedTimes(b, elapsedTimes)
-}
-
-func BenchmarkAccumulatedContextLoggOnly(b *testing.B) {
-	b.Logf("Logging with some accumulated context. [BenchmarkAccumulatedContextLoggOnly]")
-	elapsedTimes := make(map[string]time.Duration)
-	loggerWarmUp := newLoggTextMode()
-	_ = loggerWarmUp
-	loggerWarmUp = newLoggTextMode()
-	_ = loggerWarmUp
-	b.Run("hedzr/logg/slog", func(b *testing.B) {
-		logger := newLoggTextMode().With(fakeLoggArgs()...)
-		b.ResetTimer()
-		b.RunParallel(func(pb *testing.PB) {
-			for pb.Next() {
-				logger.Info(getMessage(1))
+				logger.LogAttrs(ctx, slog.LevelInfo, getMessage(0))
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -263,13 +248,14 @@ func BenchmarkAccumulatedContextLoggOnly(b *testing.B) {
 func BenchmarkAddingFields(b *testing.B) {
 	b.Logf("Logging with additional context at each log site. [BenchmarkAddingFields]")
 	elapsedTimes := make(map[string]time.Duration)
+	ctx := context.Background()
 
 	b.Run("hedzr/logg/slog TEXT", func(b *testing.B) {
 		logger := newLoggTextMode()
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0), fakeLoggArgs()...)
+				logger.InfoContext(ctx, getMessage(0), fakeLoggArgs()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -279,7 +265,7 @@ func BenchmarkAddingFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0), fakeLoggArgs()...)
+				logger.InfoContext(ctx, getMessage(0), fakeLoggArgs()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -289,7 +275,7 @@ func BenchmarkAddingFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0), fakeLoggArgs()...)
+				logger.InfoContext(ctx, getMessage(0), fakeLoggArgs()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -299,7 +285,7 @@ func BenchmarkAddingFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.Info(getMessage(0), fakeSlogArgs()...)
+				logger.InfoContext(ctx, getMessage(0), fakeSlogArgs()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -309,7 +295,7 @@ func BenchmarkAddingFields(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				logger.LogAttrs(context.Background(), slog.LevelInfo, getMessage(0), fakeSlogFields()...)
+				logger.LogAttrs(ctx, slog.LevelInfo, getMessage(0), fakeSlogFields()...)
 			}
 		})
 		elapsedTimes[b.Name()] = b.Elapsed()
@@ -344,50 +330,34 @@ func rightPad(s string, pad int) string {
 	return s
 }
 
-func BenchmarkAddingFieldsOnly(b *testing.B) {
-	b.Logf("Logging with additional context at each log site. [BenchmarkAddingFields]")
-	b.Run("hedzr/logg/slog", func(b *testing.B) {
-		logger := newLogg()
-		b.ResetTimer()
-		b.RunParallel(func(pb *testing.PB) {
-			for pb.Next() {
-				logger.Info(getMessage(1), fakeLoggArgs()...)
-			}
-		})
-	})
-}
-
-func init() {
-	// no source:
-	slogg.RemoveFlags(slogg.Lcaller | slogg.LattrsR)
-}
-
 func newLogg(fields ...slogg.Attr) slogg.Logger {
-	return slogg.New().WithLevel(slogg.DebugLevel).WithAttrs(fields...).
-		WithJSONMode().
-		// WithLevel(slogg.OffLevel)
-		WithWriter(io.Discard)
+	return slogg.New().SetLevel(slogg.DebugLevel).SetAttrs(fields...).
+		SetJSONMode().
+		// SetLevel(slogg.OffLevel)
+		SetWriter(io.Discard)
 	// .EnableJSON(useJSON).EnableSearchKnownPackage(searchingKnownPackages).Build()
-	// return hilog.New(hilog.NewJSONHandler(io.Discard, nil).WithAttrs(fields))
+	// return hilog.New(hilog.NewJSONHandler(io.Discard, nil).SetAttrs(fields))
 }
 
 func newLoggColorMode(fields ...slogg.Attr) slogg.Logger {
-	return slogg.New().WithLevel(slogg.DebugLevel).WithAttrs(fields...).
-		WithColorMode().
-		// WithLevel(slogg.OffLevel)
-		WithWriter(io.Discard)
+	return slogg.New().SetLevel(slogg.DebugLevel).SetAttrs(fields...).
+		SetColorMode().
+		// SetLevel(slogg.OffLevel)
+		SetWriter(io.Discard)
 }
 
 func newLoggTextMode(fields ...slogg.Attr) slogg.Logger {
-	return slogg.New().WithLevel(slogg.DebugLevel).WithAttrs(fields...).
-		WithColorMode(false).
-		// WithLevel(slogg.OffLevel)
-		WithWriter(io.Discard)
+	return slogg.New().
+		SetLevel(slogg.DebugLevel).
+		SetAttrs(fields...).
+		SetColorMode(false).
+		// SetLevel(slogg.OffLevel)
+		SetWriter(io.Discard)
 }
 
 func newDisabledLogg(fields ...slogg.Attr) slogg.Logger {
 	slogg.SetLevel(slogg.WarnLevel)
-	return slogg.New().WithLevel(slogg.WarnLevel).WithAttrs(fields...).WithColorMode(false).WithWriter(io.Discard)
+	return slogg.New().SetLevel(slogg.WarnLevel).SetAttrs(fields...).SetColorMode(false).SetWriter(io.Discard)
 	// .EnableJSON(useJSON).EnableSearchKnownPackage(searchingKnownPackages).Build()
 	// return hilog.New(hilog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}).WithAttrs(fields))
 }
