@@ -67,7 +67,7 @@ type PrintCtx struct {
 	valueStringer ValueStringer
 }
 
-func (s *PrintCtx) source() Source { return getpcsource(s.stackFrame) }
+func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame) }
 
 func (s *PrintCtx) setentry(e *Entry) {
 	s.buf = s.buf[:0]
@@ -1135,39 +1135,105 @@ func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 // 	s.pcAppendStringValue(string(val))
 // }
 
+func (s *PrintCtx) appendErrorAfterPrinted(err error) {
+	if err != nil && (is.DebugMode() || is.DebugBuild()) {
+		if s.jsonMode {
+			// the job has been done in appendValue() -> appendError, see the PrintCtx.
+			// tuning might be planned in the future.
+		} else {
+			// the following job must follow the normal line, so it can't be committed
+			// at PrintCtx.appendValue.
+			if inTesting {
+				// var e3 errorsv3.Error
+				// if errorsv3.As(holded, &e3) {
+				if f, ok := err.(*errorsv3.WithStackInfo); ok {
+					if st := f.StackTrace(); st != nil {
+						s.pcAppendByte('\n')
+
+						frame := st[0]
+						s.cachedSource.Extract(uintptr(frame))
+						s.pcAppendStringKey("       error: ")
+						if s.noColor {
+							s.pcAppendString(f.Error())
+						} else {
+							ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
+						}
+						s.pcAppendByte('\n')
+						s.pcAppendStringKey("   file/line: ")
+						s.pcAppendString(s.cachedSource.File)
+						s.pcAppendRune(':')
+						s.AppendInt(s.cachedSource.Line)
+						s.pcAppendByte('\n')
+						s.pcAppendStringKey("    function: ")
+						if s.noColor {
+							s.pcAppendString(s.cachedSource.Function)
+						} else {
+							ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+						}
+						s.pcAppendByte('\n')
+					}
+				}
+				// }
+			} else {
+				var stackInfo string
+				if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
+					stackInfo = fmt.Sprintf("%+v", err)
+				} else {
+					var x Stringer
+					if x, ok = err.(Stringer); ok {
+						stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+					} else {
+						stackInfo = fmt.Sprintf("%v", err)
+					}
+				}
+				s.pcAppendByte('\n')
+				txt := ct.pad(stackInfo, "    ", 1)
+				if s.noColor {
+					s.pcAppendString(txt)
+				} else {
+					ct.wrapColorAndBgTo(s, red, clrLoggerNameBg, txt)
+				}
+			}
+		}
+	}
+}
+
 func (s *PrintCtx) appendError(err error) {
+	if err == nil {
+		return
+	}
 	if s.jsonMode {
 		s.Begin()
 		s.pcAppendStringKey("message")
 		s.pcAppendColon()
 		s.pcTryQuoteValue(err.Error())
 		// ee := errorsv3.New("")
-		var e3 errorsv3.Error
-		if errors.As(err, &e3) {
-			if f, ok := e3.(*errorsv3.WithStackInfo); ok {
-				if st := f.StackTrace(); st != nil {
-					s.pcAppendComma()
-					s.pcAppendStringKey("trace")
-					s.pcAppendColon()
+		// var e3 errorsv3.Error
+		// if errors.As(err, &e3) {
+		if f, ok := err.(*errorsv3.WithStackInfo); ok {
+			if st := f.StackTrace(); st != nil {
+				s.pcAppendComma()
+				s.pcAppendStringKey("trace")
+				s.pcAppendColon()
 
-					frame := st[0]
-					src := getpcsource(uintptr(frame))
-					s.Begin()
-					s.pcAppendStringKey("file")
-					s.pcAppendColon()
-					s.pcAppendQuotedStringValue(src.File)
-					s.pcAppendComma()
-					s.pcAppendStringKey("line")
-					s.pcAppendColon()
-					s.appendValue(src.Line)
-					s.pcAppendComma()
-					s.pcAppendStringKey("func")
-					s.pcAppendColon()
-					s.pcAppendQuotedStringValue(src.Function)
-					s.End(false)
-				}
+				frame := st[0]
+				s.cachedSource.Extract(uintptr(frame))
+				s.Begin()
+				s.pcAppendStringKey("file")
+				s.pcAppendColon()
+				s.pcAppendQuotedStringValue(s.cachedSource.File)
+				s.pcAppendComma()
+				s.pcAppendStringKey("line")
+				s.pcAppendColon()
+				s.AppendInt(s.cachedSource.Line)
+				s.pcAppendComma()
+				s.pcAppendStringKey("func")
+				s.pcAppendColon()
+				s.pcAppendQuotedStringValue(s.cachedSource.Function)
+				s.End(false)
 			}
 		}
+		// }
 		s.End(false)
 	} else {
 		s.pcTryQuoteValue(err.Error())
@@ -1202,10 +1268,10 @@ func (s *PrintCtx) appendValue(val any) {
 		s.appendDuration(z)
 	case time.Time:
 		s.appendTime(z)
-	case []time.Time:
-		s.appendTimeSlice(z)
 	case []time.Duration:
 		s.appendDurationSlice(z)
+	case []time.Time:
+		s.appendTimeSlice(z)
 
 	case Level:
 		s.pcQuoteValue(z.String())

@@ -40,14 +40,23 @@ func getpc(skip int, extra int) (pc uintptr) {
 	return
 }
 
-func getpcsource(pc uintptr) Source {
+// func getpcsource(pc uintptr) Source {
+// 	frames := runtime.CallersFrames([]uintptr{pc})
+// 	frame, _ := frames.Next()
+// 	return Source{
+// 		Function: frame.Function,
+// 		File:     checkpath(frame.File),
+// 		Line:     frame.Line,
+// 	}
+// }
+
+func (s *Source) Extract(pc uintptr) *Source {
 	frames := runtime.CallersFrames([]uintptr{pc})
 	frame, _ := frames.Next()
-	return Source{
-		Function: frame.Function,
-		File:     checkpath(frame.File),
-		Line:     frame.Line,
-	}
+	s.Function = frame.Function
+	s.File = checkpath(frame.File)
+	s.Line = frame.Line
+	return s
 }
 
 func stack(skip, nFrames int) string {
