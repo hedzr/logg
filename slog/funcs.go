@@ -304,7 +304,7 @@ func argsToAttrs(kvps *Attrs, keysKnown map[string]bool, args ...any) { //nolint
 func setUniqueKvp(keysKnown map[string]bool, kvps *Attrs, key string, val any) {
 	if _, ok := keysKnown[key]; ok {
 		for ix, v := range *kvps {
-			if v.Key() == key {
+			if v != nil && v.Key() == key {
 				(*kvps)[ix].SetValue(val)
 			}
 		}
