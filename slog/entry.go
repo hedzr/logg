@@ -15,7 +15,6 @@ import (
 
 	"github.com/hedzr/is"
 	"github.com/hedzr/is/stringtool"
-	errorsv3 "gopkg.in/hedzr/errors.v3"
 )
 
 func newentry(parent *Entry, args ...any) *Entry {
@@ -56,7 +55,7 @@ func newentry(parent *Entry, args ...any) *Entry {
 
 	if l := len(todo); l > 0 {
 		s.attrs = make(Attrs, l)
-		argsToAttrs(&s.attrs, nil, todo...)
+		argsToAttrs(&s.attrs, todo...)
 	}
 
 	if namedAlways || parent != nil { // if not a detached logger (parent == nil means detached)
@@ -490,7 +489,7 @@ func (s *Entry) Set(args ...any) *Entry { // key1,val1,key2,val2,.... Of course,
 	// 		s.attrs = append(s.attrs, (*kvp)(nil))
 	// 	}
 	// }
-	argsToAttrs(&s.attrs, nil, args...)
+	argsToAttrs(&s.attrs, args...)
 	return s
 }
 
@@ -985,29 +984,15 @@ func newFixedAttrs() (kvps Attrs) {
 	return kvps
 }
 
-func (s *Entry) parseArgs(ctx context.Context, kvps *Attrs, roughSize int, lvl Level, stackFrame uintptr, msg string, args ...any) {
-	// var roughSize = 4 + len(s.attrs) + len(args)
-	// // var key string
-	// // var keys = make(map[string]bool, roughSize)
-
-	var keys map[string]bool
-
-	// kvps = s.leadingTags(roughSize, lvl, stackFrame, msg)
-
+func (s *Entry) collectArgs(ctx context.Context, kvps *Attrs, roughSize int, lvl Level, args ...any) {
 	if s.ctxKeysWanted() {
 		s.fromCtx(ctx, kvps)
 	}
 	if len(s.attrs) > 0 {
-		if dedupKeys && keys == nil { //nolint:cond
-			keys = make(map[string]bool, roughSize)
-		}
-		s.walkParentAttrs(ctx, lvl, s, keys, kvps)
+		s.walkParentAttrs(ctx, lvl, s, kvps)
 	}
 	if len(args) > 0 {
-		if dedupKeys && keys == nil {
-			keys = make(map[string]bool, roughSize)
-		}
-		argsToAttrs(kvps, keys, args...)
+		argsToAttrs(kvps, args...)
 	}
 
 	// if key != "" {
@@ -1021,14 +1006,10 @@ func (s *Entry) parseArgs(ctx context.Context, kvps *Attrs, roughSize int, lvl L
 	return
 }
 
-func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, keysKnown map[string]bool, kvps *Attrs) {
+func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, kvps *Attrs) {
 	if e == nil {
 		return
 	}
-
-	// if keysKnown == nil {
-	// 	return e.attrs
-	// }
 
 	// try appending unique attributes and walk all parents
 
@@ -1041,64 +1022,40 @@ func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, keysKn
 		roughlen = 8
 	}
 
-	// kvps = make([]Attr, 0, roughlen)
-
 	if IsAnyBitsSet(LattrsR) {
 		// lookup parents
 		if p := e.owner; p != nil {
-			s.walkParentAttrs(ctx, lvl, p, keysKnown, kvps)
+			s.walkParentAttrs(ctx, lvl, p, kvps)
 		}
 	}
 
-	if keysKnown != nil {
-		for _, attr := range e.attrs {
-			key := attr.Key()
-			if _, ok := keysKnown[key]; ok {
-				for ix, v := range *kvps {
-					if v.Key() == key {
-						(*kvps)[ix].SetValue(attr.Value())
-					}
-				}
-			} else {
-				*kvps = append(*kvps, attr)
-				keysKnown[key] = true
-			}
-		}
-	} else {
-		*kvps = append(*kvps, e.attrs...)
-	}
-	return
-}
-
-func (s *Entry) leadingTags(roughSize int, lvl Level, stackFrame uintptr, msg string) (kvps Attrs) {
-	// if s.useJSON || !s.useColor {
-	// 	kvps = make(Attrs, 0, roughSize+4) // pre-alloc slice spaces roughly
-	//
-	// 	// simulate logfmt format here, while non-JSON and non-colorful mode.
-	// 	// these key-value-pairs fit for serializing in JSON mode too.
-	// 	kvps = append(kvps,
-	// 		&kvp{timestampFieldName, time.Now()},
-	// 		&kvp{levelFieldName, lvl},
-	// 		&kvp{messageFieldName, msg})
-	//
-	// 	if IsAnyBitsSet(Lcaller) {
-	// 		source := getpcsource(stackFrame)
-	// 		kvps = append(kvps, source.toGroup())
+	// if keysKnown != nil {
+	// 	for _, attr := range e.attrs {
+	// 		key := attr.Key()
+	// 		if _, ok := keysKnown[key]; ok {
+	// 			for ix, v := range *kvps {
+	// 				if v.Key() == key {
+	// 					(*kvps)[ix].SetValue(attr.Value())
+	// 				}
+	// 			}
+	// 		} else {
+	// 			*kvps = append(*kvps, attr)
+	// 			keysKnown[key] = true
+	// 		}
 	// 	}
-	// }
-
-	// if roughSize > 0 {
-	// 	if roughSize > int(atomic.LoadInt32(&fixedSize)) && roughSize < maxFixedSize {
-	// 		atomic.StoreInt32(&fixedSize, int32(roughSize))
-	// 	}
-	// 	kvps = poolAttrs.Get().(Attrs)
-	// 	// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
+	// } else {
+	*kvps = append(*kvps, e.attrs...)
 	// }
 	return
 }
 
 func (s *Entry) SetContextKeys(keys ...any) *Entry {
 	s.contextKeys = append(s.contextKeys, keys...)
+	return s
+}
+
+func (s *Entry) ResetContextKeys(keys ...any) *Entry {
+	s.contextKeys = nil
 	return s
 }
 
@@ -1111,61 +1068,43 @@ func (s *Entry) WithContextKeys(keys ...any) *Entry {
 func (s *Entry) ctxKeysWanted() bool { return len(s.contextKeys) > 0 }
 func (s *Entry) ctxKeys() []any      { return s.contextKeys }
 func (s *Entry) fromCtx(ctx context.Context, kvps *Attrs) {
-	if dedupKeys {
-		mu := make(map[string]struct{})
-		for _, k := range s.ctxKeys() {
-			if v := ctx.Value(k); v != nil {
-				switch key := k.(type) {
-				case Stringer:
-					kk := key.String()
-					if _, ok := mu[kk]; !ok {
-						*kvps = append(*kvps, &kvp{kk, v})
-						mu[kk] = struct{}{}
-					}
-				case string:
-					if _, ok := mu[key]; !ok {
-						*kvps = append(*kvps, &kvp{key, v})
-						mu[key] = struct{}{}
-					}
-				}
-			}
-		}
-	} else {
-		for _, k := range s.ctxKeys() {
-			if v := ctx.Value(k); v != nil {
-				switch key := k.(type) {
-				case Stringer:
-					kk := key.String()
-					*kvps = append(*kvps, &kvp{kk, v})
-				case string:
-					*kvps = append(*kvps, &kvp{key, v})
-				}
+	// if dedupeKeys {
+	// 	// mu := make(map[string]struct{})
+	// 	for _, k := range s.ctxKeys() {
+	// 		if v := ctx.Value(k); v != nil {
+	// 			switch key := k.(type) {
+	// 			case Stringer:
+	// 				kk := key.String()
+	// 				if _, ok := keys[kk]; !ok {
+	// 					*kvps = append(*kvps, &kvp{kk, v})
+	// 					keys[kk] = true // struct{}{}
+	// 				}
+	// 			case string:
+	// 				if _, ok := keys[key]; !ok {
+	// 					*kvps = append(*kvps, &kvp{key, v})
+	// 					keys[key] = true // struct{}{}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// } else {
+	for _, k := range s.ctxKeys() {
+		if v := ctx.Value(k); v != nil {
+			switch key := k.(type) {
+			case Stringer:
+				kk := key.String()
+				*kvps = append(*kvps, &kvp{kk, v})
+			case string:
+				*kvps = append(*kvps, &kvp{key, v})
 			}
 		}
 	}
+	// }
 	return
 }
 
-const dedupKeys = false
-
-// var poolHelper = Pool(
-// 	newPrintCtx,
-// 	func(ctx *PrintCtx, i int) []byte {
-// 		return nil
-// 	})
-// ret = poolHelper(1)
-//
-// func(pc *PrintCtx, cb func(s *Entry, ctx context.Context, pc *PrintCtx) (ret []byte)) (ret []byte) {
-// 	pc.set(s, lvl, timestamp, stackFrame, msg, kvps)
-// 	// pc := newPrintCtx(s, lvl, timestamp, stackFrame, msg, kvps)
-// 	return cb(ctx, pc)
-// })
-
 func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
 	pc := poolPrintCtx.Get().(*PrintCtx)
-	// defer func() { poolPrintCtx.Put(pc) }()
-
-	// pc := newPrintCtx(s, lvl, timestamp, stackFrame, msg, kvps)
 
 	// pc.set will truncate internal buffer and reset all states for
 	// this current session. So, don't worry about a reused buffer
@@ -1395,7 +1334,7 @@ func (s *Entry) logContext(ctx context.Context, lvl Level, stackFrame uintptr, m
 	// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
 	// }
 
-	s.parseArgs(ctx, &kvps, roughSize, lvl, stackFrame, msg, args...)
+	s.collectArgs(ctx, &kvps, roughSize, lvl, args...)
 
 	now := time.Now()
 	s.print(ctx, lvl, now, stackFrame, msg, kvps)

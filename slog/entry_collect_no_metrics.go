@@ -3,4 +3,5 @@
 
 package slog
 
-func collectWrittenBytes(n int) {}
+func collectWrittenBytes(n int) {
+}

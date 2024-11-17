@@ -2,13 +2,14 @@ package slog
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/hedzr/logg/slog/internal/strings"
 )
 
 func NewAttr(key string, val any) Attr              { return &kvp{key, val} }                            // create an attribute
-func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(nil, args...) }            //nolint:revive,lll // freeform args here, used by WithAttrs1. See also New or With for the usage.
+func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(args...) }                 //nolint:revive,lll // freeform args here, used by WithAttrs1. See also New or With for the usage.
 func NewGroupedAttr(key string, as ...Attr) Attr    { return &gkvp{key, as} }                            // similar with Group
 func NewGroupedAttrEasy(key string, as ...any) Attr { return &gkvp{key: key, items: buildAttrs(as...)} } // synonym to Group
 
@@ -97,11 +98,70 @@ func (s Attrs) SerializeValueTo(pc *PrintCtx) {
 	_ = serializeAttrs(pc, s)
 }
 
+func dedupeSlice[S ~[]E, E any](x S, cmp func(a, b E) bool) S {
+	if len(x) == 0 {
+		return nil
+	}
+
+	j := 0
+	for i := 1; i < len(x); i++ {
+		if cmp(x[i], x[j]) {
+			x[j] = x[i]
+			continue
+		}
+		j++
+		// preserve the original data
+		// in[i], in[j] = in[j], in[i]
+		// only set what is required
+		x[j] = x[i]
+	}
+	result := x[:j+1]
+	return result
+}
+
 // serializeAttrs returns an error object if it's found in the given Attrs.
 // The caller can do something with the object, For instance, printImpl
 // will dump the error's stack trace if necessary.
 func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 	prefix := pc.prefix
+	inGroupedMode := pc.inGroupedMode
+
+	if pc.dedupeAttrs {
+		slices.SortFunc(kvps, func(a, b Attr) int {
+			if a == nil {
+				if b == nil {
+					return 0
+				}
+				return -1
+			}
+			if b == nil {
+				return 1
+			}
+
+			k1, k2 := a.Key(), b.Key()
+			if k1 < k2 {
+				return -1
+			}
+			if k1 == k2 {
+				return 0
+			}
+			return 1
+		})
+
+		// sort.Slice(kvps, func(i, j int) bool {
+		// 	return kvps[i].Key() < kvps[j].Key()
+		// })
+		kvps = dedupeSlice(kvps, func(a, b Attr) bool {
+			if a == nil || b == nil {
+				if b == a {
+					return true
+				}
+				return false
+			}
+			return a.Key() == b.Key()
+		})
+	}
+
 	for _, v := range kvps {
 		if v == nil {
 			continue
@@ -114,7 +174,6 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 			ct.echoColorAndBg(pc, pc.clr, pc.bg)
 		}
 
-		inGroupedMode := pc.inGroupedMode
 		if !inGroupedMode {
 			_, inGroupedMode = v.(groupedValue)
 		}

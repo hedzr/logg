@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/hedzr/is"
 	"github.com/hedzr/is/term/color"
 	errorsv3 "gopkg.in/hedzr/errors.v3"
 )
@@ -30,10 +31,11 @@ var poolPrintCtx = sync.Pool{New: func() any {
 
 func newPrintCtx() *PrintCtx {
 	return &PrintCtx{
-		buf:      make([]byte, 0, 1024),
-		noQuoted: true,
-		clr:      clrBasic,
-		bg:       clrNone,
+		buf:         make([]byte, 0, 1024),
+		noQuoted:    true,
+		dedupeAttrs: true,
+		clr:         clrBasic,
+		bg:          clrNone,
 	}
 }
 
@@ -43,23 +45,26 @@ type PrintCtx struct {
 	off      int    // read at &buf[off], write at &buf[len(buf)]
 	lastRead readOp // last read operation, so that Unread* can work correctly.
 
-	noQuoted bool   // should quote the string values? default is YES
-	jsonMode bool   // should print out the logging with JSON format? default is NO.
-	noColor  bool   // use ansi escape sequences in console/terminal? default is ON.
-	layout   string // time layout for formatting
-	utcTime  int    // non-set(0), local(1) or utc(2) time? default is local time mode.
+	noQuoted    bool   // should quote the string values? default is YES
+	jsonMode    bool   // should print out the logging with JSON format? default is NO.
+	noColor     bool   // use ansi escape sequences in console/terminal? default is ON.
+	layout      string // time layout for formatting
+	utcTime     int    // non-set(0), local(1) or utc(2) time? default is local time mode.
+	dedupeAttrs bool   // remove dup attrs when printing
 
-	lvl        Level
-	msg        string
-	firstLine  string
-	restLines  string
-	eol        bool
-	kvps       Attrs
-	clr, bg    color.Color
-	now        time.Time
-	stackFrame uintptr // the caller's stack frames
+	lvl          Level
+	msg          string
+	firstLine    string
+	restLines    string
+	eol          bool
+	kvps         Attrs
+	clr, bg      color.Color
+	now          time.Time
+	stackFrame   uintptr // the caller's stack frames
+	cachedSource Source
 
-	prefix        string
+	prefix string
+
 	inGroupedMode bool
 
 	// curdir string

@@ -23,18 +23,29 @@ func Test2(t *testing.T) {
 func TestUseJSON(t *testing.T) {
 	defer slogg.SaveFlagsAndMod(slogg.Lcaller)()
 
-	logger := slogg.New().SetWriter(os.Stdout).SetLevel(slogg.DebugLevel).SetJSONMode()
-	msg, attrs := getMessage(0), fakeLoggArgs()
-	logger.Info(msg, attrs...)
+	logger := slogg.New(slogg.With("int", 3)).
+		SetWriter(os.Stdout).
+		SetLevel(slogg.DebugLevel).
+		SetJSONMode()
+
+	ctx, msg, attrs := context.Background(), getMessage(0), fakeLoggArgs()
+	logger.InfoContext(ctx, msg, attrs...)
 
 	logger.SetJSONMode(false)
-	logger.Info(msg, attrs...)
+	logger.InfoContext(ctx, msg, attrs...)
 
 	logger.SetColorMode()
-	logger.Info(msg, attrs...)
+	logger.InfoContext(ctx, msg, attrs...)
 }
 
 func Test3(t *testing.T) {
+	ctx, msg, attrs := context.Background(), getMessage(0), fakeLoggArgs()
+	logger := newLoggTextMode().Set(attrs...).
+		SetWriter(os.Stdout).SetLevel(slogg.InfoLevel)
+	logger.InfoContext(ctx, msg)
+}
+
+func Test4(t *testing.T) {
 	ctx, msg, attrs := context.Background(), getMessage(0), fakeLoggArgs()
 	logger := newLoggTextMode().Set(attrs...).
 		SetWriter(os.Stdout).SetLevel(slogg.InfoLevel)

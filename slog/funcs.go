@@ -208,84 +208,43 @@ func Group(key string, args ...any) Attr {
 	g := &gkvp{key: key}
 	l := len(args)
 	g.items = make(Attrs, l)
-	argsToAttrs(&g.items, nil, args...)
+	argsToAttrs(&g.items, args...)
 	return g
 }
 
 func buildAttrs(args ...any) (kvps Attrs) {
 	l := len(args)
 	kvps = make(Attrs, l)
-	argsToAttrs(&kvps, nil, args...)
+	argsToAttrs(&kvps, args...)
 	return
 }
 
-func buildUniqueAttrs(keys map[string]bool, args ...any) (kvps Attrs) {
+func buildUniqueAttrs(args ...any) (kvps Attrs) {
 	l := len(args)
 	kvps = make(Attrs, l)
-	argsToAttrs(&kvps, keys, args...)
+	argsToAttrs(&kvps, args...)
 	return
 }
 
-func argsToAttrs(kvps *Attrs, keysKnown map[string]bool, args ...any) { //nolint:revive
+func argsToAttrs(kvps *Attrs, args ...any) { //nolint:revive
 	var key string
-	if keysKnown == nil {
-		// keysKnown = make(map[string]bool)
-		for _, it := range args {
-			if key == "" {
-				switch k := it.(type) {
-				case string:
-					key = k
-				case Attr:
-					*kvps = append(*kvps, k)
-					key = ""
-				case []Attr:
-					for _, el := range k {
-						*kvps = append(*kvps, el)
-					}
-					key = ""
-				case Attrs:
-					*kvps = append(*kvps, k...)
-					key = ""
-				default:
-					// raiseerror(`bad sequences. The right list should be:
-					// NewGroupedAttrEasy("key", "attr1", 1, "attr2", false)`)
-					hintInternal(errUnmatchedPair, "expecting 'key' and 'value' pair in 'args' list, but unmatched 'key' found")
-					// NOTE: args must be key and value pair, key should be a string
-				}
-			} else {
-				*kvps = append(*kvps, NewAttr(key, it))
-				key = ""
-			}
-		}
-		return
-	}
-
+	// if keysKnown == nil {
+	// keysKnown = make(map[string]bool)
 	for _, it := range args {
 		if key == "" {
 			switch k := it.(type) {
 			case string:
 				key = k
 			case Attr:
-				if _, ok := keysKnown[k.Key()]; !ok {
-					*kvps = append(*kvps, k)
-					keysKnown[k.Key()] = true
-				}
+				*kvps = append(*kvps, k)
 				key = ""
 			case []Attr:
 				for _, el := range k {
-					if _, ok := keysKnown[el.Key()]; !ok {
-						*kvps = append(*kvps, el)
-						keysKnown[el.Key()] = true
-					}
+					*kvps = append(*kvps, el)
 				}
 				key = ""
 			case Attrs:
-				for _, el := range k {
-					if _, ok := keysKnown[el.Key()]; !ok {
-						*kvps = append(*kvps, el)
-						keysKnown[el.Key()] = true
-					}
-				}
+				*kvps = append(*kvps, k...)
 				key = ""
 			default:
 				// raiseerror(`bad sequences. The right list should be:
@@ -294,25 +253,66 @@ func argsToAttrs(kvps *Attrs, keysKnown map[string]bool, args ...any) { //nolint
 				// NOTE: args must be key and value pair, key should be a string
 			}
 		} else {
-			setUniqueKvp(keysKnown, kvps, key, it)
+			*kvps = append(*kvps, NewAttr(key, it))
 			key = ""
 		}
 	}
 	return
+	// }
+	//
+	// for _, it := range args {
+	// 	if key == "" {
+	// 		switch k := it.(type) {
+	// 		case string:
+	// 			key = k
+	// 		case Attr:
+	// 			if _, ok := keysKnown[k.Key()]; !ok {
+	// 				*kvps = append(*kvps, k)
+	// 				keysKnown[k.Key()] = true
+	// 			}
+	// 			key = ""
+	// 		case []Attr:
+	// 			for _, el := range k {
+	// 				if _, ok := keysKnown[el.Key()]; !ok {
+	// 					*kvps = append(*kvps, el)
+	// 					keysKnown[el.Key()] = true
+	// 				}
+	// 			}
+	// 			key = ""
+	// 		case Attrs:
+	// 			for _, el := range k {
+	// 				if _, ok := keysKnown[el.Key()]; !ok {
+	// 					*kvps = append(*kvps, el)
+	// 					keysKnown[el.Key()] = true
+	// 				}
+	// 			}
+	// 			key = ""
+	// 		default:
+	// 			// raiseerror(`bad sequences. The right list should be:
+	// 			// NewGroupedAttrEasy("key", "attr1", 1, "attr2", false)`)
+	// 			hintInternal(errUnmatchedPair, "expecting 'key' and 'value' pair in 'args' list, but unmatched 'key' found")
+	// 			// NOTE: args must be key and value pair, key should be a string
+	// 		}
+	// 	} else {
+	// 		setUniqueKvp(keysKnown, kvps, key, it)
+	// 		key = ""
+	// 	}
+	// }
+	return
 }
 
-func setUniqueKvp(keysKnown map[string]bool, kvps *Attrs, key string, val any) {
-	if _, ok := keysKnown[key]; ok {
-		for ix, v := range *kvps {
-			if v != nil && v.Key() == key {
-				(*kvps)[ix].SetValue(val)
-			}
-		}
-	} else {
-		*kvps = append(*kvps, NewAttr(key, val)) //nolint:revive
-		keysKnown[key] = true
-	}
-}
+// func setUniqueKvp(keysKnown map[string]bool, kvps *Attrs, key string, val any) {
+// 	if _, ok := keysKnown[key]; ok {
+// 		for ix, v := range *kvps {
+// 			if v != nil && v.Key() == key {
+// 				(*kvps)[ix].SetValue(val)
+// 			}
+// 		}
+// 	} else {
+// 		*kvps = append(*kvps, NewAttr(key, val)) //nolint:revive
+// 		keysKnown[key] = true
+// 	}
+// }
 
 // NewLogLogger returns a new log.Logger such that each call to its Output method
 // dispatches a Record to the specified handler. The logger acts as a bridge from
