@@ -53,8 +53,9 @@ func newentry(parent *Entry, args ...any) *Entry {
 		}
 	}
 
-	if len(todo) > 0 {
-		s.attrs = argsToAttrs(nil, todo...)
+	if l := len(todo); l > 0 {
+		s.attrs = make(Attrs, l)
+		argsToAttrs(&s.attrs, nil, todo...)
 	}
 
 	if namedAlways || parent != nil { // if not a detached logger (parent == nil means detached)
@@ -82,7 +83,7 @@ type Entry struct {
 	timeLayout    string
 	modeUTC       int // non-set(0), local-time(1), and utc-time(2)
 	level         Level
-	attrs         []Attr
+	attrs         Attrs
 	writer        *dualWriter
 	valueStringer ValueStringer
 	handlerOpt    logslog.Handler
@@ -482,7 +483,13 @@ func With(args ...any) Opt {
 //
 // More samples can be found at New.
 func (s *Entry) Set(args ...any) *Entry { // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
-	s.attrs = append(s.attrs, argsToAttrs(nil, args...)...)
+	// l := len(args)
+	// if lx := len(s.attrs); lx < l {
+	// 	for i := lx; i < l; i++ {
+	// 		s.attrs = append(s.attrs, (*kvp)(nil))
+	// 	}
+	// }
+	argsToAttrs(&s.attrs, nil, args...)
 	return s
 }
 
@@ -953,6 +960,10 @@ func (s *Entry) writeInternal(ctx context.Context, lvl Level, stackFrame uintptr
 	return
 }
 
+//
+
+//
+
 var poolAttrs = sync.Pool{New: func() any {
 	return newFixedAttrs()
 
@@ -963,7 +974,7 @@ var poolAttrs = sync.Pool{New: func() any {
 	// 	bg:       clrNone,
 	// }
 }}
-var fixedSize int32 = 1
+var fixedSize int32 = 128 // initial size for warm up
 
 const maxFixedSize = 1 << 10
 
@@ -973,28 +984,29 @@ func newFixedAttrs() (kvps Attrs) {
 	return kvps
 }
 
-func (s *Entry) parseArgs(ctx context.Context, lvl Level, stackFrame uintptr, msg string, args ...any) (kvps Attrs) {
-	var roughSize = 4 + len(s.attrs) + len(args)
-	// var key string
-	// var keys = make(map[string]bool, roughSize)
+func (s *Entry) parseArgs(ctx context.Context, kvps *Attrs, roughSize int, lvl Level, stackFrame uintptr, msg string, args ...any) {
+	// var roughSize = 4 + len(s.attrs) + len(args)
+	// // var key string
+	// // var keys = make(map[string]bool, roughSize)
 
 	var keys map[string]bool
-	kvps = s.leadingTags(roughSize, lvl, stackFrame, msg)
+
+	// kvps = s.leadingTags(roughSize, lvl, stackFrame, msg)
 
 	if s.ctxKeysWanted() {
-		kvps = append(kvps, s.fromCtx(ctx)...)
+		s.fromCtx(ctx, kvps)
 	}
 	if len(s.attrs) > 0 {
-		if keys == nil { //nolint:cond
+		if dedupKeys && keys == nil { //nolint:cond
 			keys = make(map[string]bool, roughSize)
 		}
-		kvps = append(kvps, s.walkParentAttrs(ctx, lvl, s, keys)...)
+		s.walkParentAttrs(ctx, lvl, s, keys, kvps)
 	}
 	if len(args) > 0 {
-		if keys == nil {
+		if dedupKeys && keys == nil {
 			keys = make(map[string]bool, roughSize)
 		}
-		kvps = append(kvps, argsToAttrs(keys, args...)...)
+		argsToAttrs(kvps, keys, args...)
 	}
 
 	// if key != "" {
@@ -1008,14 +1020,14 @@ func (s *Entry) parseArgs(ctx context.Context, lvl Level, stackFrame uintptr, ms
 	return
 }
 
-func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, keysKnown map[string]bool) (kvps []Attr) {
+func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, keysKnown map[string]bool, kvps *Attrs) {
 	if e == nil {
 		return
 	}
 
-	if keysKnown == nil {
-		return e.attrs
-	}
+	// if keysKnown == nil {
+	// 	return e.attrs
+	// }
 
 	// try appending unique attributes and walk all parents
 
@@ -1028,29 +1040,31 @@ func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, keysKn
 		roughlen = 8
 	}
 
-	kvps = make([]Attr, 0, roughlen)
+	// kvps = make([]Attr, 0, roughlen)
 
 	if IsAnyBitsSet(LattrsR) {
 		// lookup parents
 		if p := e.owner; p != nil {
-			parentTags := s.walkParentAttrs(ctx, lvl, p, keysKnown)
-			kvps = append(kvps, parentTags...)
+			s.walkParentAttrs(ctx, lvl, p, keysKnown, kvps)
 		}
 	}
 
-	for _, attr := range e.attrs {
-		key := attr.Key()
-		if _, ok := keysKnown[key]; ok {
-			for ix, iv := range kvps {
-				if iv.Key() == key {
-					kvps[ix].SetValue(attr.Value())
-					break
+	if keysKnown != nil {
+		for _, attr := range e.attrs {
+			key := attr.Key()
+			if _, ok := keysKnown[key]; ok {
+				for ix, v := range *kvps {
+					if v.Key() == key {
+						(*kvps)[ix].SetValue(attr.Value())
+					}
 				}
+			} else {
+				*kvps = append(*kvps, attr)
+				keysKnown[key] = true
 			}
-		} else {
-			kvps = append(kvps, attr)
-			keysKnown[key] = true
 		}
+	} else {
+		*kvps = append(*kvps, e.attrs...)
 	}
 	return
 }
@@ -1071,13 +1085,14 @@ func (s *Entry) leadingTags(roughSize int, lvl Level, stackFrame uintptr, msg st
 	// 		kvps = append(kvps, source.toGroup())
 	// 	}
 	// }
-	if kvps == nil && roughSize > 0 {
-		if roughSize > int(atomic.LoadInt32(&fixedSize)) && roughSize < maxFixedSize {
-			atomic.StoreInt32(&fixedSize, int32(roughSize))
-		}
-		kvps = poolAttrs.Get().(Attrs)
-		// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
-	}
+
+	// if roughSize > 0 {
+	// 	if roughSize > int(atomic.LoadInt32(&fixedSize)) && roughSize < maxFixedSize {
+	// 		atomic.StoreInt32(&fixedSize, int32(roughSize))
+	// 	}
+	// 	kvps = poolAttrs.Get().(Attrs)
+	// 	// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
+	// }
 	return
 }
 
@@ -1094,8 +1109,8 @@ func (s *Entry) WithContextKeys(keys ...any) *Entry {
 
 func (s *Entry) ctxKeysWanted() bool { return len(s.contextKeys) > 0 }
 func (s *Entry) ctxKeys() []any      { return s.contextKeys }
-func (s *Entry) fromCtx(ctx context.Context) (ret Attrs) {
-	if ctxKeysUnify {
+func (s *Entry) fromCtx(ctx context.Context, kvps *Attrs) {
+	if dedupKeys {
 		mu := make(map[string]struct{})
 		for _, k := range s.ctxKeys() {
 			if v := ctx.Value(k); v != nil {
@@ -1103,12 +1118,12 @@ func (s *Entry) fromCtx(ctx context.Context) (ret Attrs) {
 				case Stringer:
 					kk := key.String()
 					if _, ok := mu[kk]; !ok {
-						ret = append(ret, &kvp{kk, v})
+						*kvps = append(*kvps, &kvp{kk, v})
 						mu[kk] = struct{}{}
 					}
 				case string:
 					if _, ok := mu[key]; !ok {
-						ret = append(ret, &kvp{key, v})
+						*kvps = append(*kvps, &kvp{key, v})
 						mu[key] = struct{}{}
 					}
 				}
@@ -1120,9 +1135,9 @@ func (s *Entry) fromCtx(ctx context.Context) (ret Attrs) {
 				switch key := k.(type) {
 				case Stringer:
 					kk := key.String()
-					ret = append(ret, &kvp{kk, v})
+					*kvps = append(*kvps, &kvp{kk, v})
 				case string:
-					ret = append(ret, &kvp{key, v})
+					*kvps = append(*kvps, &kvp{key, v})
 				}
 			}
 		}
@@ -1130,7 +1145,7 @@ func (s *Entry) fromCtx(ctx context.Context) (ret Attrs) {
 	return
 }
 
-const ctxKeysUnify = false
+const dedupKeys = false
 
 // var poolHelper = Pool(
 // 	newPrintCtx,
@@ -1146,8 +1161,8 @@ const ctxKeysUnify = false
 // })
 
 func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
-	pc := printCtxPool.Get().(*PrintCtx)
-	// defer func() { printCtxPool.Put(pc) }()
+	pc := poolPrintCtx.Get().(*PrintCtx)
+	// defer func() { poolPrintCtx.Put(pc) }()
 
 	// pc := newPrintCtx(s, lvl, timestamp, stackFrame, msg, kvps)
 
@@ -1158,7 +1173,7 @@ func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stack
 
 	s.printImpl(ctx, pc)
 
-	printCtxPool.Put(pc)
+	poolPrintCtx.Put(pc)
 	return
 }
 
@@ -1326,11 +1341,13 @@ func (s *Entry) printPC(ctx context.Context, pc *PrintCtx) {
 
 func (s *Entry) printMsg(ctx context.Context, pc *PrintCtx) {
 	if pc.noColor {
-		pc.AddString(levelFieldName, pc.msg)
+		pc.AddString(messageFieldName, pc.msg)
+		// pc.pcAppendComma()
 	} else {
 		pc.AddString(messageFieldName, ct.translate(pc.msg))
+		// pc.pcAppendByte(' ')
 	}
-	// pc.pcAppendComma()
+	// NOTE: serializeAttrs() will supply a leading comma char.
 }
 
 func (s *Entry) printFirstLineOfMsg(ctx context.Context, pc *PrintCtx) {
@@ -1388,10 +1405,25 @@ func (s *Entry) logContext(ctx context.Context, lvl Level, stackFrame uintptr, m
 		ctx = context.TODO()
 	}
 
+	var kvps Attrs
+	roughSize := 16 + len(s.attrs) + len(args) // at least 16 attr(s)
+	// if roughSize > 0 {
+	if roughSize > int(atomic.LoadInt32(&fixedSize)) && roughSize < maxFixedSize {
+		atomic.StoreInt32(&fixedSize, int32(roughSize))
+	}
+	kvps = poolAttrs.Get().(Attrs)
+	// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
+	// }
+
+	s.parseArgs(ctx, &kvps, roughSize, lvl, stackFrame, msg, args...)
+
 	now := time.Now()
-	kvps := s.parseArgs(ctx, lvl, stackFrame, msg, args...)
 	s.print(ctx, lvl, now, stackFrame, msg, kvps)
-	poolAttrs.Put(kvps)
+
+	// if kvps != nil {
+	kvps = kvps[:0]     // keep array cap but set slice to empty
+	poolAttrs.Put(kvps) // and return it for next request
+	// }
 
 	if !inTesting || IsAnyBitsSet(Linterruptalways) {
 		if IsAllBitsSet(LnoInterrupt) {

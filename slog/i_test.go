@@ -711,6 +711,16 @@ func TestSlogAttrsR(t *testing.T) {
 	sl.Info("info", "attr1", 1)
 }
 
+func TestPassingSlice(t *testing.T) {
+	fn := func(ss *[]string) {
+		*ss = append(*ss, "aa")
+	}
+
+	var ss []string
+	fn(&ss)
+	t.Logf("%v", ss)
+}
+
 //
 
 //

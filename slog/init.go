@@ -45,6 +45,12 @@ func init() {
 
 		defaultWriter = newDualWriter()
 		defaultLog = newDetachedLogger()
+
+		warmupAttrs := poolAttrs.Get()
+		poolAttrs.Put(warmupAttrs)
+
+		warmupPC := poolPrintCtx.Get()
+		poolPrintCtx.Put(warmupPC)
 	})
 }
 

@@ -96,8 +96,8 @@ func TestLogContext(t *testing.T) {
 
 	t.Log(a1, a2)
 
-	setUniqueKvp(keysKnown, a1, "a7", 9)
-	setUniqueKvp(keysKnown, a2, "str", 9)
+	setUniqueKvp(keysKnown, &a1, "a7", 9)
+	setUniqueKvp(keysKnown, &a2, "str", 9)
 }
 
 func TestPrintlnEmpty(t *testing.T) {

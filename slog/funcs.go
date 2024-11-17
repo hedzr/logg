@@ -205,14 +205,28 @@ func Numeric[T Numerics](key string, val T) Attr { return &kvp{key, val} } // co
 //	   Int("line", lineno),
 //	)
 func Group(key string, args ...any) Attr {
-	g := &gkvp{key: key, items: argsToAttrs(nil, args...)}
+	g := &gkvp{key: key}
+	l := len(args)
+	g.items = make(Attrs, l)
+	argsToAttrs(&g.items, nil, args...)
 	return g
 }
 
-func buildAttrs(as ...any) (kvps Attrs)                             { return argsToAttrs(nil, as...) }
-func buildUniqueAttrs(keys map[string]bool, as ...any) (kvps Attrs) { return argsToAttrs(keys, as...) }
+func buildAttrs(args ...any) (kvps Attrs) {
+	l := len(args)
+	kvps = make(Attrs, l)
+	argsToAttrs(&kvps, nil, args...)
+	return
+}
 
-func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint:revive
+func buildUniqueAttrs(keys map[string]bool, args ...any) (kvps Attrs) {
+	l := len(args)
+	kvps = make(Attrs, l)
+	argsToAttrs(&kvps, keys, args...)
+	return
+}
+
+func argsToAttrs(kvps *Attrs, keysKnown map[string]bool, args ...any) { //nolint:revive
 	var key string
 	if keysKnown == nil {
 		// keysKnown = make(map[string]bool)
@@ -222,15 +236,15 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint
 				case string:
 					key = k
 				case Attr:
-					kvps = append(kvps, k)
+					*kvps = append(*kvps, k)
 					key = ""
 				case []Attr:
 					for _, el := range k {
-						kvps = append(kvps, el)
+						*kvps = append(*kvps, el)
 					}
 					key = ""
 				case Attrs:
-					kvps = append(kvps, k...)
+					*kvps = append(*kvps, k...)
 					key = ""
 				default:
 					// raiseerror(`bad sequences. The right list should be:
@@ -239,7 +253,7 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint
 					// NOTE: args must be key and value pair, key should be a string
 				}
 			} else {
-				kvps = append(kvps, NewAttr(key, it))
+				*kvps = append(*kvps, NewAttr(key, it))
 				key = ""
 			}
 		}
@@ -253,14 +267,14 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint
 				key = k
 			case Attr:
 				if _, ok := keysKnown[k.Key()]; !ok {
-					kvps = append(kvps, k)
+					*kvps = append(*kvps, k)
 					keysKnown[k.Key()] = true
 				}
 				key = ""
 			case []Attr:
 				for _, el := range k {
 					if _, ok := keysKnown[el.Key()]; !ok {
-						kvps = append(kvps, el)
+						*kvps = append(*kvps, el)
 						keysKnown[el.Key()] = true
 					}
 				}
@@ -268,7 +282,7 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint
 			case Attrs:
 				for _, el := range k {
 					if _, ok := keysKnown[el.Key()]; !ok {
-						kvps = append(kvps, el)
+						*kvps = append(*kvps, el)
 						keysKnown[el.Key()] = true
 					}
 				}
@@ -280,27 +294,24 @@ func argsToAttrs(keysKnown map[string]bool, args ...any) (kvps Attrs) { //nolint
 				// NOTE: args must be key and value pair, key should be a string
 			}
 		} else {
-			kvps = setUniqueKvp(keysKnown, kvps, key, it)
-			keysKnown[key] = true
+			setUniqueKvp(keysKnown, kvps, key, it)
 			key = ""
 		}
 	}
 	return
 }
 
-func setUniqueKvp(keys map[string]bool, kvps []Attr, key string, val any) []Attr {
-	if _, ok := keys[key]; ok {
-		for ix, iv := range kvps {
-			if iv.Key() == key {
-				kvps[ix].SetValue(val)
-				break
+func setUniqueKvp(keysKnown map[string]bool, kvps *Attrs, key string, val any) {
+	if _, ok := keysKnown[key]; ok {
+		for ix, v := range *kvps {
+			if v.Key() == key {
+				(*kvps)[ix].SetValue(val)
 			}
 		}
 	} else {
-		kvps = append(kvps, NewAttr(key, val)) //nolint:revive
-		keys[key] = true
+		*kvps = append(*kvps, NewAttr(key, val)) //nolint:revive
+		keysKnown[key] = true
 	}
-	return kvps
 }
 
 // NewLogLogger returns a new log.Logger such that each call to its Output method

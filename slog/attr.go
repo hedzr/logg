@@ -90,16 +90,20 @@ func (s *gkvp) SerializeValueTo(pc *PrintCtx) {
 	// if sb.jsonMode {
 	// 	sb.appendRune('}')
 	// }
-	serializeAttrs(pc, s.items)
+	_ = serializeAttrs(pc, s.items)
 }
 
 func (s Attrs) SerializeValueTo(pc *PrintCtx) {
-	serializeAttrs(pc, s)
+	_ = serializeAttrs(pc, s)
 }
 
 func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 	prefix := pc.prefix
 	for _, v := range kvps {
+		if v == nil {
+			continue
+		}
+
 		if pc.noColor {
 			pc.pcAppendComma()
 		} else {
