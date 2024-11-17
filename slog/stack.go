@@ -135,10 +135,12 @@ func checkpath(file string) string {
 			}
 		}
 	}
-	cwd, _ := os.Getwd()
-	relfile, _ := filepath.Rel(cwd, file)
-	if l := len(relfile); l > 0 && l < len(privfile) {
-		return relfile
+	if filepath.IsAbs(privfile) {
+		cwd, _ := os.Getwd()
+		relfile, _ := filepath.Rel(cwd, file)
+		if l := len(relfile); l > 0 && l < len(privfile) {
+			return relfile
+		}
 	}
 	return privfile
 }
