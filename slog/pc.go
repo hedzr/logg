@@ -1145,7 +1145,7 @@ func (s *PrintCtx) appendError(err error) {
 		var e3 errorsv3.Error
 		if errors.As(err, &e3) {
 			if f, ok := e3.(*errorsv3.WithStackInfo); ok {
-				if st := f.Stack.StackTrace(); st != nil {
+				if st := f.StackTrace(); st != nil {
 					s.pcAppendComma()
 					s.pcAppendStringKey("trace")
 					s.pcAppendColon()

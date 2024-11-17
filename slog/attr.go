@@ -97,6 +97,9 @@ func (s Attrs) SerializeValueTo(pc *PrintCtx) {
 	_ = serializeAttrs(pc, s)
 }
 
+// serializeAttrs returns an error object if it's found in the given Attrs.
+// The caller can do something with the object, For instance, printImpl
+// will dump the error's stack trace if necessary.
 func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 	prefix := pc.prefix
 	for _, v := range kvps {
@@ -162,7 +165,7 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 		} else {
 			pc.appendValue(val)
 			if e, ok := val.(error); ok && e != nil {
-				err = e
+				err = e // just a error value
 			}
 		}
 		pc.prefix = prefix

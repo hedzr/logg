@@ -15,6 +15,7 @@ import (
 
 	"github.com/hedzr/is"
 	"github.com/hedzr/is/stringtool"
+	errorsv3 "gopkg.in/hedzr/errors.v3"
 )
 
 func newentry(parent *Entry, args ...any) *Entry {
@@ -1215,26 +1216,52 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 	s.printRestLinesOfMsg(ctx, pc)
 
 	if holded != nil && (is.DebugMode() || is.DebugBuild()) {
-		var stackInfo string
-		if _, ok := holded.(interface{ Format(s fmt.State, verb rune) }); ok {
-			stackInfo = fmt.Sprintf("%+v", holded)
-		} else {
-			var x Stringer
-			if x, ok = holded.(Stringer); ok {
-				stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
-			} else {
-				stackInfo = fmt.Sprintf("%v", holded)
-			}
-		}
 		if pc.jsonMode {
 			// pc.pcAppendStringKey("errDetail")
 			// pc.pcAppendColon()
 			// pc.pcAppendStringValue(stackInfo)
 			// pc.pcAppendComma()
 		} else {
-			pc.pcAppendByte('\n')
-			txt := ct.pad(stackInfo, "    ", 1)
-			ct.wrapColorAndBgTo(pc, red, clrLoggerNameBg, txt)
+			testing := is.InTesting()
+			if testing {
+				var e3 errorsv3.Error
+				if errorsv3.As(holded, &e3) {
+					if f, ok := e3.(*errorsv3.WithStackInfo); ok {
+						if st := f.StackTrace(); st != nil {
+							pc.pcAppendByte('\n')
+
+							frame := st[0]
+							src := getpcsource(uintptr(frame))
+							pc.pcAppendStringKey("       error: ")
+							ct.wrapColorAndBgTo(pc, clrError, clrNone, holded.Error())
+							pc.pcAppendByte('\n')
+							pc.pcAppendStringKey("   file/line: ")
+							pc.pcAppendString(src.File)
+							pc.pcAppendRune(':')
+							pc.appendValue(src.Line)
+							pc.pcAppendByte('\n')
+							pc.pcAppendStringKey("    function: ")
+							ct.wrapColorAndBgTo(pc, clrFuncName, clrNone, src.Function)
+							pc.pcAppendByte('\n')
+						}
+					}
+				}
+			} else {
+				var stackInfo string
+				if _, ok := holded.(interface{ Format(s fmt.State, verb rune) }); ok {
+					stackInfo = fmt.Sprintf("%+v", holded)
+				} else {
+					var x Stringer
+					if x, ok = holded.(Stringer); ok {
+						stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+					} else {
+						stackInfo = fmt.Sprintf("%v", holded)
+					}
+				}
+				pc.pcAppendByte('\n')
+				txt := ct.pad(stackInfo, "    ", 1)
+				ct.wrapColorAndBgTo(pc, red, clrLoggerNameBg, txt)
+			}
 		}
 	}
 

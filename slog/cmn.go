@@ -194,6 +194,7 @@ const (
 	clrAttrKeyBg    = clrNone
 	clrLoggerName   = color.FgLightGray
 	clrLoggerNameBg = clrNone
+	clrError        = color.FgRed
 )
 
 const (

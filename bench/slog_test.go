@@ -21,6 +21,8 @@ func Test2(t *testing.T) {
 }
 
 func TestUseJSON(t *testing.T) {
+	defer slogg.SaveFlagsAndMod(slogg.Lcaller)()
+
 	logger := slogg.New().SetWriter(os.Stdout).SetLevel(slogg.DebugLevel).SetJSONMode()
 	msg, attrs := getMessage(0), fakeLoggArgs()
 	logger.Info(msg, attrs...)
