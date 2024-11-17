@@ -1613,70 +1613,76 @@ func (s *PrintCtx) appendBytes(z []byte) {
 
 func (s *PrintCtx) appendStringSlice(val []string) {
 	s.buf = append(s.buf, '[')
-	for i := range val {
-		if i > 0 {
+	if l := len(val); l > 0 {
+		s.appendQuotedString(val[0])
+		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
+			// s.buf = strconv.AppendQuote(s.buf, val[i])
+			s.appendQuotedString(val[i])
+			// s.buf = append(s.buf, '"')
+			// s.appendEscapedJSONString(val[i])
+			// s.buf = append(s.buf, '"')
 		}
-		// s.buf = strconv.AppendQuote(s.buf, val[i])
-		s.appendQuotedString(val[i])
-		// s.buf = append(s.buf, '"')
-		// s.appendEscapedJSONString(val[i])
-		// s.buf = append(s.buf, '"')
 	}
 	s.buf = append(s.buf, ']')
 }
 
 func (s *PrintCtx) appendBoolSlice(val []bool) {
 	s.buf = append(s.buf, '[')
-	for i := range val {
-		if i > 0 {
+	if l := len(val); l > 0 {
+		s.buf = strconv.AppendBool(s.buf, val[0])
+		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
+			s.buf = strconv.AppendBool(s.buf, val[i])
 		}
-		s.buf = strconv.AppendBool(s.buf, val[i])
 	}
 	s.buf = append(s.buf, ']')
 }
 
 func intSliceTo[T Integers](s *PrintCtx, val IntSlice[T]) {
 	s.buf = append(s.buf, '[')
-	for i := range val {
-		if i > 0 {
+	if l := len(val); l > 0 {
+		s.buf = strconv.AppendInt(s.buf, int64(val[0]), 10)
+		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
+			s.buf = strconv.AppendInt(s.buf, int64(val[i]), 10)
 		}
-		s.buf = strconv.AppendInt(s.buf, int64(val[i]), 10)
 	}
 	s.buf = append(s.buf, ']')
 }
 
 func uintSliceTo[T Uintegers](s *PrintCtx, val UintSlice[T]) {
 	s.buf = append(s.buf, '[')
-	for i := range val {
-		if i > 0 {
+	if l := len(val); l > 0 {
+		s.buf = strconv.AppendUint(s.buf, uint64(val[0]), 10)
+		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
+			s.buf = strconv.AppendUint(s.buf, uint64(val[i]), 10)
 		}
-		s.buf = strconv.AppendUint(s.buf, uint64(val[i]), 10)
 	}
 	s.buf = append(s.buf, ']')
 }
 
 func floatSliceTo[T Floats](s *PrintCtx, val FloatSlice[T]) {
 	s.buf = append(s.buf, '[')
-	for i := range val {
-		if i > 0 {
+	if l := len(val); l > 0 {
+		ftoaS(s, val[0])
+		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
+			ftoaS(s, val[i])
 		}
-		ftoaS(s, val[i])
 	}
 	s.buf = append(s.buf, ']')
 }
 
 func complexSliceTo[T Complexes](s *PrintCtx, val ComplexSlice[T]) {
 	s.buf = append(s.buf, '[')
-	for i := range val {
-		if i > 0 {
+	if l := len(val); l > 0 {
+		ctoaS(s, val[0])
+		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
+			ctoaS(s, val[i])
 		}
-		ctoaS(s, val[i])
 	}
 	s.buf = append(s.buf, ']')
 }
@@ -1690,11 +1696,13 @@ func (s *PrintCtx) appendDuration(z time.Duration) {
 
 func (s *PrintCtx) appendDurationSlice(z []time.Duration) {
 	s.pcAppendByte('[')
-	for i, dur := range z {
-		if i > 0 {
+	if l := len(z); l > 0 {
+		s.appendDuration(z[0])
+		for i := 1; i < len(z); i++ {
+			dur := z[i]
 			s.pcAppendByte(',')
+			s.appendDuration(dur)
 		}
-		s.appendDuration(dur)
 	}
 	s.pcAppendByte(']')
 }
@@ -1712,11 +1720,13 @@ func (s *PrintCtx) appendTime(z time.Time) {
 
 func (s *PrintCtx) appendTimeSlice(z []time.Time) {
 	s.pcAppendByte('[')
-	for i, tm := range z {
-		if i > 0 {
+	if l := len(z); l > 0 {
+		s.appendTime(z[0])
+		for i := 1; i < len(z); i++ {
+			dur := z[i]
 			s.pcAppendByte(',')
+			s.appendTime(dur)
 		}
-		s.appendTime(tm)
 	}
 	s.pcAppendByte(']')
 }
