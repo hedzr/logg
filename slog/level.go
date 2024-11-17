@@ -299,6 +299,32 @@ func SetLevelColors(lvl Level, fg, bg color.Color) {
 	mLevelColors[lvl] = []color.Color{fg, bg}
 }
 
+func logsloglevel2Level(level logslog.Level) Level {
+	switch level {
+	case logslog.LevelDebug:
+		return DebugLevel
+	case logslog.LevelInfo:
+		return InfoLevel
+	case logslog.LevelWarn:
+		return WarnLevel
+	case logslog.LevelError:
+		return ErrorLevel
+	case LevelVerbose:
+		return TraceLevel
+	case LevelTrace:
+		return TraceLevel
+	case LevelNotice:
+		return InfoLevel
+	case LevelHint:
+		return InfoLevel
+	case LevelFatal:
+		return FatalLevel
+	case LevelPanic:
+		return PanicLevel
+	}
+	return FatalLevel
+}
+
 // mLevelIsEnabledAs is a replacement table of two levels.
 //
 // The given level is treated as another one (generally
@@ -434,6 +460,15 @@ var allLevels = []Level{
 	SuccessLevel,
 	FailLevel,
 }
+
+const (
+	LevelVerbose = logslog.Level(-16)
+	LevelTrace   = logslog.Level(-8)
+	LevelNotice  = logslog.Level(2)
+	LevelHint    = logslog.Level(3)
+	LevelFatal   = logslog.Level(16)
+	LevelPanic   = logslog.Level(17)
+)
 
 const (
 
