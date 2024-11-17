@@ -1180,19 +1180,20 @@ func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stack
 
 func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 	if pc.lvl == AlwaysLevel && strings.Trim(pc.msg, "\n\r \t") == "" {
-		pc.pcAppendByte('\n')
-		msg := pc.Bytes()
-		s.printOut(pc.lvl, msg)
+		// pc.pcAppendByte('\n')
+		// msg := pc.Bytes()
+		// s.printOut(pc.lvl, msg)
+		s.printOut(pc.lvl, []byte{'\n'})
 		return
 	}
 
 	pc.Begin()
 
 	if pc.noColor { // json or logfmt
-		s.printTimestamp(ctx, pc)
-		s.printLoggerName(ctx, pc)
-		s.printSeverity(ctx, pc)
-		s.printMsg(ctx, pc)
+		s.printTimestamp(pc)
+		s.printLoggerName(pc)
+		s.printSeverity(pc)
+		s.printMsg(pc)
 	} else {
 		if aa, ok := mLevelColors[pc.lvl]; ok {
 			pc.clr = aa[0]
@@ -1201,69 +1202,21 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 			}
 		}
 
-		s.printTimestamp(ctx, pc)
-		s.printLoggerName(ctx, pc)
-		s.printSeverity(ctx, pc)
-		s.printFirstLineOfMsg(ctx, pc)
+		s.printTimestamp(pc)
+		s.printLoggerName(pc)
+		s.printSeverity(pc)
+		s.printFirstLineOfMsg(pc)
 	}
 
-	holded := serializeAttrs(pc, pc.kvps)
+	holdErrorValue := serializeAttrs(pc, pc.kvps)
 
 	if IsAnyBitsSet(Lcaller) {
-		s.printPC(ctx, pc)
+		s.printPC(pc)
 	}
 
-	s.printRestLinesOfMsg(ctx, pc)
+	s.printRestLinesOfMsg(pc)
 
-	if holded != nil && (is.DebugMode() || is.DebugBuild()) {
-		if pc.jsonMode {
-			// pc.pcAppendStringKey("errDetail")
-			// pc.pcAppendColon()
-			// pc.pcAppendStringValue(stackInfo)
-			// pc.pcAppendComma()
-		} else {
-			testing := is.InTesting()
-			if testing {
-				var e3 errorsv3.Error
-				if errorsv3.As(holded, &e3) {
-					if f, ok := e3.(*errorsv3.WithStackInfo); ok {
-						if st := f.StackTrace(); st != nil {
-							pc.pcAppendByte('\n')
-
-							frame := st[0]
-							src := getpcsource(uintptr(frame))
-							pc.pcAppendStringKey("       error: ")
-							ct.wrapColorAndBgTo(pc, clrError, clrNone, holded.Error())
-							pc.pcAppendByte('\n')
-							pc.pcAppendStringKey("   file/line: ")
-							pc.pcAppendString(src.File)
-							pc.pcAppendRune(':')
-							pc.appendValue(src.Line)
-							pc.pcAppendByte('\n')
-							pc.pcAppendStringKey("    function: ")
-							ct.wrapColorAndBgTo(pc, clrFuncName, clrNone, src.Function)
-							pc.pcAppendByte('\n')
-						}
-					}
-				}
-			} else {
-				var stackInfo string
-				if _, ok := holded.(interface{ Format(s fmt.State, verb rune) }); ok {
-					stackInfo = fmt.Sprintf("%+v", holded)
-				} else {
-					var x Stringer
-					if x, ok = holded.(Stringer); ok {
-						stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
-					} else {
-						stackInfo = fmt.Sprintf("%v", holded)
-					}
-				}
-				pc.pcAppendByte('\n')
-				txt := ct.pad(stackInfo, "    ", 1)
-				ct.wrapColorAndBgTo(pc, red, clrLoggerNameBg, txt)
-			}
-		}
-	}
+	pc.appendErrorAfterPrinted(holdErrorValue)
 
 	pc.End(true)
 
@@ -1274,7 +1227,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 	return
 }
 
-func (s *Entry) printTimestamp(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printTimestamp(pc *PrintCtx) {
 	if pc.noColor { // json or logfmt
 		pc.pcAppendStringKey(timestampFieldName)
 		pc.pcAppendColon()
@@ -1288,7 +1241,7 @@ func (s *Entry) printTimestamp(ctx context.Context, pc *PrintCtx) {
 	}
 }
 
-func (s *Entry) printLoggerName(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printLoggerName(pc *PrintCtx) {
 	if s.name != "" {
 		if pc.noColor { // json or logfmt
 			if pc.jsonMode {
@@ -1308,7 +1261,7 @@ func (s *Entry) printLoggerName(ctx context.Context, pc *PrintCtx) {
 	}
 }
 
-func (s *Entry) printSeverity(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printSeverity(pc *PrintCtx) {
 	if pc.noColor { // json or logfmt
 		pc.AddString(levelFieldName, pc.lvl.String())
 		// pc.pcAppendStringKey(levelFieldName)
@@ -1323,7 +1276,7 @@ func (s *Entry) printSeverity(ctx context.Context, pc *PrintCtx) {
 	}
 }
 
-func (s *Entry) printPC(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printPC(pc *PrintCtx) {
 	if pc.noColor {
 		pc.pcAppendComma()
 
@@ -1366,7 +1319,7 @@ func (s *Entry) printPC(ctx context.Context, pc *PrintCtx) {
 	ct.echoResetColor(pc)
 }
 
-func (s *Entry) printMsg(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printMsg(pc *PrintCtx) {
 	if pc.noColor {
 		pc.AddString(messageFieldName, pc.msg)
 		// pc.pcAppendComma()
@@ -1377,7 +1330,7 @@ func (s *Entry) printMsg(ctx context.Context, pc *PrintCtx) {
 	// NOTE: serializeAttrs() will supply a leading comma char.
 }
 
-func (s *Entry) printFirstLineOfMsg(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printFirstLineOfMsg(pc *PrintCtx) {
 	var firstLine string
 	firstLine, pc.restLines, pc.eol = ct.splitFirstAndRestLines(pc.msg)
 	if minimalMessageWidth > 0 {
@@ -1392,7 +1345,7 @@ func (s *Entry) printFirstLineOfMsg(ctx context.Context, pc *PrintCtx) {
 	// pc.pcAppendByte('|')
 }
 
-func (s *Entry) printRestLinesOfMsg(ctx context.Context, pc *PrintCtx) {
+func (s *Entry) printRestLinesOfMsg(pc *PrintCtx) {
 	if !pc.noColor && pc.restLines != "" {
 		pc.pcAppendByte('\n')
 		pc.pcAppendString(ct.padFunc(pc.restLines, " ", 4, func(i int, line string) string {
