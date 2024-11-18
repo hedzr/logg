@@ -994,6 +994,27 @@ It prints:
 
 As you seen, a message will be splitted to first line (as a title) and the rest lines (as a details text). So you can avoid write a long message. Instead, you write a title with some details to describe a logging line better clearly. By the way, its json or logfmt format is still a message field with key name "msg".
 
+### Error Objects
+
+When you're using [errors.v3](https://github.com/hedzr/errors) (`gopkg.in/hedzr/errors.v3`), the trace info will be embedded into all output formats:
+
+```go
+import "gopkg.in/hedzr/errors.v3"
+
+err := errors.New("fail sample")
+slog.Info("error occurred", "err", err)
+```
+
+The similar test codes get the output like this:
+
+![Screenshot 2024-11-18 at 07.58.11](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/upgit/2024/11/20241118_1731888090.png)
+
+For others errors, we used `fmt.Sprintf("%+v", err)`, it's heavy but effective.
+
+We do not support the log/slog way with `slog.Any("error", err)` and `replaceAttr`.
+
+
+
 ## LICENSE
 
 Apache 2.0
