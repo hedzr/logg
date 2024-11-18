@@ -934,17 +934,18 @@ func (s *PrintCtx) pcAppendQuotedStringValue(str string) {
 }
 
 func (s *PrintCtx) appendQuotedString(str string) {
+	s.tryGrowByReslice(len(s.buf) + len(str)*2 + 2)
 	s.buf = appendQuotedWith(s.buf, str, '"', false, false)
 }
 
 func appendQuotedWith(buf []byte, s string, quote byte, ASCIIonly, graphicOnly bool) []byte {
-	// Often called with big strings, so preallocate. If there's quoting,
-	// this is conservative but still helps a lot.
-	if cap(buf)-len(buf) < len(s) {
-		nBuf := make([]byte, len(buf), len(buf)+1+len(s)+1)
-		copy(nBuf, buf)
-		buf = nBuf
-	}
+	// // Often called with big strings, so preallocate. If there's quoting,
+	// // this is conservative but still helps a lot.
+	// if cap(buf)-len(buf) < len(s) {
+	// 	nBuf := make([]byte, len(buf), len(buf)+1+len(s)+1)
+	// 	copy(nBuf, buf)
+	// 	buf = nBuf
+	// }
 	buf = append(buf, quote)
 	for width := 0; len(s) > 0; s = s[width:] {
 		r := rune(s[0])
