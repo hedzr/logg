@@ -120,6 +120,7 @@ func dedupeSlice[S ~[]E, E any](x S, cmp func(a, b E) bool) S {
 }
 
 // serializeAttrs returns an error object if it's found in the given Attrs.
+//
 // The caller can do something with the object, For instance, printImpl
 // will dump the error's stack trace if necessary.
 func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
@@ -148,9 +149,6 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 			return 1
 		})
 
-		// sort.Slice(kvps, func(i, j int) bool {
-		// 	return kvps[i].Key() < kvps[j].Key()
-		// })
 		kvps = dedupeSlice(kvps, func(a, b Attr) bool {
 			if a == nil || b == nil {
 				if b == a {
