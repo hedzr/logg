@@ -508,7 +508,8 @@ func (u *user) MarshalSlogObject(enc *slogg.PrintCtx) error {
 	enc.AddComma()
 	enc.AddString("email", u.Email)
 	enc.AddComma()
-	enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
+	// enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
+	enc.AddTime("createdAt", u.CreatedAt)
 	enc.End(false)
 	return nil
 }
