@@ -1,5 +1,37 @@
 # HISTORY / CHANGELOG
 
+- v0.7.15
+  - add inBench and stock the states (debugMode, ...)
+  - added `AddTime`/`AddDuration` to `PrintCtx`; change user's createdAt to Time in MarshalSlogObject
+  - improved performance by avoiding unused call to `os.Getwd()`
+  - improved performance by using `tryGrowByReslice` at `appendQuoteString`
+  - improved performance by refactoring stacktrace info retriever
+  - improved performance after rewritten dedupe algorithm and re-enabled it by default
+  - improved slice printers
+  - improved logging error object, to embed trace info into json format, to print the info at splitted lines in other formats
+    - print stacktrace info if possible (in color/logfmt mode)
+    - fix nil kvps
+    - support serializing trace info as a subobject of an errors.v3 object (in json mode)
+    - added TestErrors
+  - cleanup print() codes
+  - update bench(s)
+  - improved serializeAttrs
+  - improved `PrintCtx` - added `Begin`/`End`, `BeginArray`/`EndArray`, and `AddComma`
+  - fixed/improved object and array serializing
+  - fixed `SetColorMode(false)`
+  - avoid allocates in fromCtx
+  - avoid close stdout
+  - pooled Attrs allocs
+  - use another quote tool but improved perf less
+  - support metrics collecting for future
+  - fixed WithXXX to SetXXX
+  - added sublogger tree structure dumping, walking, ...
+  - fixed autoname of sublogger
+  - added `Remove/ResetKnownPathMapping`, `Remove/ResetKnownPathRegexpMapping`, ...
+  - improved initial behavior to detect `is.Tracing` and `is.TraceMode` to enter `slog.TraceLevel`
+  - security patch
+  - upgrade deps
+
 - v0.7.5
   - security patch
   - upgrade deps
