@@ -503,6 +503,12 @@ type user struct {
 }
 
 func (u *user) MarshalSlogObject(enc *slogg.PrintCtx) error {
+	l0, cap0 := enc.Len(), enc.Cap()
+
+	if capInc > 0 {
+		enc.PreAlloc(capInc * 2)
+	}
+
 	enc.Begin()
 	enc.AddString("name", u.Name)
 	enc.AddComma()
@@ -511,5 +517,15 @@ func (u *user) MarshalSlogObject(enc *slogg.PrintCtx) error {
 	// enc.AddInt64("createdAt", u.CreatedAt.UnixNano())
 	enc.AddTime("createdAt", u.CreatedAt)
 	enc.End(false)
+	l1, cap1 := enc.Len(), enc.Cap()
+
+	if capInc1 := cap1 - cap0; capInc1 > capInc {
+		capInc = capInc1
+		lenInc = l1 - l0
+		// println("user.MarshalSlogObject caused capInc ", capInc, " due the lenInc ", lenInc)
+	}
 	return nil
 }
+
+var lenInc int
+var capInc int

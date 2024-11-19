@@ -194,6 +194,8 @@ func (s *PrintCtx) Reset() {
 	s.lastRead = opInvalid
 }
 
+func (s *PrintCtx) PreAlloc(n int) { s.tryGrowByReslice(n) }
+
 // tryGrowByReslice is an inlineable version of grow for the fast-case where the
 // internal buffer only needs to be resliced.
 // It returns the index where bytes should be written and whether it succeeded.
