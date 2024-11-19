@@ -6,7 +6,6 @@ import (
 	"io"
 	logslog "log/slog"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -1370,46 +1369,46 @@ func (s *Entry) findWriter(lvl Level) (lw LogWriter) {
 }
 
 var inTesting = is.InTesting()
-var inBenching = isInBench()
+var inBenching = is.InBenchmark()
 var isDebugging = is.InDebugging()
 var isDebug = is.DebugMode() || is.DebugBuild()
 
-func isInBench() bool {
-	for _, arg := range os.Args {
-		if strings.HasPrefix(arg, "-test.bench") || strings.HasPrefix(arg, "-bench") {
-			return true
-		}
-		// if strings.HasPrefix(arg, "-test.bench=") {
-		// 	// ignore the benchmark name after an underscore
-		// 	bench = strings.SplitN(arg[12:], "_", 2)[0]
-		// 	break
-		// }
-	}
-	return false
-}
-
-var benchRe *regexp.Regexp
-
-func isTested(name string) bool {
-	if benchRe == nil {
-		// Get -test.bench flag value (not accessible via flag package)
-		bench := ""
-		for _, arg := range os.Args {
-			if strings.HasPrefix(arg, "-test.bench=") {
-				// ignore the benchmark name after an underscore
-				bench = strings.SplitN(arg[12:], "_", 2)[0]
-				break
-			}
-		}
-
-		// Compile RegExp to match Benchmark names
-		var err error
-		benchRe, err = regexp.Compile(bench)
-		if err != nil {
-			panic(err.Error())
-		}
-	}
-	return benchRe.MatchString(name)
-}
+// func isInBench() bool {
+// 	for _, arg := range os.Args {
+// 		if strings.HasPrefix(arg, "-test.bench") || strings.HasPrefix(arg, "-bench") {
+// 			return true
+// 		}
+// 		// if strings.HasPrefix(arg, "-test.bench=") {
+// 		// 	// ignore the benchmark name after an underscore
+// 		// 	bench = strings.SplitN(arg[12:], "_", 2)[0]
+// 		// 	break
+// 		// }
+// 	}
+// 	return false
+// }
+//
+// var benchRe *regexp.Regexp
+//
+// func isTested(name string) bool {
+// 	if benchRe == nil {
+// 		// Get -test.bench flag value (not accessible via flag package)
+// 		bench := ""
+// 		for _, arg := range os.Args {
+// 			if strings.HasPrefix(arg, "-test.bench=") {
+// 				// ignore the benchmark name after an underscore
+// 				bench = strings.SplitN(arg[12:], "_", 2)[0]
+// 				break
+// 			}
+// 		}
+//
+// 		// Compile RegExp to match Benchmark names
+// 		var err error
+// 		benchRe, err = regexp.Compile(bench)
+// 		if err != nil {
+// 			panic(err.Error())
+// 		}
+// 	}
+// 	return benchRe.MatchString(name)
+// }
 
 const BADKEY = "!BADKEY"

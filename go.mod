@@ -11,7 +11,7 @@ go 1.22.7
 // replace github.com/hedzr/go-utils/v2 => ./
 
 require (
-	github.com/hedzr/is v0.6.1
+	github.com/hedzr/is v0.6.2
 	gopkg.in/hedzr/errors.v3 v3.3.5
 )
 
