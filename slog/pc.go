@@ -194,7 +194,20 @@ func (s *PrintCtx) Reset() {
 	s.lastRead = opInvalid
 }
 
-func (s *PrintCtx) PreAlloc(n int) { s.tryGrowByReslice(n) }
+// PreAlloc requests the increased size n for writing later.
+// After PreAlloc, the internal buffer get at least n bytes
+// to write.
+func (s *PrintCtx) PreAlloc(n int) {
+	// s.grow(n + cap(s.buf))
+	if l := len(s.buf); n > cap(s.buf)-l {
+		if n < smallBufferSize {
+			n = smallBufferSize
+		}
+		s.buf = growSlice(s.buf, n+cap(s.buf))
+		// return l, true
+	}
+	// return 0, false
+}
 
 // tryGrowByReslice is an inlineable version of grow for the fast-case where the
 // internal buffer only needs to be resliced.
@@ -971,7 +984,7 @@ func (s *PrintCtx) pcAppendQuotedStringValue(str string) {
 }
 
 func (s *PrintCtx) appendQuotedString(str string) {
-	s.tryGrowByReslice(len(s.buf) + len(str)*2 + 2)
+	s.PreAlloc(len(str)*2 + 2)
 	s.buf = appendQuotedWith(s.buf, str, '"', false, false)
 }
 
