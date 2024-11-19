@@ -503,11 +503,11 @@ type user struct {
 }
 
 func (u *user) MarshalSlogObject(enc *slogg.PrintCtx) error {
-	l0, cap0 := enc.Len(), enc.Cap()
-
 	if capInc > 0 {
 		enc.PreAlloc(capInc * 2)
 	}
+
+	l0, cap0 := enc.Len(), enc.Cap()
 
 	enc.Begin()
 	enc.AddString("name", u.Name)
