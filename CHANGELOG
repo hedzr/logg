@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.7.16
+  - security patch
+  - upgrade deps
+
 - v0.7.15
   - add inBench and stock the states (debugMode, ...)
   - added `AddTime`/`AddDuration` to `PrintCtx`; change user's createdAt to Time in MarshalSlogObject
