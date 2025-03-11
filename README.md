@@ -25,6 +25,8 @@ The abilities are:
 - privacy enough: hardening filepath(s), shortening package name(s) (by `Lprivacypath` and `Lprivacypathregexp`); and implementing `LogObjectMarshaller` or `LogArrayMarshaller` to safe guard the sensitive fields.
 - better multiline outputs.
 
+Since v0.8.0, we need go toolchain 1.23.7 and above.
+
 Since v0.7.3, a locking version of printOut added. It would give more safeties to splitted writer (if your writer had implemented `LevelSettable` interface to compliant with logg/slog's log level).
 
 ![image-20231107091609707](https://cdn.jsdelivr.net/gh/hzimg/blog-pics@master/uPic/image-20231107091609707.png)
@@ -334,8 +336,6 @@ Passing common attributes and WithOpts following the sublogger name to `New()`, 
 
 Making children loggers is low-cost.
 
-
-
 ### Holding a Logger
 
 By creating and managing a sublogger, making your own logger might be dead simple:
@@ -381,8 +381,6 @@ func TestSlogBasic4(t *testing.T) {
 ```
 
 That is it.
-
-
 
 ### Logging with Attributes
 
@@ -526,7 +524,7 @@ As you seen, the value in context was been extracted and printed out.
 
 `logg/slog` uses a internal `dualWriter` to serialize the logging contents.
 
-A `dualWriter` holds two output devices: `Normal`, and `Error`. `dualWriter` sends contents to stdout or stderr in accord to the requesting logging level. For example, a `Info(...)` calling will be dispatched to stdout and a `Warn`, `Error`, `Panic`, and `Fatal` to stderr. 
+A `dualWriter` holds two output devices: `Normal`, and `Error`. `dualWriter` sends contents to stdout or stderr in accord to the requesting logging level. For example, a `Info(...)` calling will be dispatched to stdout and a `Warn`, `Error`, `Panic`, and `Fatal` to stderr.
 
 Not only for those, the dualWriter allows you stack mutiple writers as its `Normal` or `Error` output devices. That means, a console `os.Stdout` and a file writer can be combined into `Normal` at once. How to do it? It's simple:
 
@@ -961,8 +959,8 @@ Here are two savers so that you can write codes easiler:
 defer slog.SaveLevelAndSet(slog.WarnLevel)()
 
 
-	defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
-	defer SaveLevelAndSet(TraceLevel)()
+ defer SaveFlagsAndMod(LnoInterrupt | LattrsR)()
+ defer SaveLevelAndSet(TraceLevel)()
 
 // Save global Flags and modify it for local logic, and restore it after going back to up level
 defer slog.SaveFlagsAnd(func() {
@@ -1012,8 +1010,6 @@ The similar test codes get the output like this:
 For others errors, we used `fmt.Sprintf("%+v", err)`, it's heavy but effective.
 
 We do not support the log/slog way with `slog.Any("error", err)` and `replaceAttr`.
-
-
 
 ## LICENSE
 
