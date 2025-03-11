@@ -1,6 +1,6 @@
 module github.com/hedzr/logg
 
-go 1.22.7
+go 1.23.7
 
 // replace github.com/hedzr/go-errors/v2 => ../libs.errors
 
