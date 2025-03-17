@@ -1,5 +1,8 @@
 # HISTORY / CHANGELOG
 
+- v0.8.1
+  - upgrade deps
+
 - v0.8.0
   - upgrade toolchain to go1.23.7
   - security patch
