@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -28,21 +29,22 @@ func main() {
 	catcher := is.Signals().Catch()
 	catcher.
 		WithPrompt("Press CTRL-C to quit...").
-		WithOnLoop(dbStarter, cacheStarter, mqStarter).
+		WithOnLoopFunc(dbStarter, cacheStarter, mqStarter).
 		WithOnSignalCaught(func(sig os.Signal, wg *sync.WaitGroup) {
 			println()
 			slog.Info("signal caught", "sig", sig)
 			cancel() // cancel user's loop, see Wait(...)
 		}).
-		Wait(func(stopChan chan<- os.Signal, wgDone *sync.WaitGroup) {
+		WaitFor(func(closer func()) {
 			slog.Debug("entering looper's loop...")
 			go func() {
 				// to terminate this app after a while automatically:
 				time.Sleep(10 * time.Second)
-				stopChan <- os.Interrupt
+				// stopChan <- os.Interrupt
+				closer()
 			}()
-			<-ctx.Done()  // waiting until any os signal caught
-			wgDone.Done() // and complete myself
+			<-ctx.Done() // waiting until any os signal caught
+			// wgDone.Done() // and complete myself
 		})
 }
 
@@ -92,6 +94,80 @@ func testLogz(ctx context.Context) {
 	logz.InfoContext(ctx, "Hello", "target", "world")
 
 	testLogzAdapter(ctx)
+
+	testLogz1(ctx)
+}
+
+func testLogz1(ctx context.Context) {
+	msg := "A message"
+	args := []any{
+		"attr1", 0,
+		"attr2", false,
+		"attr3", 3.13,
+		"attr4", errors.New("simple"),
+		// ,,,
+		logz.Group("group1",
+			"attr1", 0,
+			"attr2", false,
+			logz.NewAttr("attr3", "any styles what u prefer"),
+			"attrn", // unpaired key can work here
+			logz.Group("more", "group", []byte("more subgroup here")),
+		),
+		// ...
+		logz.Int("id", 23123),
+		logz.Group("properties",
+			logz.Int("width", 4000),
+			logz.Int("height", 3000),
+			logz.String("format", "jpeg"),
+		),
+	}
+
+	// disable unconditional termination inside logz.Panic/Fatal() calls.
+	logz.AddFlags(logz.LnoInterrupt)
+
+	logz.Print("")   // logging a clean newline without decorations
+	logz.Println("") // logging a clean newline without decorations
+	logz.Println()   // logging a clean newline without decorations
+	logz.Print(msg, args...)
+	logz.Println(msg) // synosym of Print
+	logz.Fatal(msg, args...)
+	logz.Panic(msg, args...)
+	logz.Error(msg, args...)
+	logz.Warn(msg, args...)
+	logz.Info(msg, args...)
+	logz.Debug(msg, args...)
+	logz.Trace(msg, args...)
+
+	// only print the logging contents while built with `-tags verbose`
+	logz.Verbose(msg, args...) //
+
+	// some verbs with more meanings
+	logz.OK("ok")
+	logz.OK("ok", args...)
+	logz.Success(msg, args...)
+	logz.Fail(msg, args...)
+
+	// Contextual logging
+	logz.InfoContext(ctx, "info msg", args...)
+
+	logName := "child1"
+	log := logz.New(logName)
+	defer log.Close() // when you added file writer into `log`
+
+	log.Print("")   // logging a clean newline without decorations
+	log.Println("") // logging a clean newline without decorations
+	log.Println()   // logging a clean newline without decorations
+	log.Print(msg, args...)
+	log.Println(msg) // synosym of Print
+	log.Fatal(msg, args...)
+	log.Panic(msg, args...)
+	log.Error(msg, args...)
+	log.Warn(msg, args...)
+	log.Info(msg, args...)
+	log.Debug(msg, args...)
+	log.Trace(msg, args...)
+
+	log.LogAttrs(ctx, logz.DebugLevel, "debug msg", args...)
 }
 
 func testLogzAdapter(ctx context.Context) {
@@ -133,20 +209,27 @@ func testLogzAdapter(ctx context.Context) {
 	sub2.InfoContext(ctx, "hi info", "AA", 1.23456789)
 }
 
-func dbStarter(stopChan chan<- os.Signal, wgDone *sync.WaitGroup) {
+func dbStarter(closer func()) {
+	defer closer()
 	// initializing database connections...
 	// ...
-	wgDone.Done()
 }
 
-func cacheStarter(stopChan chan<- os.Signal, wgDone *sync.WaitGroup) {
+func cacheStarter(closer func()) {
+	defer closer()
 	// initializing redis cache connections...
 	// ...
-	wgDone.Done()
 }
 
-func mqStarter(stopChan chan<- os.Signal, wgDone *sync.WaitGroup) {
+func mqStarter(closer func()) {
+	defer closer()
 	// initializing message queue connections...
 	// ...
-	wgDone.Done()
 }
+
+const (
+	AppNameExample = "small"     // appName for the current demo app
+	appName        = "logg/slog" // appName of hedzr/logg package
+	version        = "v0.8.1"    // version of hedzr/logg package | update it while bumping hedzr/logg' version
+	Version        = version     // version name you can check it
+)
