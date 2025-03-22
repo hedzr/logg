@@ -4,10 +4,10 @@ go 1.23.7
 
 replace github.com/hedzr/logg => ../
 
-require github.com/hedzr/logg v0.8.5
+require github.com/hedzr/logg v0.8.6
 
 require (
-	github.com/hedzr/is v0.7.5 // indirect
+	github.com/hedzr/is v0.7.6 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
