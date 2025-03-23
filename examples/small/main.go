@@ -33,18 +33,16 @@ func main() {
 		WithOnSignalCaught(func(sig os.Signal, wg *sync.WaitGroup) {
 			println()
 			slog.Info("signal caught", "sig", sig)
-			cancel() // cancel user's loop, see Wait(...)
+			cancel() // cancel user's loop, see <-ctx.Done() in Wait(...)
 		}).
 		WaitFor(func(closer func()) {
 			slog.Debug("entering looper's loop...")
 			go func() {
+				defer closer()
 				// to terminate this app after a while automatically:
 				time.Sleep(10 * time.Second)
-				// stopChan <- os.Interrupt
-				closer()
+				<-ctx.Done() // waiting for main program stop
 			}()
-			<-ctx.Done() // waiting until any os signal caught
-			// wgDone.Done() // and complete myself
 		})
 }
 
