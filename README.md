@@ -1,7 +1,7 @@
 # hedzr/logg
 
 ![Go](https://github.com/hedzr/logg/workflows/Go/badge.svg)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/hedzr/store)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/hedzr/logg)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/hedzr/logg.svg?label=release)](https://github.com/hedzr/logg/releases)
 [![Go Dev](https://img.shields.io/badge/go-dev-green)](https://pkg.go.dev/github.com/hedzr/logg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/logg)](https://goreportcard.com/report/github.com/hedzr/logg)
@@ -25,7 +25,7 @@ The abilities are:
 - privacy enough: hardening filepath(s), shortening package name(s) (by `Lprivacypath` and `Lprivacypathregexp`); and implementing `LogObjectMarshaller` or `LogArrayMarshaller` to safe guard the sensitive fields.
 - better multiline outputs.
 
-Since v0.8.0, we need go toolchain 1.23.7 and above.
+Since v0.8.0, we need go toolchain 1.23 and above.
 
 Since v0.7.3, a locking version of printOut added. It would give more safeties to splitted writer (if your writer had implemented `LevelSettable` interface to compliant with logg/slog's log level).
 
