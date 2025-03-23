@@ -1,12 +1,14 @@
 module github.com/hedzr/logg/examples/small1
 
-go 1.23.7
+go 1.23.0
+
+toolchain go1.23.3
 
 replace github.com/hedzr/logg => ../../
 
 require (
-	github.com/hedzr/is v0.7.6
-	github.com/hedzr/logg v0.8.6
+	github.com/hedzr/is v0.7.7
+	github.com/hedzr/logg v0.8.7
 )
 
 require (

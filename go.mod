@@ -1,6 +1,8 @@
 module github.com/hedzr/logg
 
-go 1.23.7
+go 1.23.0
+
+toolchain go1.23.3
 
 // replace github.com/hedzr/go-errors/v2 => ../libs.errors
 
@@ -11,7 +13,7 @@ go 1.23.7
 // replace github.com/hedzr/go-utils/v2 => ./
 
 require (
-	github.com/hedzr/is v0.7.6
+	github.com/hedzr/is v0.7.7
 	gopkg.in/hedzr/errors.v3 v3.3.5
 )
 
