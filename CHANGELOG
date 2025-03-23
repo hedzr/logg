@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.8.7
+  - downgrade toolchain to go1.23.0
+  - upgrade deps
+
 - v0.8.6
   - upgrade deps
   - improve examples/small sample codes
