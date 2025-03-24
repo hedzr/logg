@@ -1,5 +1,8 @@
 # HISTORY / CHANGELOG
 
+- v0.8.8
+  - patch: fix wrong version number in local go.work
+
 - v0.8.7
   - downgrade toolchain to go1.23.0
   - upgrade deps
