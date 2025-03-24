@@ -91,19 +91,17 @@ func main() {
   WithPrompt("Press CTRL-C to quit...").
   WithOnLoopFunc(dbStarter, cacheStarter, mqStarter).
   WithOnSignalCaught(func(sig os.Signal, wg *sync.WaitGroup) {
-   println()
-   slog.Info("signal caught", "sig", sig)
-   cancel() // cancel user's loop, see <-ctx.Done() in Wait(...)
+    println()
+    slog.Info("signal caught", "sig", sig)
+    cancel() // cancel user's loop, see <-ctx.Done() in Wait(...)
   }).
   WaitFor(func(closer func()) {
-   slog.Debug("entering looper's loop...")
-   go func() {
+    slog.Debug("entering looper's loop...")
     defer closer()
     // to terminate this app after a while automatically:
     time.Sleep(10 * time.Second)
     // stopChan <- os.Interrupt
     <-ctx.Done() // waiting for main program stop
-   }()
   })
 }
 
