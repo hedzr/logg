@@ -37,12 +37,10 @@ func main() {
 		}).
 		WaitFor(func(closer func()) {
 			slog.Debug("entering looper's loop...")
-			go func() {
-				defer closer()
-				// to terminate this app after a while automatically:
-				time.Sleep(10 * time.Second)
-				<-ctx.Done() // waiting for main program stop
-			}()
+			defer closer()
+			// to terminate this app after a while automatically:
+			time.Sleep(10 * time.Second)
+			<-ctx.Done() // waiting for main program stop
 		})
 }
 
