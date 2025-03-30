@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.8.11
+  - security patch
+  - upgrade deps
+
 - v0.8.8
   - patch: fix wrong version number in local go.work
 
