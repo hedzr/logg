@@ -13,12 +13,11 @@ toolchain go1.23.3
 // replace github.com/hedzr/go-utils/v2 => ./
 
 require (
-	github.com/hedzr/is v0.7.13
+	github.com/hedzr/is v0.7.15
 	gopkg.in/hedzr/errors.v3 v3.3.5
 )
 
 require (
-	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
