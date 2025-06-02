@@ -13,7 +13,7 @@ toolchain go1.23.3
 // replace github.com/hedzr/go-utils/v2 => ./
 
 require (
-	github.com/hedzr/is v0.7.16
+	github.com/hedzr/is v0.7.19
 	gopkg.in/hedzr/errors.v3 v3.3.5
 )
 

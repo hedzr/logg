@@ -6,10 +6,10 @@ toolchain go1.23.3
 
 replace github.com/hedzr/logg => ../
 
-require github.com/hedzr/logg v0.8.16
+require github.com/hedzr/logg v0.8.19
 
 require (
-	github.com/hedzr/is v0.7.16 // indirect
+	github.com/hedzr/is v0.7.19 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
