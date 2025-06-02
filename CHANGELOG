@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.8.19
+  - improved default level when hedzr/is/states.DebugMode/TraceMode is changed
+  - upgrade deps
+
 - v0.8.16
   - security patch
   - upgrade deps
