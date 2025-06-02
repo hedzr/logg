@@ -42,6 +42,18 @@ func init() {
 			lvlCurrent = DebugLevel
 			RemoveFlags(Lprivacypathregexp) // disable tilde directory to make the logging msg clickable
 		}
+		is.SetOnDebugChanged(func(mod bool, level int) {
+			if mod {
+				lvlCurrent = DebugLevel
+				Debug("[logz][onDebugChanged] debug mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+			}
+		})
+		is.SetOnTraceChanged(func(mod bool, level int) {
+			if mod {
+				lvlCurrent = TraceLevel
+				Trace("[logz][onTraceChanged] trace mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+			}
+		})
 
 		defaultWriter = newDualWriter()
 		defaultLog = newDetachedLogger()
