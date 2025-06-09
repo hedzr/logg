@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/hedzr/is"
 	"github.com/hedzr/is/term/color"
 	errorsv3 "gopkg.in/hedzr/errors.v3"
 )
@@ -35,6 +36,7 @@ func newPrintCtx() *PrintCtx {
 		dedupeAttrs: true,
 		clr:         clrBasic,
 		bg:          clrNone,
+		// noColor:     is.NoColorMode(),
 	}
 }
 
@@ -69,6 +71,8 @@ type PrintCtx struct {
 	// curdir string
 
 	valueStringer ValueStringer
+
+	colorful bool // cache is.NoColorMode() for each printImpl()
 }
 
 func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame) }
@@ -76,12 +80,14 @@ func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame
 func (s *PrintCtx) setentry(e *Entry) {
 	s.buf = s.buf[:0]
 
+	s.colorful = !is.NoColorMode()
+
 	s.jsonMode = e.useJSON
 	useColor := e.useColor
 	if e.useJSON && useColor {
 		useColor = false
 	}
-	s.noColor = !useColor
+	s.noColor = !useColor // || !s.colorful
 
 	s.layout = e.timeLayout
 	s.utcTime = e.modeUTC

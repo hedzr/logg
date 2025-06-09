@@ -9,7 +9,7 @@ import (
 )
 
 func NewAttr(key string, val any) Attr              { return &kvp{key, val} }                            // create an attribute
-func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(args...) }                 //nolint:revive,lll // freeform args here, used by WithAttrs1. See also New or With for the usage.
+func NewAttrs(args ...any) Attrs                    { return buildUniqueAttrs(args...) }                 // freeform args here, used by WithAttrs1. See also New or With for the usage.
 func NewGroupedAttr(key string, as ...Attr) Attr    { return &gkvp{key, as} }                            // similar with Group
 func NewGroupedAttrEasy(key string, as ...any) Attr { return &gkvp{key: key, items: buildAttrs(as...)} } // synonym to Group
 
@@ -123,7 +123,7 @@ func dedupeSlice[S ~[]E, E any](x S, cmp func(a, b E) bool) S {
 //
 // The caller can do something with the object, For instance, printImpl
 // will dump the error's stack trace if necessary.
-func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
+func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 	prefix := pc.prefix
 	inGroupedMode := pc.inGroupedMode
 
@@ -169,7 +169,9 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 			pc.pcAppendComma()
 		} else {
 			pc.pcAppendByte(' ')
-			ct.echoColorAndBg(pc, pc.clr, pc.bg)
+			if pc.colorful {
+				ct.echoColorAndBg(pc, pc.clr, pc.bg)
+			}
 		}
 
 		if !inGroupedMode {
@@ -192,9 +194,13 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 			if pc.noColor {
 				pc.pcAppendStringKey(key)
 			} else {
-				ct.echoColorAndBg(pc, clrAttrKey, clrAttrKeyBg)
-				pc.pcAppendStringKey(key)
-				ct.echoColorAndBg(pc, pc.clr, pc.bg)
+				if pc.colorful {
+					ct.echoColorAndBg(pc, clrAttrKey, clrAttrKeyBg)
+					pc.pcAppendStringKey(key)
+					ct.echoColorAndBg(pc, pc.clr, pc.bg)
+				} else {
+					pc.pcAppendStringKey(key)
+				}
 			}
 
 			pc.pcAppendColon()
@@ -229,7 +235,9 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) { //nolint:revive
 	}
 
 	if !pc.noColor {
-		ct.echoResetColor(pc)
+		if pc.colorful {
+			ct.echoResetColor(pc)
+		}
 	}
 	return
 }

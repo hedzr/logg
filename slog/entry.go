@@ -1174,7 +1174,9 @@ func (s *Entry) printTimestamp(pc *PrintCtx) {
 		pc.appendTimestamp(pc.now)
 		pc.pcAppendComma()
 	} else {
-		ct.echoColor(pc, clrTimestamp)
+		if pc.colorful {
+			ct.echoColor(pc, clrTimestamp)
+		}
 		pc.appendTimestamp(pc.now)
 		pc.pcAppendByte(' ')
 	}
@@ -1194,7 +1196,11 @@ func (s *Entry) printLoggerName(pc *PrintCtx) {
 			}
 			pc.pcAppendComma()
 		} else {
-			ct.wrapColorAndBgTo(pc, clrLoggerName, clrLoggerNameBg, s.name)
+			if pc.colorful {
+				ct.wrapColorAndBgTo(pc, clrLoggerName, clrLoggerNameBg, s.name)
+			} else {
+				pc.pcAppendString(s.name)
+			}
 			pc.pcAppendByte(' ')
 		}
 	}
@@ -1210,7 +1216,11 @@ func (s *Entry) printSeverity(pc *PrintCtx) {
 		// pc.pcAppendByte('"')
 		pc.pcAppendComma()
 	} else {
-		ct.wrapColorAndBgTo(pc, pc.clr, pc.bg, ct.wrapRune(pc.lvl.ShortTag(levelOutputWidth), '[', ']'))
+		if pc.colorful {
+			ct.wrapColorAndBgTo(pc, pc.clr, pc.bg, ct.wrapRune(pc.lvl.ShortTag(levelOutputWidth), '[', ']'))
+		} else {
+			pc.pcAppendString(ct.wrapRune(pc.lvl.ShortTag(levelOutputWidth), '[', ']'))
+		}
 		pc.pcAppendByte(' ')
 	}
 }
@@ -1254,8 +1264,12 @@ func (s *Entry) printPC(pc *PrintCtx) {
 	// pc.appendRune(')')
 	pc.pcAppendByte(' ')
 	// ct.wrapDimColorTo(pc.SB, source.checkedfuncname()) // clion p-term in run panel cannot support dim color.
-	ct.wrapColorTo(pc, clrFuncName, checkedfuncname(source.Function))
-	ct.echoResetColor(pc)
+	if pc.colorful {
+		ct.wrapColorTo(pc, clrFuncName, checkedfuncname(source.Function))
+		ct.echoResetColor(pc)
+	} else {
+		pc.pcAppendString(checkedfuncname(source.Function))
+	}
 }
 
 func (s *Entry) printMsg(pc *PrintCtx) {
@@ -1288,7 +1302,11 @@ func (s *Entry) printRestLinesOfMsg(pc *PrintCtx) {
 	if !pc.noColor && pc.restLines != "" {
 		pc.pcAppendByte('\n')
 		pc.pcAppendString(ct.padFunc(pc.restLines, " ", 4, func(i int, line string) string {
-			return ct.wrapColorAndBg(line, pc.clr, pc.bg)
+			if pc.colorful {
+				return ct.wrapColorAndBg(line, pc.clr, pc.bg)
+			} else {
+				return line
+			}
 		}))
 		if pc.eol {
 			pc.pcAppendByte('\n')
