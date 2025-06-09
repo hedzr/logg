@@ -7,8 +7,8 @@ toolchain go1.23.3
 replace github.com/hedzr/logg => ../../
 
 require (
-	github.com/hedzr/is v0.7.22
-	github.com/hedzr/logg v0.8.22
+	github.com/hedzr/is v0.7.23
+	github.com/hedzr/logg v0.8.23
 )
 
 require (
