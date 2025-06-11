@@ -1388,8 +1388,8 @@ func (s *Entry) findWriter(lvl Level) (lw LogWriter) {
 
 var inTesting = is.InTesting()
 var inBenching = is.InBenchmark()
-var isDebugging = is.InDebugging()
-var isDebug = is.DebugMode() || is.DebugBuild()
+var isDebuggingOrBuild = is.InDebugging()
+var isDebug = func() bool { return is.DebugMode() }
 
 // func isInBench() bool {
 // 	for _, arg := range os.Args {

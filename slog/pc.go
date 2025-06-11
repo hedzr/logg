@@ -1198,7 +1198,7 @@ func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 // }
 
 func (s *PrintCtx) appendErrorAfterPrinted(err error) {
-	if err != nil && (inTesting || isDebug || isDebugging) {
+	if err != nil && (inTesting || isDebuggingOrBuild || isDebug()) {
 		if s.jsonMode {
 			// the job has been done in appendValue() -> appendError, see the PrintCtx.
 			// tuning might be planned in the future.
