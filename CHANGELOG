@@ -1,5 +1,10 @@
 # HISTORY / CHANGELOG
 
+- v0.8.25
+  - fix error print style in debug mode - added stacktrace now
+  - fix detecting debugMode -> update to dyn-test
+  - upgrade deps
+
 - v0.8.23
   - improved colorful printer on plain terminal without color support
   - upgrade deps

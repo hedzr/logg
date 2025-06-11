@@ -1,5 +1,5 @@
 package slog
 
-const version = "v0.8.23" // new Version of logg/slog
+const version = "v0.8.25" // new Version of logg/slog
 const Version = version   // version name you can check it
 const appName = "logg/slog"
