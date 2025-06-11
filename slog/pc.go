@@ -1233,9 +1233,9 @@ func (s *PrintCtx) appendErrorAfterPrinted(err error) {
 					} else {
 						ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
 					}
-					s.pcAppendByte('\n')
+					// s.pcAppendByte('\n')
 				}
-				return
+				// return
 			}
 			// }
 
