@@ -1197,6 +1197,14 @@ func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 // 	s.pcAppendStringValue(string(val))
 // }
 
+func (s *PrintCtx) getStackTrace(err error) (f *errorsv3.WithStackInfo, st errorsv3.StackTrace) {
+	var ok bool
+	if f, ok = err.(*errorsv3.WithStackInfo); ok {
+		st = f.StackTrace()
+	}
+	return
+}
+
 func (s *PrintCtx) appendErrorAfterPrinted(err error) {
 	if err != nil && (inTesting || isDebuggingOrBuild || isDebug()) {
 		if s.jsonMode {
@@ -1209,32 +1217,30 @@ func (s *PrintCtx) appendErrorAfterPrinted(err error) {
 
 			// var e3 errorsv3.Error
 			// if errorsv3.As(holded, &e3) {
-			if f, ok := err.(*errorsv3.WithStackInfo); ok {
-				if st := f.StackTrace(); st != nil {
-					s.pcAppendByte('\n')
+			if f, st := s.getStackTrace(err); st != nil {
+				s.pcAppendByte('\n')
 
-					frame := st[0]
-					s.cachedSource.Extract(uintptr(frame))
-					s.pcAppendStringKey("       error: ")
-					if s.noColor {
-						s.pcAppendString(f.Error())
-					} else {
-						ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
-					}
-					s.pcAppendByte('\n')
-					s.pcAppendStringKey("   file/line: ")
-					s.pcAppendString(s.cachedSource.File)
-					s.pcAppendRune(':')
-					s.AppendInt(s.cachedSource.Line)
-					s.pcAppendByte('\n')
-					s.pcAppendStringKey("    function: ")
-					if s.noColor {
-						s.pcAppendString(s.cachedSource.Function)
-					} else {
-						ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
-					}
-					// s.pcAppendByte('\n')
+				frame := st[0]
+				s.cachedSource.Extract(uintptr(frame))
+				s.pcAppendStringKey("       error: ")
+				if s.noColor {
+					s.pcAppendString(f.Error())
+				} else {
+					ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
 				}
+				s.pcAppendByte('\n')
+				s.pcAppendStringKey("   file/line: ")
+				s.pcAppendString(s.cachedSource.File)
+				s.pcAppendRune(':')
+				s.AppendInt(s.cachedSource.Line)
+				s.pcAppendByte('\n')
+				s.pcAppendStringKey("    function: ")
+				if s.noColor {
+					s.pcAppendString(s.cachedSource.Function)
+				} else {
+					ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+				}
+				// s.pcAppendByte('\n')
 				// return
 			}
 			// }
