@@ -2,7 +2,6 @@ package slog
 
 import (
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/hedzr/is/term/color"
@@ -84,35 +83,39 @@ func (colorizeToolS) wrapHighlightColor(text string) string { //nolint:unused
 }
 
 func (colorizeToolS) echoBgColor(out io.Writer, clr color.Color) {
-	if clr != clrNone {
-		// _, _ = fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
-		_, _ = out.Write([]byte("\x1b["))
-		_, _ = out.Write([]byte(strconv.Itoa(int(clr))))
-		_, _ = out.Write([]byte{'m'})
+	if clr != clrNone && clr != nil {
+		// // _, _ = fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
+		// _, _ = out.Write([]byte("\x1b["))
+		// _, _ = out.Write([]byte(strconv.Itoa(int(clr))))
+		// _, _ = out.Write([]byte{'m'})
+		clr.ColorTo(out)
 	}
 }
 
 func (colorizeToolS) echoColor(out io.Writer, clr color.Color) {
-	if clr != clrNone {
-		// _, _ = fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
-		_, _ = out.Write([]byte("\x1b["))
-		_, _ = out.Write([]byte(strconv.Itoa(int(clr))))
-		_, _ = out.Write([]byte{'m'})
+	if clr != clrNone && clr != nil {
+		// // _, _ = fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
+		// _, _ = out.Write([]byte("\x1b["))
+		// _, _ = out.Write([]byte(strconv.Itoa(int(clr))))
+		// _, _ = out.Write([]byte{'m'})
+		clr.ColorTo(out)
 	}
 }
 
 func (colorizeToolS) echoColorAndBg(out io.Writer, clr, bg color.Color) {
 	// _, _ = fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
 
-	if clr != clrNone {
-		_, _ = out.Write([]byte("\x1b["))
-		_, _ = out.Write([]byte(strconv.Itoa(int(clr))))
-		_, _ = out.Write([]byte{'m'})
+	if clr != clrNone && clr != nil {
+		// _, _ = out.Write([]byte("\x1b["))
+		// _, _ = out.Write([]byte(strconv.Itoa(int(clr))))
+		// _, _ = out.Write([]byte{'m'})
+		clr.ColorTo(out)
 	}
-	if bg != clrNone {
-		_, _ = out.Write([]byte("\x1b["))
-		_, _ = out.Write([]byte(strconv.Itoa(int(bg))))
-		_, _ = out.Write([]byte{'m'})
+	if bg != clrNone && bg != nil {
+		// _, _ = out.Write([]byte("\x1b["))
+		// _, _ = out.Write([]byte(strconv.Itoa(int(bg))))
+		// _, _ = out.Write([]byte{'m'})
+		bg.ColorTo(out)
 	}
 }
 
@@ -125,7 +128,7 @@ func (colorizeToolS) echoResetColor(out io.Writer) { //nolint:unused //no
 //
 
 func (colorizeToolS) translate(str string, initialColor ...color.Color) string {
-	clr := color.FgDefault
+	var clr color.Color = color.FgDefault
 	for _, c := range initialColor {
 		clr = c
 	}
