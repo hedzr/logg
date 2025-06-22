@@ -1,11 +1,13 @@
 # HISTORY / CHANGELOG
 
+- v0.8.31
+  - upgrade deps
+
 - v0.8.29
-  - fix/improve for dumping error object
   - upgrade deps
 
 - v0.8.27
-  - fix/improve for dumping error object
+  - fix possible new issues since color.Color is a interface now
   - upgrade deps
 
 - v0.8.26
