@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.8.37
+  - upgrade deps
+  - fix init.go - onDebugChanged & onTraceChanged
+
 - v0.8.35
   - upgrade deps
 
