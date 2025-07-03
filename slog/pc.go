@@ -1478,7 +1478,7 @@ func (s *PrintCtx) appendValue(val any) {
 		// }
 
 		// TODO remove usage to fmt.Sprintf
-		s.pcTryQuoteValue(fmt.Sprintf("{{%v}}", z))
+		s.pcTryQuoteValue(fmt.Sprintf("{{%+v}}", z))
 	}
 }
 
@@ -1919,10 +1919,10 @@ func itoaS[T Integers](s *PrintCtx, val T) {
 
 	if s.jsonMode {
 		// s.checkerr(s.WriteByte('"'))
-		itoasimple[T](s, val, 10)
+		itoasimple(s, val, 10)
 		// s.checkerr(s.WriteByte('"'))
 	} else {
-		itoasimple[T](s, val, 10)
+		itoasimple(s, val, 10)
 	}
 }
 
@@ -1937,10 +1937,10 @@ func utoaS[T Uintegers](s *PrintCtx, val T) {
 
 	if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
-		utoasimple[T](s, val, 10)
+		utoasimple(s, val, 10)
 		s.checkerr(s.WriteByte('"'))
 	} else {
-		utoasimple[T](s, val, 10)
+		utoasimple(s, val, 10)
 	}
 }
 
@@ -1955,10 +1955,10 @@ func ftoaS[T Floats](s *PrintCtx, val T) {
 
 	if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
-		ftoasimple[T](s, val, 'f', -1, 64)
+		ftoasimple(s, val, 'f', -1, 64)
 		s.checkerr(s.WriteByte('"'))
 	} else {
-		ftoasimple[T](s, val, 'f', -1, 64)
+		ftoasimple(s, val, 'f', -1, 64)
 	}
 }
 
@@ -1973,10 +1973,10 @@ func ctoaS[T Complexes](s *PrintCtx, val T) {
 
 	if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
-		ctoasimple[T](s, val, 'f', -1, 64)
+		ctoasimple(s, val, 'f', -1, 64)
 		s.checkerr(s.WriteByte('"'))
 	} else {
-		ctoasimple[T](s, val, 'f', -1, 64)
+		ctoasimple(s, val, 'f', -1, 64)
 	}
 }
 
