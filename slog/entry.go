@@ -796,7 +796,7 @@ func (s *Entry) Println(args ...any) {
 func (s *Entry) PanicContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, PanicLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, PanicLevel, pc, msg, args...)
+		s.logContext(ctx, PanicLevel, false, pc, msg, args...)
 	}
 }
 
@@ -804,7 +804,7 @@ func (s *Entry) PanicContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) FatalContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, FatalLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, FatalLevel, pc, msg, args...)
+		s.logContext(ctx, FatalLevel, false, pc, msg, args...)
 	}
 }
 
@@ -812,7 +812,7 @@ func (s *Entry) FatalContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) ErrorContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, ErrorLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, ErrorLevel, pc, msg, args...)
+		s.logContext(ctx, ErrorLevel, false, pc, msg, args...)
 	}
 }
 
@@ -820,7 +820,7 @@ func (s *Entry) ErrorContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) WarnContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, WarnLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, WarnLevel, pc, msg, args...)
+		s.logContext(ctx, WarnLevel, false, pc, msg, args...)
 	}
 }
 
@@ -828,7 +828,7 @@ func (s *Entry) WarnContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) InfoContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, InfoLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, InfoLevel, pc, msg, args...)
+		s.logContext(ctx, InfoLevel, false, pc, msg, args...)
 	}
 }
 
@@ -836,7 +836,7 @@ func (s *Entry) InfoContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) DebugContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, DebugLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, DebugLevel, pc, msg, args...)
+		s.logContext(ctx, DebugLevel, false, pc, msg, args...)
 	}
 }
 
@@ -844,46 +844,46 @@ func (s *Entry) DebugContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) TraceContext(ctx context.Context, msg string, args ...any) {
 	if s.EnabledContext(ctx, TraceLevel) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, TraceLevel, pc, msg, args...)
+		s.logContext(ctx, TraceLevel, false, pc, msg, args...)
 	}
 }
 
 // PrintContext implements Logger.
 func (s *Entry) PrintContext(ctx context.Context, msg string, args ...any) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(ctx, AlwaysLevel, pc, msg, args...)
+	s.logContext(ctx, AlwaysLevel, false, pc, msg, args...)
 	// panic("unimplemented")
 }
 
 // PrintlnContext implements Logger.
 func (s *Entry) PrintlnContext(ctx context.Context, msg string, args ...any) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(ctx, AlwaysLevel, pc, msg, args...)
+	s.logContext(ctx, AlwaysLevel, false, pc, msg, args...)
 }
 
 // OKContext implements Logger.
 func (s *Entry) OKContext(ctx context.Context, msg string, args ...any) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(ctx, OKLevel, pc, msg, args...)
+	s.logContext(ctx, OKLevel, false, pc, msg, args...)
 }
 
 // SuccessContext implements Logger.
 func (s *Entry) SuccessContext(ctx context.Context, msg string, args ...any) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(ctx, SuccessLevel, pc, msg, args...)
+	s.logContext(ctx, SuccessLevel, false, pc, msg, args...)
 }
 
 // FailContext implements Logger.
 func (s *Entry) FailContext(ctx context.Context, msg string, args ...any) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(ctx, FailLevel, pc, msg, args...)
+	s.logContext(ctx, FailLevel, false, pc, msg, args...)
 }
 
 // LogAttrs implements Logger.
 func (s *Entry) LogAttrs(ctx context.Context, level Level, msg string, args ...any) {
 	if s.EnabledContext(ctx, level) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, level, pc, msg, args...)
+		s.logContext(ctx, level, false, pc, msg, args...)
 	}
 }
 
@@ -891,7 +891,7 @@ func (s *Entry) LogAttrs(ctx context.Context, level Level, msg string, args ...a
 func (s *Entry) Logit(ctx context.Context, level Level, msg string, args ...any) {
 	if s.EnabledContext(ctx, level) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, level, pc, msg, args...)
+		s.logContext(ctx, level, false, pc, msg, args...)
 	}
 }
 
@@ -899,39 +899,124 @@ func (s *Entry) Log(ctx context.Context, level logslog.Level, msg string, args .
 	lvl := logsloglevel2Level(level)
 	if s.EnabledContext(ctx, lvl) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, lvl, pc, msg, args...)
+		s.logContext(ctx, lvl, false, pc, msg, args...)
 	}
 }
 
-func (s *Entry) Infof(format string, a ...interface{}) error {
-	lvl := InfoLevel
+func (s *Entry) Logf(ctx context.Context, level Level, msg string, args ...any) {
+	// lvl := logsloglevel2Level(level)
+	if s.EnabledContext(ctx, level) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, level, true, pc, msg, args...)
+	}
+}
+
+func (s *Entry) Panicf(format string, args ...any) error {
+	lvl := PanicLevel
 	ctx := context.Background()
-	msg := fmt.Sprintf(format, a...)
 	if s.EnabledContext(ctx, lvl) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, lvl, pc, msg)
+		s.logContext(ctx, lvl, true, pc, format, args...)
 	}
 	return nil
 }
 
-func (s *Entry) Warnf(format string, a ...interface{}) error {
-	lvl := WarnLevel
+func (s *Entry) Fatalf(format string, args ...any) error {
+	lvl := FatalLevel
 	ctx := context.Background()
-	msg := fmt.Sprintf(format, a...)
 	if s.EnabledContext(ctx, lvl) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, lvl, pc, msg)
+		s.logContext(ctx, lvl, true, pc, format, args...)
 	}
 	return nil
 }
 
-func (s *Entry) Errorf(format string, a ...interface{}) error {
+func (s *Entry) Errorf(format string, args ...any) error {
 	lvl := ErrorLevel
 	ctx := context.Background()
-	msg := fmt.Sprintf(format, a...)
 	if s.EnabledContext(ctx, lvl) {
 		pc := getpc(2, s.extraFrames)
-		s.logContext(ctx, lvl, pc, msg)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Warnf(format string, args ...any) error {
+	lvl := WarnLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Infof(format string, args ...any) error {
+	lvl := InfoLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Debugf(format string, args ...any) error {
+	lvl := DebugLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Tracef(format string, args ...any) error {
+	lvl := TraceLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Printf(format string, args ...any) error {
+	lvl := AlwaysLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) OKf(format string, args ...any) error {
+	lvl := OKLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Successf(format string, args ...any) error {
+	lvl := SuccessLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
+	}
+	return nil
+}
+
+func (s *Entry) Failf(format string, args ...any) error {
+	lvl := FailLevel
+	ctx := context.Background()
+	if s.EnabledContext(ctx, lvl) {
+		pc := getpc(2, s.extraFrames)
+		s.logContext(ctx, lvl, true, pc, format, args...)
 	}
 	return nil
 }
@@ -1003,7 +1088,7 @@ func (s *Entry) collectArgs(ctx context.Context, kvps *Attrs, roughSize int, lvl
 	// 	kvps = setUniqueKvp(keys, kvps, it.Key(), it.Value())
 	// }
 
-	return
+	// return
 }
 
 func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, kvps *Attrs) {
@@ -1046,7 +1131,7 @@ func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, kvps *
 	// } else {
 	*kvps = append(*kvps, e.attrs...)
 	// }
-	return
+	// return
 }
 
 func (s *Entry) SetContextKeys(keys ...any) *Entry {
@@ -1100,7 +1185,7 @@ func (s *Entry) fromCtx(ctx context.Context, kvps *Attrs) {
 		}
 	}
 	// }
-	return
+	// return
 }
 
 func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
@@ -1114,7 +1199,7 @@ func (s *Entry) print(ctx context.Context, lvl Level, timestamp time.Time, stack
 	s.printImpl(ctx, pc)
 
 	poolPrintCtx.Put(pc)
-	return
+	// return
 }
 
 func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
@@ -1163,7 +1248,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 	// s.printOut(pc.lvl, []byte(ret))
 	msg := pc.Bytes()
 	s.printOut(pc.lvl, msg)
-	return
+	// return
 }
 
 func (s *Entry) printTimestamp(pc *PrintCtx) {
@@ -1318,7 +1403,7 @@ func (s *Entry) log1(lvl Level, msg string, args ...any) {
 	ctx := context.Background()
 	if s.EnabledContext(ctx, lvl) {
 		stackFrame := getpc(3, s.extraFrames)
-		s.logContext(ctx, lvl, stackFrame, msg, args...)
+		s.logContext(ctx, lvl, false, stackFrame, msg, args...)
 	}
 }
 
@@ -1329,7 +1414,7 @@ func (s *Entry) log1(lvl Level, msg string, args ...any) {
 // 	}
 // }
 
-func (s *Entry) logContext(ctx context.Context, lvl Level, stackFrame uintptr, msg string, args ...any) {
+func (s *Entry) logContext(ctx context.Context, lvl Level, isformat bool, stackFrame uintptr, msg string, args ...any) {
 	if hh := s.handlerOpt; hh != nil {
 		level := convertLevelToLogSlog(lvl)
 		if hh.Enabled(ctx, level) {
@@ -1352,7 +1437,11 @@ func (s *Entry) logContext(ctx context.Context, lvl Level, stackFrame uintptr, m
 	// kvps = make(Attrs, 0, roughSize) // pre-allocate slice spaces roughly
 	// }
 
-	s.collectArgs(ctx, &kvps, roughSize, lvl, args...)
+	if isformat {
+		msg = fmt.Sprintf(msg, args...)
+	} else {
+		s.collectArgs(ctx, &kvps, roughSize, lvl, args...)
+	}
 
 	now := time.Now()
 	s.print(ctx, lvl, now, stackFrame, msg, kvps)

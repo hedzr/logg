@@ -15,8 +15,11 @@ type (
 
 		// Log(ctx context.Context, level Level, msg string, args ...any)
 
-		// Log to log/slog
-		Log(ctx context.Context, level stdlog.Level, msg string, args ...any)
+		// // Log to log/slog
+		// Log(ctx context.Context, level stdlog.Level, msg string, args ...any)
+
+		// // Logf provides Printf like api
+		// Logf(ctx context.Context, level Level, msg string, args ...any)
 
 		ExtraPrintersI
 	}
@@ -34,6 +37,14 @@ type (
 	// EntryI is a small and efficient tiny logger, which is the entity of real logger.
 	EntryI interface {
 		BasicLogger
+
+		// Log to log/slog
+		Log(ctx context.Context, level stdlog.Level, msg string, args ...any)
+
+		// Logf provides Printf like api
+		Logf(ctx context.Context, level Level, msg string, args ...any)
+
+		//
 
 		Close() // Closeable interface
 

@@ -88,12 +88,12 @@ func logctxctx(ctx context.Context, inc int, lvl Level, msg string, args ...any)
 	case *logimp:
 		if s.EnabledContext(ctx, lvl) {
 			pc := getpc(3+inc, s.extraFrames) // caller -> slog.Info -> logctx (this func)
-			s.logContext(ctx, lvl, pc, msg, args...)
+			s.logContext(ctx, lvl, false, pc, msg, args...)
 		}
 	case *Entry:
 		if s.EnabledContext(ctx, lvl) {
 			pc := getpc(3+inc, s.extraFrames) // caller -> slog.Info -> logctx (this func)
-			s.logContext(ctx, lvl, pc, msg, args...)
+			s.logContext(ctx, lvl, false, pc, msg, args...)
 		}
 	}
 }
@@ -257,7 +257,9 @@ func argsToAttrs(kvps *Attrs, args ...any) { //nolint:revive
 			key = ""
 		}
 	}
-	return
+
+	// return
+
 	// }
 	//
 	// for _, it := range args {
@@ -298,7 +300,8 @@ func argsToAttrs(kvps *Attrs, args ...any) { //nolint:revive
 	// 		key = ""
 	// 	}
 	// }
-	return
+
+	// return
 }
 
 // func setUniqueKvp(keysKnown map[string]bool, kvps *Attrs, key string, val any) {
