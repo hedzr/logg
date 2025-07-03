@@ -363,18 +363,18 @@ var mLevelUseErrorDevice = map[Level]bool{
 }
 
 var mLevelColors = map[Level][]color.Color{
-	PanicLevel:   {hiRed, clrNone},                    //
-	FatalLevel:   {hiRed, clrNone},                    //
-	ErrorLevel:   {red, clrNone},                      //
-	WarnLevel:    {yellow, clrNone},                   //
-	InfoLevel:    {cyan, clrNone},                     //
-	DebugLevel:   {color.FgMagenta, clrNone},          //
-	TraceLevel:   {yellow, color.BgDim},               //
-	OffLevel:     {color.FgBlack, color.BgDim},        // never used.
-	AlwaysLevel:  {lightGray, color.BgBlink},          // blink color relies on concrete terminal but it commonly takes no effect.
-	OKLevel:      {color.FgLightCyan, color.BgBlink},  //
-	SuccessLevel: {color.FgGreen, color.BgBlink},      //
-	FailLevel:    {color.FgRed, color.BgBoldOrBright}, //
+	PanicLevel:   {hiRed, clrNone},                     //
+	FatalLevel:   {hiRed, clrNone},                     //
+	ErrorLevel:   {red, clrNone},                       //
+	WarnLevel:    {yellow, clrNone},                    //
+	InfoLevel:    {cyan, clrNone},                      //
+	DebugLevel:   {color.FgMagenta, clrNone},           //
+	TraceLevel:   {yellow, color.BgDim},                //
+	OffLevel:     {color.FgBlack, color.BgDim},         // never used.
+	AlwaysLevel:  {lightGray, color.BgBlink},           // blink color relies on concrete terminal but it commonly takes no effect.
+	OKLevel:      {color.FgLightCyan, color.BgInverse}, //
+	SuccessLevel: {color.FgGreen, color.BgBlink},       //
+	FailLevel:    {color.FgRed, color.BgBoldOrBright},  //
 }
 
 var shortTagMap = map[int]map[Level]string{
