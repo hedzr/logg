@@ -18,6 +18,8 @@ func init() {
 			"gitlab.com":    "GL",
 			"gitee.com":     "GT",
 			"bitbucket.com": "BB",
+			"codeberg.org":  "CB",
+			"framagit.org":  "FR",
 		}
 
 		// for hardening your privacy,
@@ -42,16 +44,31 @@ func init() {
 			lvlCurrent = DebugLevel
 			RemoveFlags(Lprivacypathregexp) // disable tilde directory to make the logging msg clickable
 		}
+		is.Env().SetOnDevModeChanged(func(mod bool, level int) {
+			// if mod {
+			if lvlCurrent < InfoLevel {
+				lvlCurrent = InfoLevel
+				Debug("[logz][onDevModeChanged] dev-mode changed, set to InfoLevel", "mode", mod, "level", level, "log-level", lvlCurrent)
+			} else {
+				Debug("[logz][onDevModeChanged] dev-mode changed, no action", "mode", mod, "level", level, "log-level", lvlCurrent)
+			}
+			// }
+		})
 		is.SetOnDebugChanged(func(mod bool, level int) {
 			// if mod {
-			lvlCurrent = DebugLevel
-			Debug("[logz][onDebugChanged] debug mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+			if lvlCurrent < DebugLevel {
+				lvlCurrent = DebugLevel
+				Debug("[logz][onDebugChanged] debug mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+			}
 			// }
 		})
 		is.SetOnTraceChanged(func(mod bool, level int) {
 			// if mod {
-			lvlCurrent = TraceLevel
-			Trace("[logz][onTraceChanged] trace mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+			// Print("[logz][onTraceChanged]", "current", lvlCurrent, "new-trace-mode", mod)
+			if lvlCurrent < TraceLevel {
+				lvlCurrent = TraceLevel
+				Trace("[logz][onTraceChanged] trace mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+			}
 			// }
 		})
 
