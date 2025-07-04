@@ -1,5 +1,8 @@
 # HISTORY / CHANGELOG
 
+- v0.8.39
+  - upgrade deps
+
 - v0.8.38
   - added new method `Logf` to `EntryI interface`, and `Logger` modified
   - changed bg of `OKLevel` - from `BgBlink` to `BgInverse`
@@ -7,8 +10,6 @@
   - changed dump style to detailed mode for value
   - upgrade deps
 
-- v0.8.37
-  - upgrade deps
   - fix init.go - onDebugChanged & onTraceChanged
 
 - v0.8.35
