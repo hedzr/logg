@@ -27,14 +27,13 @@ func main() {
 	p := timing.New()
 	defer p.CalcNow()
 
-	// go func() {
-	// 	time.Sleep(3 * time.Second)
-	// 	cancel() // stop after 4s instead of waiting for 6s later.
-	// }()
+	go func() {
+		time.Sleep(5 * time.Second)
+		cancel() // stop after 5s instead of waiting for 10s later.
+	}()
 
-	is.SignalsEnh().WaitForSeconds(ctx, cancel, 6*time.Second,
-		// is.WithCatcherCloser(cancel),
-		is.WithCatcherMsg("Press CTRL-C to quit, or waiting for 6s..."),
+	is.SignalsEnh().WaitForSeconds(ctx, cancel, 10*time.Second,
+		is.WithCatcherMsg("Press CTRL-C to quit, or waiting for 10s..."),
 	)
 }
 
