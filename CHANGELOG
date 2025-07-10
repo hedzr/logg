@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.8.43
+  - upgrade deps
+    - is - fix sigusr1 in windows
+
 - v0.8.41
   - BREAK: change log styles to [Mode]: `ModeColorful`, `ModeJSON`, ...
     GOOD NEWS: your old codes have nothing to be updated.
