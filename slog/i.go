@@ -52,8 +52,13 @@ type (
 
 		Parent() *Entry                    // parent logger of a sub-logger
 		Root() *Entry                      // root logger (always is Default) of a sub-logger
-		Sublogger(name string) *Entry      // find a sublogger by name
 		Each(cb func(l *Entry, depth int)) // walk for all subloggers
+
+		// Sublogger return the matched sub-logger by name.
+		//
+		// A tip is, logz.Default().Sublogger("") will return
+		// default-logger as a *Entry object itself.
+		Sublogger(name string) *Entry // find a sublogger by name
 
 		// WithSkip create a new child logger with specified extra
 		// ignored stack frames, which will be plussed over the
