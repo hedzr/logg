@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/hedzr/is"
 	"github.com/hedzr/is/term"
 	"github.com/hedzr/is/term/color"
+	"github.com/hedzr/is/timing"
 
 	logz "github.com/hedzr/logg/slog"
 )
@@ -24,22 +24,18 @@ func main() {
 	testIs2(ctx)
 	testLogz(ctx)
 
-	catcher := is.Signals().Catch()
-	catcher.
-		WithPrompt("Press CTRL-C to quit...").
-		// WithOnLoopFunc(dbStarter, cacheStarter, mqStarter).
-		WithOnSignalCaught(func(ctx context.Context, sig os.Signal, wg *sync.WaitGroup) {
-			println()
-			slog.Info("signal caught", "sig", sig)
-			cancel() // cancel user's loop, see <-ctx.Done() in Wait(...)
-		}).
-		WaitFor(ctx, func(ctx context.Context, closer func()) {
-			slog.Debug("entering looper's loop...")
-			defer closer()
-			// to terminate this app after a while automatically:
-			time.Sleep(10 * time.Second)
-			<-ctx.Done() // waiting for main program stop
-		})
+	p := timing.New()
+	defer p.CalcNow()
+
+	// go func() {
+	// 	time.Sleep(3 * time.Second)
+	// 	cancel() // stop after 4s instead of waiting for 6s later.
+	// }()
+
+	is.SignalsEnh().WaitForSeconds(ctx, cancel, 6*time.Second,
+		// is.WithCatcherCloser(cancel),
+		is.WithCatcherMsg("Press CTRL-C to quit, or waiting for 6s..."),
+	)
 }
 
 func testIs(ctx context.Context) {
@@ -145,15 +141,27 @@ func testIs2(ctx context.Context) {
 }
 
 func testLogz(ctx context.Context) {
-	logz.SetLevel(logz.DebugLevel)
+	logz.SetLevel(logz.TraceLevel)
+
+	logz.Default().SetMode(logz.ModeColorful)
 
 	logz.InfoContext(ctx, "Hello, world!")
 
+	println("Colorful")
 	logz.InfoContext(ctx, "Hello", "target", "world")
-	logz.Default().SetColorMode(false)
+	println("Plain")
+	logz.Default().SetMode(logz.ModePlain)
 	logz.InfoContext(ctx, "Hello", "target", "world")
-	logz.Default().SetJSONMode(true)
+	println("Logfmt")
+	// logz.Default().SetColorMode(false)
+	logz.Default().SetMode(logz.ModeLogFmt)
 	logz.InfoContext(ctx, "Hello", "target", "world")
+	println("JSON")
+	// logz.Default().SetJSONMode(true)
+	logz.Default().SetMode(logz.ModeJSON)
+	logz.InfoContext(ctx, "Hello", "target", "world")
+
+	logz.Default().SetMode(logz.ModeColorful)
 
 	testLogzAdapter(ctx)
 
