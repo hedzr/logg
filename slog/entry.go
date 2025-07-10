@@ -306,7 +306,7 @@ func (s *Entry) SetColorMode(b ...bool) *Entry {
 	if mode {
 		s.mode = ModeColorful
 	} else {
-		s.mode = ModeJSON
+		s.mode = ModePlain
 	}
 	return s
 }
@@ -1239,8 +1239,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 
 	pc.Begin()
 
-	switch pc.mode {
-	case ModeColorful:
+	if pc.IsColorStyle() {
 		if aa, ok := mLevelColors[pc.lvl]; ok {
 			pc.clr = aa[0]
 			if len(aa) > 1 {
@@ -1252,8 +1251,7 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 		s.printLoggerName(pc)
 		s.printSeverity(pc)
 		s.printFirstLineOfMsg(pc)
-
-	default: // json or logfmt
+	} else { // json or logfmt
 		s.printTimestamp(pc)
 		s.printLoggerName(pc)
 		s.printSeverity(pc)
@@ -1298,19 +1296,18 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 }
 
 func (s *Entry) printTimestamp(pc *PrintCtx) {
-	switch s.mode {
-	case ModeJSON, ModeLogFmt:
-		pc.pcAppendStringKey(timestampFieldName)
-		pc.pcAppendColon()
-		// pc.pcAppendByte('"')
-		pc.appendTimestamp(pc.now)
-		pc.pcAppendComma()
-	default:
+	if pc.IsColorStyle() {
 		if pc.colorful {
 			ct.echoColor(pc, clrTimestamp)
 		}
 		pc.appendTimestamp(pc.now)
 		pc.pcAppendByte(' ')
+	} else {
+		pc.pcAppendStringKey(timestampFieldName)
+		pc.pcAppendColon()
+		// pc.pcAppendByte('"')
+		pc.appendTimestamp(pc.now)
+		pc.pcAppendComma()
 	}
 	// if pc.noColor { // json or logfmt
 	// 	pc.pcAppendStringKey(timestampFieldName)
@@ -1506,10 +1503,7 @@ func (s *Entry) printPC(pc *PrintCtx) {
 
 func (s *Entry) printMsg(pc *PrintCtx) {
 	switch s.mode {
-	case ModeJSON:
-		pc.AddString(messageFieldName, pc.msg)
-		// pc.pcAppendComma()
-	case ModeLogFmt:
+	case ModeJSON, ModeLogFmt:
 		pc.AddString(messageFieldName, pc.msg)
 		// pc.pcAppendComma()
 	default:
@@ -1531,11 +1525,19 @@ func (s *Entry) printFirstLineOfMsg(pc *PrintCtx) {
 	firstLine, pc.restLines, pc.eol = ct.splitFirstAndRestLines(pc.msg)
 	if minimalMessageWidth > 0 {
 		str := ct.rightPad(firstLine, " ", minimalMessageWidth)
-		str = ct.translate(str)
-		_, _ = pc.WriteString(ct.wrapColorAndBg(str, pc.clr, pc.bg))
+		if pc.colorful {
+			str = ct.translate(str)
+			_, _ = pc.WriteString(ct.wrapColorAndBg(str, pc.clr, pc.bg))
+		} else {
+			_, _ = pc.WriteString(str)
+		}
 	} else {
-		str := ct.translate(firstLine)
-		_, _ = pc.WriteString(ct.wrapColorAndBg(str, pc.clr, pc.bg))
+		if pc.colorful {
+			str := ct.translate(firstLine)
+			_, _ = pc.WriteString(ct.wrapColorAndBg(str, pc.clr, pc.bg))
+		} else {
+			_, _ = pc.WriteString(firstLine)
+		}
 	}
 	// pc.pcAppendByte(' ')
 	// pc.pcAppendByte('|')

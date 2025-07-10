@@ -76,6 +76,10 @@ type PrintCtx struct {
 	valueStringer ValueStringer
 }
 
+func (s *PrintCtx) IsColorStyle() bool    { return s.mode == ModeColorful || s.mode == ModePlain }
+func (s *PrintCtx) IsColorfulStyle() bool { return s.colorful && s.IsColorStyle() }
+func (s *PrintCtx) IsJSONStyle() bool     { return s.mode == ModeJSON || s.mode == ModeLogFmt }
+
 func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame) }
 
 func (s *PrintCtx) setentry(e *Entry) {
@@ -84,6 +88,9 @@ func (s *PrintCtx) setentry(e *Entry) {
 	s.colorful = !is.NoColorMode()
 
 	s.mode = e.mode
+	if s.mode == ModePlain {
+		s.colorful = false
+	}
 	// s.jsonMode = e.useJSON
 	// useColor := e.useColor
 	// if e.useJSON /* && useColor */ {
@@ -927,7 +934,7 @@ func (s *PrintCtx) pcAppendColon() {
 	switch s.mode {
 	case ModeJSON:
 		s.pcAppendByte(':')
-	case ModeLogFmt, ModeColorful:
+	default:
 		s.pcAppendByte('=')
 	}
 	// if s.jsonMode {
@@ -1496,7 +1503,7 @@ func (s *PrintCtx) appendError(err error) {
 		s.End(false)
 	case ModeLogFmt:
 		s.pcQuoteValue(txt)
-	case ModeColorful:
+	case ModeColorful, ModePlain:
 		ct.echoColor(s, clrError)
 		s.pcQuoteValue(txt)
 		ct.echoResetColor(s)
@@ -2149,7 +2156,7 @@ func (s *PrintCtx) appendTimestamp(z time.Time) {
 
 	// return tm.Format(layout)
 
-	if s.mode != ModeColorful {
+	if s.IsJSONStyle() {
 		// if s.jsonMode || s.noColor {
 		s.pcAppendByte('"')
 		s.buf = tm.AppendFormat(s.buf, layout)
