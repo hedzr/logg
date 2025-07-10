@@ -18,16 +18,15 @@ import (
 )
 
 func newentry(parent *Entry, args ...any) *Entry {
-	js, color, level := false, true, GetLevel()
+	mode, level := ModeColorful, GetLevel()
 	if parent != nil {
-		js, color, level = parent.useJSON, parent.useColor, parent.Level()
+		mode, level = parent.mode, parent.Level()
 	}
 
 	s := &Entry{
-		owner:    parent,
-		useColor: color,
-		useJSON:  js,
-		level:    level,
+		owner: parent,
+		mode:  mode,
+		level: level,
 	}
 
 	var todo []any
@@ -78,8 +77,9 @@ type Entry struct {
 	// msg string
 	// kvp map[string]any
 
-	useJSON       bool
-	useColor      bool
+	mode Mode
+	// useJSON       bool
+	// useColor      bool
 	timeLayout    string
 	modeUTC       int // non-set(0), local-time(1), and utc-time(2)
 	level         Level
@@ -213,13 +213,9 @@ func (s *Entry) String() string {
 	sb.WriteString(s.Level().String())
 	sb.WriteRune(',')
 	sb.WriteRune(' ')
-	if s.useJSON {
-		sb.WriteString("json")
-	} else if s.useColor {
-		sb.WriteString("colorful")
-	} else {
-		sb.WriteString("logfmt")
-	}
+	sb.WriteString(s.mode.String())
+	// sb.WriteRune(',')
+	// sb.WriteRune(' ')
 	if len(s.items) > 0 {
 		sb.WriteRune(',')
 		sb.WriteRune(' ')
@@ -242,8 +238,9 @@ func (s *Entry) String() string {
 //
 //
 
-func (s *Entry) JSONMode() bool  { return s.useJSON }
-func (s *Entry) ColorMode() bool { return s.useColor }
+func (s *Entry) Mode() Mode      { return s.mode }
+func (s *Entry) JSONMode() bool  { return s.mode == ModeJSON }
+func (s *Entry) ColorMode() bool { return s.mode == ModeColorful }
 
 func WithJSONMode(b ...bool) Opt {
 	return func(s *Entry) {
@@ -257,10 +254,15 @@ func (s *Entry) SetJSONMode(b ...bool) *Entry {
 		mode = bb
 	}
 
+	// // if mode {
+	// // 	s.useColor = false
+	// // }
+	// s.useJSON = mode
 	if mode {
-		s.useColor = false
+		s.mode = ModeJSON
+	} else {
+		s.mode = ModeColorful
 	}
-	s.useJSON = mode
 	return s
 }
 
@@ -268,6 +270,17 @@ func (s *Entry) WithJSONMode(b ...bool) *Entry {
 	child := s.newChildLogger()
 	child.SetJSONMode(b...)
 	return child
+}
+
+func WithMode(mode Mode) Opt {
+	return func(s *Entry) {
+		s.SetMode(mode)
+	}
+}
+
+func (s *Entry) SetMode(mode Mode) *Entry {
+	s.mode = mode
+	return s
 }
 
 func WithColorMode(b ...bool) Opt {
@@ -281,10 +294,15 @@ func (s *Entry) SetColorMode(b ...bool) *Entry {
 	for _, bb := range b {
 		mode = bb
 	}
-	// if mode {
-	s.useJSON = false
-	// }
-	s.useColor = mode
+	// // if mode {
+	// // 	s.useJSON = false
+	// // }
+	// s.useColor = mode
+	if mode {
+		s.mode = ModeColorful
+	} else {
+		s.mode = ModeJSON
+	}
 	return s
 }
 
@@ -1079,6 +1097,7 @@ func (s *Entry) collectArgs(ctx context.Context, kvps *Attrs, roughSize int, lvl
 	if len(args) > 0 {
 		argsToAttrs(kvps, args...)
 	}
+	_ = roughSize
 
 	// if key != "" {
 	// 	kvps = setUniqueKvp(keys, kvps, BADKEY, key)
@@ -1106,6 +1125,7 @@ func (s *Entry) walkParentAttrs(ctx context.Context, lvl Level, e *Entry, kvps *
 	if roughlen < 8 {
 		roughlen = 8
 	}
+	_ = roughlen
 
 	if IsAnyBitsSet(LattrsR) {
 		// lookup parents
@@ -1210,15 +1230,12 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 		s.printOut(pc.lvl, []byte{'\n'})
 		return
 	}
+	_ = ctx
 
 	pc.Begin()
 
-	if pc.noColor { // json or logfmt
-		s.printTimestamp(pc)
-		s.printLoggerName(pc)
-		s.printSeverity(pc)
-		s.printMsg(pc)
-	} else {
+	switch pc.mode {
+	case ModeColorful:
 		if aa, ok := mLevelColors[pc.lvl]; ok {
 			pc.clr = aa[0]
 			if len(aa) > 1 {
@@ -1230,7 +1247,31 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 		s.printLoggerName(pc)
 		s.printSeverity(pc)
 		s.printFirstLineOfMsg(pc)
+
+	default: // json or logfmt
+		s.printTimestamp(pc)
+		s.printLoggerName(pc)
+		s.printSeverity(pc)
+		s.printMsg(pc)
 	}
+	// if pc.noColor && !pc.colorful { // json or logfmt
+	// 	s.printTimestamp(pc)
+	// 	s.printLoggerName(pc)
+	// 	s.printSeverity(pc)
+	// 	s.printMsg(pc)
+	// } else {
+	// 	if aa, ok := mLevelColors[pc.lvl]; ok {
+	// 		pc.clr = aa[0]
+	// 		if len(aa) > 1 {
+	// 			pc.bg = aa[1]
+	// 		}
+	// 	}
+
+	// 	s.printTimestamp(pc)
+	// 	s.printLoggerName(pc)
+	// 	s.printSeverity(pc)
+	// 	s.printFirstLineOfMsg(pc)
+	// }
 
 	holdErrorValue := serializeAttrs(pc, pc.kvps)
 
@@ -1252,35 +1293,49 @@ func (s *Entry) printImpl(ctx context.Context, pc *PrintCtx) {
 }
 
 func (s *Entry) printTimestamp(pc *PrintCtx) {
-	if pc.noColor { // json or logfmt
+	switch s.mode {
+	case ModeJSON, ModeLogFmt:
 		pc.pcAppendStringKey(timestampFieldName)
 		pc.pcAppendColon()
 		// pc.pcAppendByte('"')
 		pc.appendTimestamp(pc.now)
 		pc.pcAppendComma()
-	} else {
+	default:
 		if pc.colorful {
 			ct.echoColor(pc, clrTimestamp)
 		}
 		pc.appendTimestamp(pc.now)
 		pc.pcAppendByte(' ')
 	}
+	// if pc.noColor { // json or logfmt
+	// 	pc.pcAppendStringKey(timestampFieldName)
+	// 	pc.pcAppendColon()
+	// 	// pc.pcAppendByte('"')
+	// 	pc.appendTimestamp(pc.now)
+	// 	pc.pcAppendComma()
+	// } else {
+	// 	if pc.colorful {
+	// 		ct.echoColor(pc, clrTimestamp)
+	// 	}
+	// 	pc.appendTimestamp(pc.now)
+	// 	pc.pcAppendByte(' ')
+	// }
 }
 
 func (s *Entry) printLoggerName(pc *PrintCtx) {
 	if s.name != "" {
-		if pc.noColor { // json or logfmt
-			if pc.jsonMode {
-				pc.pcAppendStringKey("logger")
-				pc.pcAppendColon()
-				pc.pcAppendByte('"')
-				pc.pcAppendStringValue(s.name)
-				pc.pcAppendByte('"')
-			} else {
-				pc.AddString("logger", s.name)
-			}
+		switch s.mode {
+		case ModeJSON:
+			pc.pcAppendStringKey("logger")
+			pc.pcAppendColon()
+			pc.pcAppendByte('"')
+			pc.pcAppendStringValue(s.name)
+			pc.pcAppendByte('"')
 			pc.pcAppendComma()
-		} else {
+		case ModeLogFmt:
+			pc.AddString("logger", s.name)
+			pc.pcAppendComma()
+		default:
 			if pc.colorful {
 				ct.wrapColorAndBgTo(pc, clrLoggerName, clrLoggerNameBg, s.name)
 			} else {
@@ -1288,11 +1343,31 @@ func (s *Entry) printLoggerName(pc *PrintCtx) {
 			}
 			pc.pcAppendByte(' ')
 		}
+		// if pc.noColor { // json or logfmt
+		// 	if pc.jsonMode {
+		// 		pc.pcAppendStringKey("logger")
+		// 		pc.pcAppendColon()
+		// 		pc.pcAppendByte('"')
+		// 		pc.pcAppendStringValue(s.name)
+		// 		pc.pcAppendByte('"')
+		// 	} else {
+		// 		pc.AddString("logger", s.name)
+		// 	}
+		// 	pc.pcAppendComma()
+		// } else {
+		// 	if pc.colorful {
+		// 		ct.wrapColorAndBgTo(pc, clrLoggerName, clrLoggerNameBg, s.name)
+		// 	} else {
+		// 		pc.pcAppendString(s.name)
+		// 	}
+		// 	pc.pcAppendByte(' ')
+		// }
 	}
 }
 
 func (s *Entry) printSeverity(pc *PrintCtx) {
-	if pc.noColor { // json or logfmt
+	switch s.mode {
+	case ModeJSON, ModeLogFmt:
 		pc.AddString(levelFieldName, pc.lvl.String())
 		// pc.pcAppendStringKey(levelFieldName)
 		// pc.pcAppendColon()
@@ -1300,7 +1375,7 @@ func (s *Entry) printSeverity(pc *PrintCtx) {
 		// pc.pcAppendStringValue(pc.lvl.String())
 		// pc.pcAppendByte('"')
 		pc.pcAppendComma()
-	} else {
+	default:
 		if pc.colorful {
 			ct.wrapColorAndBgTo(pc, pc.clr, pc.bg, ct.wrapRune(pc.lvl.ShortTag(levelOutputWidth), '[', ']'))
 		} else {
@@ -1308,14 +1383,31 @@ func (s *Entry) printSeverity(pc *PrintCtx) {
 		}
 		pc.pcAppendByte(' ')
 	}
+	// if pc.noColor { // json or logfmt
+	// 	pc.AddString(levelFieldName, pc.lvl.String())
+	// 	// pc.pcAppendStringKey(levelFieldName)
+	// 	// pc.pcAppendColon()
+	// 	// pc.pcAppendByte('"')
+	// 	// pc.pcAppendStringValue(pc.lvl.String())
+	// 	// pc.pcAppendByte('"')
+	// 	pc.pcAppendComma()
+	// } else {
+	// 	if pc.colorful {
+	// 		ct.wrapColorAndBgTo(pc, pc.clr, pc.bg, ct.wrapRune(pc.lvl.ShortTag(levelOutputWidth), '[', ']'))
+	// 	} else {
+	// 		pc.pcAppendString(ct.wrapRune(pc.lvl.ShortTag(levelOutputWidth), '[', ']'))
+	// 	}
+	// 	pc.pcAppendByte(' ')
+	// }
 }
 
 func (s *Entry) printPC(pc *PrintCtx) {
-	if pc.noColor {
+	switch s.mode {
+	case ModeJSON, ModeLogFmt:
 		pc.pcAppendComma()
 
 		source := pc.source()
-		if pc.jsonMode {
+		if s.mode == ModeJSON {
 			pc.pcAppendStringKey(callerFieldName)
 			pc.pcAppendColon()
 			pc.pcAppendByte('{')
@@ -1337,35 +1429,89 @@ func (s *Entry) printPC(pc *PrintCtx) {
 			pc.AddPrefixedString(callerFieldName, "function", source.Function)
 		}
 		// pc.pcAppendComma()
-		return
+	default:
+		source := pc.source()
+		pc.pcAppendByte(' ')
+		// pc.appendRune('(')
+		pc.pcAppendString(source.File)
+		pc.pcAppendByte(':')
+		pc.AppendInt(source.Line)
+		// pc.appendRune(')')
+		pc.pcAppendByte(' ')
+		// ct.wrapDimColorTo(pc.SB, source.checkedfuncname()) // clion p-term in run panel cannot support dim color.
+		if pc.colorful {
+			ct.wrapColorTo(pc, clrFuncName, checkedfuncname(source.Function))
+			ct.echoResetColor(pc)
+		} else {
+			pc.pcAppendString(checkedfuncname(source.Function))
+		}
 	}
+	// if pc.noColor {
+	// 	pc.pcAppendComma()
 
-	source := pc.source()
-	pc.pcAppendByte(' ')
-	// pc.appendRune('(')
-	pc.pcAppendString(source.File)
-	pc.pcAppendByte(':')
-	pc.AppendInt(source.Line)
-	// pc.appendRune(')')
-	pc.pcAppendByte(' ')
-	// ct.wrapDimColorTo(pc.SB, source.checkedfuncname()) // clion p-term in run panel cannot support dim color.
-	if pc.colorful {
-		ct.wrapColorTo(pc, clrFuncName, checkedfuncname(source.Function))
-		ct.echoResetColor(pc)
-	} else {
-		pc.pcAppendString(checkedfuncname(source.Function))
-	}
+	// 	source := pc.source()
+	// 	if pc.jsonMode {
+	// 		pc.pcAppendStringKey(callerFieldName)
+	// 		pc.pcAppendColon()
+	// 		pc.pcAppendByte('{')
+
+	// 		pc.AddString("file", source.File)
+	// 		pc.pcAppendComma()
+	// 		pc.AddInt("line", source.Line)
+	// 		pc.pcAppendComma()
+	// 		pc.AddString("function", source.Function)
+
+	// 		pc.pcAppendByte('}')
+	// 	} else {
+	// 		pc.AddPrefixedString(callerFieldName, "file", source.File)
+	// 		pc.pcAppendComma()
+
+	// 		pc.AddPrefixedInt(callerFieldName, "line", source.Line)
+	// 		pc.pcAppendComma()
+
+	// 		pc.AddPrefixedString(callerFieldName, "function", source.Function)
+	// 	}
+	// 	// pc.pcAppendComma()
+	// 	return
+	// }
+
+	// source := pc.source()
+	// pc.pcAppendByte(' ')
+	// // pc.appendRune('(')
+	// pc.pcAppendString(source.File)
+	// pc.pcAppendByte(':')
+	// pc.AppendInt(source.Line)
+	// // pc.appendRune(')')
+	// pc.pcAppendByte(' ')
+	// // ct.wrapDimColorTo(pc.SB, source.checkedfuncname()) // clion p-term in run panel cannot support dim color.
+	// if pc.colorful {
+	// 	ct.wrapColorTo(pc, clrFuncName, checkedfuncname(source.Function))
+	// 	ct.echoResetColor(pc)
+	// } else {
+	// 	pc.pcAppendString(checkedfuncname(source.Function))
+	// }
 }
 
 func (s *Entry) printMsg(pc *PrintCtx) {
-	if pc.noColor {
+	switch s.mode {
+	case ModeJSON:
 		pc.AddString(messageFieldName, pc.msg)
 		// pc.pcAppendComma()
-	} else {
+	case ModeLogFmt:
+		pc.AddString(messageFieldName, pc.msg)
+		// pc.pcAppendComma()
+	default:
 		pc.AddString(messageFieldName, ct.translate(pc.msg))
 		// pc.pcAppendByte(' ')
 	}
-	// NOTE: serializeAttrs() will supply a leading comma char.
+	// if pc.noColor {
+	// 	pc.AddString(messageFieldName, pc.msg)
+	// 	// pc.pcAppendComma()
+	// } else {
+	// 	pc.AddString(messageFieldName, ct.translate(pc.msg))
+	// 	// pc.pcAppendByte(' ')
+	// }
+	// // NOTE: serializeAttrs() will supply a leading comma char.
 }
 
 func (s *Entry) printFirstLineOfMsg(pc *PrintCtx) {
@@ -1384,19 +1530,36 @@ func (s *Entry) printFirstLineOfMsg(pc *PrintCtx) {
 }
 
 func (s *Entry) printRestLinesOfMsg(pc *PrintCtx) {
-	if !pc.noColor && pc.restLines != "" {
-		pc.pcAppendByte('\n')
-		pc.pcAppendString(ct.padFunc(pc.restLines, " ", 4, func(i int, line string) string {
-			if pc.colorful {
-				return ct.wrapColorAndBg(line, pc.clr, pc.bg)
-			} else {
-				return line
-			}
-		}))
-		if pc.eol {
+	switch s.mode {
+	case ModeJSON, ModeLogFmt:
+	default:
+		if pc.restLines != "" {
 			pc.pcAppendByte('\n')
+			pc.pcAppendString(ct.padFunc(pc.restLines, " ", 4, func(i int, line string) string {
+				if pc.colorful {
+					return ct.wrapColorAndBg(line, pc.clr, pc.bg)
+				} else {
+					return line
+				}
+			}))
+			if pc.eol {
+				pc.pcAppendByte('\n')
+			}
 		}
 	}
+	// if !pc.noColor && pc.restLines != "" {
+	// 	pc.pcAppendByte('\n')
+	// 	pc.pcAppendString(ct.padFunc(pc.restLines, " ", 4, func(i int, line string) string {
+	// 		if pc.colorful {
+	// 			return ct.wrapColorAndBg(line, pc.clr, pc.bg)
+	// 		} else {
+	// 			return line
+	// 		}
+	// 	}))
+	// 	if pc.eol {
+	// 		pc.pcAppendByte('\n')
+	// 	}
+	// }
 }
 
 func (s *Entry) log1(lvl Level, msg string, args ...any) {

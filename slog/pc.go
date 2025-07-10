@@ -36,7 +36,8 @@ func newPrintCtx() *PrintCtx {
 		dedupeAttrs: true,
 		clr:         clrBasic,
 		bg:          clrNone,
-		// noColor:     is.NoColorMode(),
+		mode:        ModeColorful,
+		// colorful:     is.NoColorMode(),
 	}
 }
 
@@ -46,9 +47,11 @@ type PrintCtx struct {
 	off      int    // read at &buf[off], write at &buf[len(buf)]
 	lastRead readOp // last read operation, so that Unread* can work correctly.
 
-	noQuoted    bool   // should quote the string values? default is YES
-	jsonMode    bool   // should print out the logging with JSON format? default is NO.
-	noColor     bool   // use ansi escape sequences in console/terminal? default is ON.
+	mode     Mode
+	colorful bool // cache is.NoColorMode() for each printImpl()
+	noQuoted bool // should quote the string values? default is YES
+	// jsonMode    bool   // should print out the logging with JSON format? default is NO.
+	// noColor     bool   // use ansi escape sequences in console/terminal? default is ON.
 	layout      string // time layout for formatting
 	utcTime     int    // non-set(0), local(1) or utc(2) time? default is local time mode.
 	dedupeAttrs bool   // remove dup attrs when printing
@@ -71,8 +74,6 @@ type PrintCtx struct {
 	// curdir string
 
 	valueStringer ValueStringer
-
-	colorful bool // cache is.NoColorMode() for each printImpl()
 }
 
 func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame) }
@@ -82,12 +83,13 @@ func (s *PrintCtx) setentry(e *Entry) {
 
 	s.colorful = !is.NoColorMode()
 
-	s.jsonMode = e.useJSON
-	useColor := e.useColor
-	if e.useJSON && useColor {
-		useColor = false
-	}
-	s.noColor = !useColor // || !s.colorful
+	s.mode = e.mode
+	// s.jsonMode = e.useJSON
+	// useColor := e.useColor
+	// if e.useJSON /* && useColor */ {
+	// 	useColor = false
+	// }
+	// s.noColor = !useColor // || !s.colorful
 
 	s.layout = e.timeLayout
 	s.utcTime = e.modeUTC
@@ -787,11 +789,17 @@ func (s *PrintCtx) AddPrefixedString(prefix, name string, value string) {
 	s.pcAppendStringKeyPrefixed(name, prefix)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
-	if s.noColor {
+	switch s.mode {
+	case ModeJSON, ModeLogFmt:
 		s.pcAppendQuotedStringValue(value)
-	} else {
+	default:
 		s.pcAppendString(value)
 	}
+	// if s.noColor {
+	// 	s.pcAppendQuotedStringValue(value)
+	// } else {
+	// 	s.pcAppendString(value)
+	// }
 }
 
 func (s *PrintCtx) AppendRune(value rune) {
@@ -854,15 +862,26 @@ func (s *PrintCtx) pcAppendRune(r rune) {
 
 func (s *PrintCtx) pcTryQuoteValue(val string) {
 	s.preCheck()
-	if s.noColor {
+	switch s.mode {
+	case ModeJSON, ModeLogFmt:
 		// return strconv.Quote(val)
 		s.appendQuotedString(val)
 		// s.pcAppendByte('"')
 		// s.appendEscapedJSONString(val)
 		// s.pcAppendByte('"')
-	} else {
+	default:
 		s.pcAppendStringValue(val)
 	}
+
+	// if s.noColor {
+	// 	// return strconv.Quote(val)
+	// 	s.appendQuotedString(val)
+	// 	// s.pcAppendByte('"')
+	// 	// s.appendEscapedJSONString(val)
+	// 	// s.pcAppendByte('"')
+	// } else {
+	// 	s.pcAppendStringValue(val)
+	// }
 }
 
 func (s *PrintCtx) pcQuoteValue(val string) {
@@ -874,19 +893,31 @@ func (s *PrintCtx) pcQuoteValue(val string) {
 
 func (s *PrintCtx) pcAppendColon() {
 	s.preCheck()
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.pcAppendByte(':')
-	} else {
+	case ModeLogFmt, ModeColorful:
 		s.pcAppendByte('=')
 	}
+	// if s.jsonMode {
+	// 	s.pcAppendByte(':')
+	// } else {
+	// 	s.pcAppendByte('=')
+	// }
 }
 
 func (s *PrintCtx) pcAppendComma() {
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.pcAppendByte(',')
-	} else {
+	case ModeLogFmt:
 		s.pcAppendByte(' ')
 	}
+	// if s.jsonMode {
+	// 	s.pcAppendByte(',')
+	// } else {
+	// 	s.pcAppendByte(' ')
+	// }
 }
 
 // AddComma shall be inserted at middle of two fields.
@@ -914,9 +945,14 @@ func (s *PrintCtx) AddComma() {
 //		return nil
 //	}
 func (s *PrintCtx) Begin() {
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.pcAppendByte('{')
+	default:
 	}
+	// if s.jsonMode {
+	// 	s.pcAppendByte('{')
+	// }
 }
 
 // End ends dumping an object and Begin begins it.
@@ -924,9 +960,14 @@ func (s *PrintCtx) Begin() {
 // Inserting AddComma between two fields.
 // Using BeginArray and EndArray to dump a slice.
 func (s *PrintCtx) End(newline bool) {
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.pcAppendByte('}')
+	default:
 	}
+	// if s.jsonMode {
+	// 	s.pcAppendByte('}')
+	// }
 	if newline {
 		s.pcAppendByte('\n')
 	}
@@ -951,16 +992,26 @@ func (s *PrintCtx) End(newline bool) {
 //		return err
 //	}
 func (s *PrintCtx) BeginArray() {
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.pcAppendByte('[')
+	default:
 	}
+	// if s.jsonMode {
+	// 	s.pcAppendByte('[')
+	// }
 }
 
 // EndArray ends dumping a slice and BeginArray begins it.
 func (s *PrintCtx) EndArray(newline bool) {
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.pcAppendByte(']')
+	default:
 	}
+	// if s.jsonMode {
+	// 	s.pcAppendByte(']')
+	// }
 	if newline {
 		s.pcAppendByte('\n')
 	}
@@ -1152,20 +1203,35 @@ func bsearch32(a []uint32, x uint32) int {
 // If a PrintCtx is in non json mode, the key shouldn't wrapped with quotes.
 func (s *PrintCtx) pcAppendStringKey(str string) {
 	s.preCheck()
-	if s.jsonMode {
+
+	switch s.mode {
+	case ModeJSON:
 		// s.WriteString(strconv.Quote(str))
 		// s.Grow(2 + len([]byte(str)))
 		s.checkerr(s.WriteByte('"'))
 		_, _ = s.WriteString(str)
 		s.checkerr(s.WriteByte('"'))
-	} else {
+	// case ModeLogFmt:
+	default:
 		_, _ = s.WriteString(str)
 	}
+
+	// if s.jsonMode {
+	// 	// s.WriteString(strconv.Quote(str))
+	// 	// s.Grow(2 + len([]byte(str)))
+	// 	s.checkerr(s.WriteByte('"'))
+	// 	_, _ = s.WriteString(str)
+	// 	s.checkerr(s.WriteByte('"'))
+	// } else {
+	// 	_, _ = s.WriteString(str)
+	// }
 }
 
 func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 	s.preCheck()
-	if s.jsonMode {
+
+	switch s.mode {
+	case ModeJSON:
 		// s.WriteString(strconv.Quote(str))
 		// s.Grow(2 + len([]byte(str)))
 		s.checkerr(s.WriteByte('"'))
@@ -1173,11 +1239,26 @@ func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
 		s.checkerr(s.WriteByte('.'))
 		_, _ = s.WriteString(str)
 		s.checkerr(s.WriteByte('"'))
-	} else {
+	// case ModeLogFmt:
+	default:
 		_, _ = s.WriteString(prefix)
 		s.checkerr(s.WriteByte('.'))
 		_, _ = s.WriteString(str)
 	}
+
+	// if s.jsonMode {
+	// 	// s.WriteString(strconv.Quote(str))
+	// 	// s.Grow(2 + len([]byte(str)))
+	// 	s.checkerr(s.WriteByte('"'))
+	// 	_, _ = s.WriteString(prefix)
+	// 	s.checkerr(s.WriteByte('.'))
+	// 	_, _ = s.WriteString(str)
+	// 	s.checkerr(s.WriteByte('"'))
+	// } else {
+	// 	_, _ = s.WriteString(prefix)
+	// 	s.checkerr(s.WriteByte('.'))
+	// 	_, _ = s.WriteString(str)
+	// }
 }
 
 // func (s *PrintCtx) appendRune(val rune) {
@@ -1207,67 +1288,131 @@ func (s *PrintCtx) getStackTrace(err error) (f *errorsv3.WithStackInfo, st error
 
 func (s *PrintCtx) appendErrorAfterPrinted(err error) {
 	if err != nil && (inTesting || isDebuggingOrBuild || isDebug()) {
-		if s.jsonMode {
+		switch s.mode {
+		case ModeJSON:
 			// the job has been done in appendValue() -> appendError, see the PrintCtx.
 			// tuning might be planned in the future.
-		} else if !inBenching {
-			// the following job must follow the normal line, so it can't be committed
-			// at PrintCtx.appendValue.
-			// if inTesting {
+		default:
+			if !inBenching {
+				// the following job must follow the normal line, so it can't be committed
+				// at PrintCtx.appendValue.
+				// if inTesting {
 
-			// var e3 errorsv3.Error
-			// if errorsv3.As(holded, &e3) {
-			if f, st := s.getStackTrace(err); st != nil {
-				s.pcAppendByte('\n')
+				// var e3 errorsv3.Error
+				// if errorsv3.As(holded, &e3) {
+				if f, st := s.getStackTrace(err); st != nil {
+					s.pcAppendByte('\n')
 
-				frame := st[0]
-				s.cachedSource.Extract(uintptr(frame))
-				s.pcAppendStringKey("       error: ")
-				if s.noColor {
-					s.pcAppendString(f.Error())
-				} else {
-					ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
+					frame := st[0]
+					s.cachedSource.Extract(uintptr(frame))
+					s.pcAppendStringKey("       error: ")
+					if s.colorful && s.mode == ModeColorful {
+						ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
+					} else {
+						s.pcAppendString(f.Error())
+					}
+					s.pcAppendByte('\n')
+					s.pcAppendStringKey("   file/line: ")
+					s.pcAppendString(s.cachedSource.File)
+					s.pcAppendRune(':')
+					s.AppendInt(s.cachedSource.Line)
+					s.pcAppendByte('\n')
+					s.pcAppendStringKey("    function: ")
+					if s.colorful && s.mode == ModeColorful {
+						ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+					} else {
+						s.pcAppendString(s.cachedSource.Function)
+					}
+					// s.pcAppendByte('\n')
+					// return
 				}
+				// }
+
+				// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
+
+				var stackInfo string
+				stackInfo = fmt.Sprintf("%+v", err)
+				// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
+				// 	stackInfo = fmt.Sprintf("%+v", err)
+				// } else {
+				// 	var x Stringer
+				// 	if x, ok = err.(Stringer); ok {
+				// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+				// 	} else {
+				// 		stackInfo = fmt.Sprintf("%v", err)
+				// 	}
+				// }
 				s.pcAppendByte('\n')
-				s.pcAppendStringKey("   file/line: ")
-				s.pcAppendString(s.cachedSource.File)
-				s.pcAppendRune(':')
-				s.AppendInt(s.cachedSource.Line)
-				s.pcAppendByte('\n')
-				s.pcAppendStringKey("    function: ")
-				if s.noColor {
-					s.pcAppendString(s.cachedSource.Function)
+				txt := ct.pad(stackInfo, "    ", 1)
+				if s.colorful && s.mode == ModeColorful {
+					ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
 				} else {
-					ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+					s.pcAppendString(txt)
 				}
-				// s.pcAppendByte('\n')
-				// return
-			}
-			// }
-
-			// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
-
-			var stackInfo string
-			stackInfo = fmt.Sprintf("%+v", err)
-			// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
-			// 	stackInfo = fmt.Sprintf("%+v", err)
-			// } else {
-			// 	var x Stringer
-			// 	if x, ok = err.(Stringer); ok {
-			// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
-			// 	} else {
-			// 		stackInfo = fmt.Sprintf("%v", err)
-			// 	}
-			// }
-			s.pcAppendByte('\n')
-			txt := ct.pad(stackInfo, "    ", 1)
-			if s.noColor {
-				s.pcAppendString(txt)
-			} else {
-				ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
 			}
 		}
+
+		// if s.jsonMode {
+		// 	// the job has been done in appendValue() -> appendError, see the PrintCtx.
+		// 	// tuning might be planned in the future.
+		// } else if !inBenching {
+		// 	// the following job must follow the normal line, so it can't be committed
+		// 	// at PrintCtx.appendValue.
+		// 	// if inTesting {
+
+		// 	// var e3 errorsv3.Error
+		// 	// if errorsv3.As(holded, &e3) {
+		// 	if f, st := s.getStackTrace(err); st != nil {
+		// 		s.pcAppendByte('\n')
+
+		// 		frame := st[0]
+		// 		s.cachedSource.Extract(uintptr(frame))
+		// 		s.pcAppendStringKey("       error: ")
+		// 		if s.noColor {
+		// 			s.pcAppendString(f.Error())
+		// 		} else {
+		// 			ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
+		// 		}
+		// 		s.pcAppendByte('\n')
+		// 		s.pcAppendStringKey("   file/line: ")
+		// 		s.pcAppendString(s.cachedSource.File)
+		// 		s.pcAppendRune(':')
+		// 		s.AppendInt(s.cachedSource.Line)
+		// 		s.pcAppendByte('\n')
+		// 		s.pcAppendStringKey("    function: ")
+		// 		if s.noColor {
+		// 			s.pcAppendString(s.cachedSource.Function)
+		// 		} else {
+		// 			ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+		// 		}
+		// 		// s.pcAppendByte('\n')
+		// 		// return
+		// 	}
+		// 	// }
+
+		// 	// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
+
+		// 	var stackInfo string
+		// 	stackInfo = fmt.Sprintf("%+v", err)
+		// 	// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
+		// 	// 	stackInfo = fmt.Sprintf("%+v", err)
+		// 	// } else {
+		// 	// 	var x Stringer
+		// 	// 	if x, ok = err.(Stringer); ok {
+		// 	// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+		// 	// 	} else {
+		// 	// 		stackInfo = fmt.Sprintf("%v", err)
+		// 	// 	}
+		// 	// }
+		// 	s.pcAppendByte('\n')
+		// 	txt := ct.pad(stackInfo, "    ", 1)
+		// 	if s.noColor {
+		// 		s.pcAppendString(txt)
+		// 	} else {
+		// 		ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
+		// 	}
 		// }
+		// // }
 	}
 }
 
@@ -1276,7 +1421,8 @@ func (s *PrintCtx) appendError(err error) {
 		return
 	}
 	txt := err.Error()
-	if s.jsonMode {
+	switch s.mode {
+	case ModeJSON:
 		s.Begin()
 		s.pcAppendStringKey("message")
 		s.pcAppendColon()
@@ -1309,13 +1455,55 @@ func (s *PrintCtx) appendError(err error) {
 		}
 		// }
 		s.End(false)
-	} else if s.noColor {
+	case ModeLogFmt:
 		s.pcQuoteValue(txt)
-	} else {
+	case ModeColorful:
 		ct.echoColor(s, clrError)
 		s.pcQuoteValue(txt)
 		ct.echoResetColor(s)
+	default:
 	}
+
+	// if s.jsonMode {
+	// 	s.Begin()
+	// 	s.pcAppendStringKey("message")
+	// 	s.pcAppendColon()
+	// 	s.pcQuoteValue(txt)
+	// 	// ee := errorsv3.New("")
+	// 	// var e3 errorsv3.Error
+	// 	// if errors.As(err, &e3) {
+	// 	if f, ok := err.(*errorsv3.WithStackInfo); ok {
+	// 		if st := f.StackTrace(); st != nil {
+	// 			s.pcAppendComma()
+	// 			s.pcAppendStringKey("trace")
+	// 			s.pcAppendColon()
+	//
+	// 			frame := st[0]
+	// 			s.cachedSource.Extract(uintptr(frame))
+	// 			s.Begin()
+	// 			s.pcAppendStringKey("file")
+	// 			s.pcAppendColon()
+	// 			s.pcAppendQuotedStringValue(s.cachedSource.File)
+	// 			s.pcAppendComma()
+	// 			s.pcAppendStringKey("line")
+	// 			s.pcAppendColon()
+	// 			s.AppendInt(s.cachedSource.Line)
+	// 			s.pcAppendComma()
+	// 			s.pcAppendStringKey("func")
+	// 			s.pcAppendColon()
+	// 			s.pcAppendQuotedStringValue(s.cachedSource.Function)
+	// 			s.End(false)
+	// 		}
+	// 	}
+	// 	// }
+	// 	s.End(false)
+	// } else if s.noColor {
+	// 	s.pcQuoteValue(txt)
+	// } else {
+	// 	ct.echoColor(s, clrError)
+	// 	s.pcQuoteValue(txt)
+	// 	ct.echoResetColor(s)
+	// }
 }
 
 func (s *PrintCtx) appendValue(val any) {
@@ -1442,7 +1630,8 @@ func (s *PrintCtx) appendValue(val any) {
 		ctoaS(s, z)
 
 	default:
-		if s.jsonMode {
+		switch s.mode {
+		case ModeJSON:
 			if m, ok := val.(interface{ MarshalJSON() ([]byte, error) }); ok {
 				data, err := m.MarshalJSON()
 				if err != nil {
@@ -1454,7 +1643,7 @@ func (s *PrintCtx) appendValue(val any) {
 			} else {
 				// json
 			}
-		} else {
+		default:
 			if m, ok := val.(encoding.TextMarshaler); ok {
 				data, err := m.MarshalText()
 				if err != nil {
@@ -1465,6 +1654,29 @@ func (s *PrintCtx) appendValue(val any) {
 				break
 			}
 		}
+		// if s.jsonMode {
+		// 	if m, ok := val.(interface{ MarshalJSON() ([]byte, error) }); ok {
+		// 		data, err := m.MarshalJSON()
+		// 		if err != nil {
+		// 			hintInternal(err, "MarshalJSON failed")
+		// 			break
+		// 		}
+		// 		s.pcAppendStringValue(string(data))
+		// 		break
+		// 	} else {
+		// 		// json
+		// 	}
+		// } else {
+		// 	if m, ok := val.(encoding.TextMarshaler); ok {
+		// 		data, err := m.MarshalText()
+		// 		if err != nil {
+		// 			hintInternal(err, "MarshalText failed")
+		// 			break
+		// 		}
+		// 		s.pcAppendStringValue(string(data))
+		// 		break
+		// 	}
+		// }
 
 		// var typ = reflect.TypeOf(z)
 		// if kind := typ.Kind(); kind == reflect.Slice {
@@ -1853,7 +2065,8 @@ func (s *PrintCtx) appendDurationSlice(z []time.Duration) {
 
 func (s *PrintCtx) appendTime(z time.Time) {
 	const layout = time.RFC3339Nano
-	if s.jsonMode || s.noColor {
+	if s.mode != ModeColorful {
+		// if s.jsonMode || s.noColor {
 		s.pcAppendByte('"')
 		s.buf = z.AppendFormat(s.buf, layout)
 		s.pcAppendByte('"')
@@ -1897,7 +2110,8 @@ func (s *PrintCtx) appendTimestamp(z time.Time) {
 
 	// return tm.Format(layout)
 
-	if s.jsonMode || s.noColor {
+	if s.mode != ModeColorful {
+		// if s.jsonMode || s.noColor {
 		s.pcAppendByte('"')
 		s.buf = tm.AppendFormat(s.buf, layout)
 		// t := tm.Format(layout)
@@ -1917,7 +2131,8 @@ func itoaS[T Integers](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.jsonMode {
+	if s.mode == ModeJSON {
+		// if s.jsonMode {
 		// s.checkerr(s.WriteByte('"'))
 		itoasimple(s, val, 10)
 		// s.checkerr(s.WriteByte('"'))
@@ -1935,7 +2150,8 @@ func utoaS[T Uintegers](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.jsonMode {
+	if s.mode == ModeJSON {
+		// if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
 		utoasimple(s, val, 10)
 		s.checkerr(s.WriteByte('"'))
@@ -1953,7 +2169,8 @@ func ftoaS[T Floats](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.jsonMode {
+	if s.mode == ModeJSON {
+		// if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
 		ftoasimple(s, val, 'f', -1, 64)
 		s.checkerr(s.WriteByte('"'))
@@ -1971,7 +2188,8 @@ func ctoaS[T Complexes](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.jsonMode {
+	if s.mode == ModeJSON {
+		// if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
 		ctoasimple(s, val, 'f', -1, 64)
 		s.checkerr(s.WriteByte('"'))

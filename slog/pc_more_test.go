@@ -52,12 +52,14 @@ func TestPrintCtx_pcAppendString(t *testing.T) {
 		t.Fatalf("pc is %q now, but expecting '()[]'", str)
 	}
 
+	pc.mode = ModeLogFmt
 	pc.pcAppendColon()
 	if str := pc.String(); str != "()[]=" {
 		t.Fatalf("pc is %q now, but expecting '()[]='", str)
 	}
 
-	pc.jsonMode = true
+	// pc.jsonMode = true
+	pc.mode = ModeJSON
 	pc.pcAppendColon()
 	if str := pc.String(); str != "()[]=:" {
 		t.Fatalf("pc is %q now, but expecting '()[]=:'", str)
@@ -70,8 +72,9 @@ func TestPrintCtx_pcTryQuoteValue(t *testing.T) {
 	var pc PrintCtx
 
 	t.Log("json mode")
-	pc.jsonMode = true
-	pc.noColor = true
+	pc.mode = ModeJSON
+	// pc.jsonMode = true
+	// pc.noColor = true
 	for _, c := range []struct{ src, expect string }{
 		{"msg", `"msg"`},
 		{`msg"pc"`, `"msg\"pc\""`},
@@ -84,8 +87,9 @@ func TestPrintCtx_pcTryQuoteValue(t *testing.T) {
 	}
 
 	t.Log("logfmt mode")
-	pc.jsonMode = false
-	pc.noColor = true
+	pc.mode = ModeLogFmt
+	// pc.jsonMode = false
+	// pc.noColor = true
 	for _, c := range []struct{ src, expect string }{
 		{"msg", `"msg"`},
 		{`msg"pc"`, `"msg\"pc\""`},
@@ -98,8 +102,9 @@ func TestPrintCtx_pcTryQuoteValue(t *testing.T) {
 	}
 
 	t.Log("color mode")
-	pc.jsonMode = false
-	pc.noColor = false
+	pc.mode = ModeColorful
+	// pc.jsonMode = false
+	// pc.noColor = false
 	for _, c := range []struct{ src, expect string }{
 		{"msg", `msg`},
 		{`msg"pc"`, `msg"pc"`},
@@ -115,35 +120,70 @@ func TestPrintCtx_pcTryQuoteValue(t *testing.T) {
 func TestPrintCtx_pcAppendStringValue(t *testing.T) {
 	var pc PrintCtx
 
-	for _, c := range []struct {
-		json, noColor bool
-		src, expect   string
+	for i, c := range []struct {
+		mode Mode
+		// json, noColor bool
+		src, expect string
 	}{
-		{true, false, "msg", `"msg"`},
-		{true, false, `msg"pc"`, `"msg\"pc\""`},
+		{ModeJSON, "msg", `"msg"`},
+		{ModeJSON, `msg"pc"`, `"msg\"pc\""`},
+		{ModeLogFmt, "msg", `"msg"`},
+		{ModeLogFmt, `msg"pc"`, `"msg\"pc\""`},
+		{ModeColorful, "msg", `"msg"`},
+		{ModeColorful, `msg"pc"`, `"msg\"pc\""`},
+		{ModeUndefined, "msg", `"msg"`},
+		{ModeUndefined, `msg"pc"`, `"msg\"pc\""`},
+		// {true, false, "msg", `"msg"`},
+		// {true, false, `msg"pc"`, `"msg\"pc\""`},
 	} {
-		pc.jsonMode, pc.noColor = c.json, c.noColor
+		// pc.jsonMode, pc.noColor = c.json, c.noColor
+		pc.mode = c.mode
 		pc.pcAppendQuotedStringValue(c.src)
 		if str := pc.String(); str != c.expect {
-			t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
+			t.Fatalf("#%5d. pc is %q now, but expecting %q", i, str, c.expect)
 		}
 		pc.Reset()
 	}
 
-	for _, c := range []struct {
-		json, noColor bool
-		src, expect   string
+	for i, c := range []struct {
+		mode Mode
+		// json, noColor bool
+		src, expect string
 	}{
-		{true, false, "msg", `msg`},
-		{true, false, `msg"pc"`, `msg"pc"`},
+		{ModeJSON, "msg", `msg`},
+		{ModeJSON, `msg"pc"`, `msg"pc"`},
+		{ModeLogFmt, "msg", `msg`},
+		{ModeLogFmt, `msg"pc"`, `msg"pc"`},
+		{ModeColorful, "msg", `msg`},
+		{ModeColorful, `msg"pc"`, `msg"pc"`},
+		{ModeUndefined, "msg", `msg`},
+		{ModeUndefined, `msg"pc"`, `msg"pc"`},
+		// {true, false, "msg", `"msg"`},
+		// {true, false, `msg"pc"`, `"msg\"pc\""`},
 	} {
-		pc.jsonMode, pc.noColor = c.json, c.noColor
+		// pc.jsonMode, pc.noColor = c.json, c.noColor
+		pc.mode = c.mode
 		pc.pcAppendStringValue(c.src)
 		if str := pc.String(); str != c.expect {
-			t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
+			t.Fatalf(">%5d. pc is %q now, but expecting %q", i, str, c.expect)
 		}
 		pc.Reset()
 	}
+
+	// for _, c := range []struct {
+	// 	json, noColor bool
+	// 	src, expect   string
+	// }{
+	// 	{true, false, "msg", `msg`},
+	// 	{true, false, `msg"pc"`, `msg"pc"`},
+	// } {
+	// 	pc.jsonMode, pc.noColor = c.json, c.noColor
+	// 	pc.pcAppendStringValue(c.src)
+	// 	if str := pc.String(); str != c.expect {
+	// 		t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
+	// 	}
+	// 	pc.Reset()
+	// }
 }
 
 func TestPrintCtx_appendDuration(t *testing.T) {
@@ -197,6 +237,7 @@ func TestPrintCtx_appendTime(t *testing.T) {
 		{times.MustSmartParseTime("2000-1-1 3:0:59.001059"), `2000-01-01T03:00:59.001059Z`},
 		{times.MustSmartParseTime("2023-11-01 3:0:59.001059"), `2023-11-01T03:00:59.001059Z`},
 	} {
+		pc.mode = ModeColorful
 		pc.appendTime(c.src.UTC())
 		if str := pc.String(); str != c.expect {
 			t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
@@ -210,8 +251,9 @@ func TestPrintCtx_appendTimestamp(t *testing.T) {
 
 	defer SaveFlagsAndMod(Lempty, Ldatetimeflags|LlocalTime)() //nolint:revive // ok
 
-	pc.jsonMode = true
-	pc.noColor = false
+	pc.mode = ModeJSON
+	// pc.jsonMode = true
+	// pc.noColor = false
 	for _, c := range []struct {
 		src    time.Time
 		expect string
@@ -226,8 +268,9 @@ func TestPrintCtx_appendTimestamp(t *testing.T) {
 		pc.Reset()
 	}
 
-	pc.jsonMode = false
-	pc.noColor = false
+	pc.mode = ModeColorful
+	// pc.jsonMode = false
+	// pc.noColor = false
 	for _, c := range []struct {
 		src    time.Time
 		expect string
@@ -282,6 +325,7 @@ func TestUtoaS(t *testing.T) {
 		{123, `123`},
 		{18446744073709551615, `18446744073709551615`},
 	} {
+		pc.mode = ModeColorful
 		utoaS(&pc, c.src)
 		if str := pc.String(); str != c.expect {
 			t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
@@ -305,6 +349,7 @@ func TestFtoaS(t *testing.T) {
 		{1280.00001357, `1280.00001357`},
 		{-1280.00001357, `-1280.00001357`},
 	} {
+		pc.mode = ModeColorful
 		ftoaS(&pc, c.src)
 		if str := pc.String(); str != c.expect {
 			t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
@@ -328,6 +373,7 @@ func TestCtoaS(t *testing.T) {
 		{0.00001357i, `(0+0.00001357i)`},
 		{-0.00001357i, `(0-0.00001357i)`},
 	} {
+		pc.mode = ModeColorful
 		ctoaS(&pc, c.src)
 		if str := pc.String(); str != c.expect {
 			t.Fatalf("pc is %q now, but expecting %q", str, c.expect)
@@ -421,9 +467,9 @@ func TestAddXXX(t *testing.T) {
 	subTest(t, &pc)
 
 	l = newentry(nil, WithColorMode(true), WithJSONMode(true))
-	l.useColor = true
+	// l.useColor = true
 	pc.setentry(l)
-	pc.noColor = false
+	// pc.noColor = false
 	pc.AddPrefixedString("pre-", "want", "vn")
 	pc.AddPrefixedInt("pre-", "want", 92)
 	pc.appendValue(nil)

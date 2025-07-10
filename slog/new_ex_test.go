@@ -16,10 +16,15 @@ func TestNewSubLoggers(t *testing.T) {
 	_, _, _, _ = logger1, logger2, logger3, logger4
 
 	logger5 := slog.New("detached-logger")
+	_ = logger5
 	logger5 = slog.New("name", slog.WithAttrs(fakeLoggFields()...))
+	_ = logger5
 	logger5 = slog.New("name", slog.NewAttr("attr1", v1))
+	_ = logger5
 	logger5 = slog.New("name", slog.Group("group1", slog.Int("attr1", _tenInts[0])))
+	_ = logger5
 	logger5 = slog.New("name", "attr1", v1, "attr2", v2).SetAttrs(fakeLoggFields()...)
+	_ = logger5
 	logger5 = slog.New(slog.Int("attr1", _tenInts[0]))
 	_ = logger5
 

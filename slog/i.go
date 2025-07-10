@@ -92,6 +92,7 @@ type (
 		WithAttrs1(attrs Attrs) *Entry          //
 		With(args ...any) *Entry                // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
 
+		SetMode(mode Mode) *Entry              // set working [Mode]
 		SetJSONMode(b ...bool) *Entry          // entering JSON mode, the output are json format
 		SetColorMode(b ...bool) *Entry         // entering Colorful mode for the modern terminal. false means using logfmt format.
 		SetUTCMode(b ...bool) *Entry           // default is local mode, true will switch to UTC mode

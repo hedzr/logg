@@ -67,8 +67,12 @@ func (s *gkvp) Add(as ...Attr) {
 // }
 
 func (s *gkvp) SerializeValueTo(pc *PrintCtx) {
-	if pc.jsonMode {
-		if pc.noColor {
+	switch pc.mode {
+	case ModeJSON:
+		pc.pcAppendStringKey(s.key)
+		pc.pcAppendByte(':')
+	case ModeLogFmt:
+		if pc.colorful {
 			pc.pcAppendStringKey(s.key)
 			pc.pcAppendByte(':')
 		} else {
@@ -77,6 +81,17 @@ func (s *gkvp) SerializeValueTo(pc *PrintCtx) {
 			ct.echoColorAndBg(pc, pc.clr, pc.bg)
 		}
 	}
+	// if pc.jsonMode {
+	// 	if pc.noColor {
+	// 		pc.pcAppendStringKey(s.key)
+	// 		pc.pcAppendByte(':')
+	// 	} else {
+	// 		ct.wrapDimColorTo(pc, s.key)
+	// 		pc.pcAppendByte(':')
+	// 		ct.echoColorAndBg(pc, pc.clr, pc.bg)
+	// 	}
+	// }
+
 	// if sb.jsonMode {
 	// 	sb.appendRune('{')
 	// }
@@ -165,13 +180,13 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 			continue
 		}
 
-		if pc.noColor {
-			pc.pcAppendComma()
-		} else {
+		if pc.IsColorfulStyle() {
 			pc.pcAppendByte(' ')
 			if pc.colorful {
 				ct.echoColorAndBg(pc, pc.clr, pc.bg)
 			}
+		} else {
+			pc.pcAppendComma()
 		}
 
 		if !inGroupedMode {
@@ -179,30 +194,25 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 		}
 
 		key := v.Key()
-		if inGroupedMode && !pc.jsonMode && pc.valueStringer == nil {
+		if inGroupedMode && pc.mode != ModeJSON && pc.valueStringer == nil {
 			key = strings.DotPrefix(key, prefix)
 		} else {
-			if inGroupedMode && !pc.jsonMode && pc.valueStringer == nil {
+			if inGroupedMode && pc.mode != ModeJSON && pc.valueStringer == nil {
 				panic("impossible condition matched: inGroupedMode && !pc.jsonMode")
 				// if inGroupedMode && !pc.jsonMode {
 				// 	key = DotPrefix(key, prefix)
 				// }
 			}
-			if !pc.jsonMode {
+			if pc.mode != ModeJSON {
 				key = strings.DotPrefix(key, prefix)
 			}
-			if pc.noColor {
+			if pc.IsColorfulStyle() {
+				ct.echoColorAndBg(pc, clrAttrKey, clrAttrKeyBg)
 				pc.pcAppendStringKey(key)
+				ct.echoColorAndBg(pc, pc.clr, pc.bg)
 			} else {
-				if pc.colorful {
-					ct.echoColorAndBg(pc, clrAttrKey, clrAttrKeyBg)
-					pc.pcAppendStringKey(key)
-					ct.echoColorAndBg(pc, pc.clr, pc.bg)
-				} else {
-					pc.pcAppendStringKey(key)
-				}
+				pc.pcAppendStringKey(key)
 			}
-
 			pc.pcAppendColon()
 		}
 
@@ -234,10 +244,8 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 		pc.prefix = prefix
 	}
 
-	if !pc.noColor {
-		if pc.colorful {
-			ct.echoResetColor(pc)
-		}
+	if pc.colorful {
+		ct.echoResetColor(pc)
 	}
 	return
 }

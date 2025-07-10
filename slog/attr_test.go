@@ -71,15 +71,18 @@ func TestGkvp_SetValue(t *testing.T) {
 	// json mode
 	testBytes = testBytes[:0]
 	pc = NewPrintCtx(testBytes)
-	pc.jsonMode = true
+	// pc.jsonMode = true
+	pc.mode = ModeJSON
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 
 	// and no color
 	testBytes = testBytes[:0]
 	pc = NewPrintCtx(testBytes)
-	pc.jsonMode = true
-	pc.noColor = true
+	// pc.jsonMode = true
+	// pc.noColor = true
+	pc.mode = ModeLogFmt
+	pc.colorful = false
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 }
