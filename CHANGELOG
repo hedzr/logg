@@ -1,5 +1,13 @@
 # HISTORY / CHANGELOG
 
+- v0.8.41
+  - BREAK: change log styles to [Mode]: `ModeColorful`, `ModeJSON`, ...
+    GOOD NEWS: your old codes have nothing to be updated.
+  - improved example apps
+  - align sub-logger name field in non-JSON styles
+  - upgrade deps
+  - security patch
+
 - v0.8.39
   - upgrade deps
 
