@@ -400,6 +400,18 @@ func (s *PrintCtx) WriteByte(c byte) error {
 	return nil
 }
 
+func (s *PrintCtx) WriteBytes(c byte, times int) error {
+	s.lastRead = opInvalid
+	m, ok := s.tryGrowByReslice(times)
+	if !ok {
+		m = s.grow(times)
+	}
+	for i := m; i < m+times; i++ {
+		s.buf[i] = c
+	}
+	return nil
+}
+
 // WriteRune appends the UTF-8 encoding of Unicode code point r to the
 // buffer, returning its length and an error, which is always nil but is
 // included to match bufio.Writer's WriteRune. The buffer is grown as needed;
@@ -416,6 +428,25 @@ func (s *PrintCtx) WriteRune(r rune) (n int, err error) {
 		m = s.grow(utf8.UTFMax)
 	}
 	s.buf = utf8.AppendRune(s.buf[:m], r)
+	return len(s.buf) - m, nil
+
+	// s.buf= append(s.buf, []byte(r)...)
+}
+
+func (s *PrintCtx) WriteRunes(r rune, times int) (n int, err error) {
+	// Compare as uint32 to correctly handle negative runes.
+	if uint32(r) < utf8.RuneSelf {
+		s.WriteBytes(byte(r), times)
+		return times, nil
+	}
+	s.lastRead = opInvalid
+	m, ok := s.tryGrowByReslice(utf8.UTFMax * times)
+	if !ok {
+		m = s.grow(utf8.UTFMax * times)
+	}
+	for i := 0; i < times; i++ {
+		s.buf = utf8.AppendRune(s.buf[:m], r)
+	}
 	return len(s.buf) - m, nil
 
 	// s.buf= append(s.buf, []byte(r)...)
@@ -1020,6 +1051,14 @@ func (s *PrintCtx) EndArray(newline bool) {
 func (s *PrintCtx) pcAppendString(str string) {
 	s.preCheck()
 	_, err := s.WriteString(str)
+	if err != nil {
+		hintInternal(err, "PrintCtx.pcAppendString failed")
+	}
+}
+
+func (s *PrintCtx) pcAppendRunes(r rune, times int) {
+	s.preCheck()
+	_, err := s.WriteRunes(r, times)
 	if err != nil {
 		hintInternal(err, "PrintCtx.pcAppendString failed")
 	}

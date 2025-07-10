@@ -62,6 +62,9 @@ func newentry(parent *Entry, args ...any) *Entry {
 			s.name = stringtool.RandomStringPure(6)
 		}
 	}
+	if l, lnw := len(s.name), int(atomic.LoadInt32(&longestNameWidth)); l > lnw {
+		atomic.StoreInt32(&longestNameWidth, int32(l))
+	}
 	return s
 }
 
@@ -103,6 +106,8 @@ type Entry struct {
 //
 //	logger := slog.New("my-app")
 func (s *Entry) New(args ...any) *Entry { return s.newChildLogger(args...) }
+
+var longestNameWidth int32
 
 func (s *Entry) newChildLogger(args ...any) *Entry {
 	if s.items == nil {
@@ -1336,6 +1341,10 @@ func (s *Entry) printLoggerName(pc *PrintCtx) {
 			pc.AddString("logger", s.name)
 			pc.pcAppendComma()
 		default:
+			l, lnw := len(s.name), int(atomic.LoadInt32(&longestNameWidth))
+			if r := lnw - l; r > 0 {
+				pc.pcAppendRunes(' ', r)
+			}
 			if pc.colorful {
 				ct.wrapColorAndBgTo(pc, clrLoggerName, clrLoggerNameBg, s.name)
 			} else {
@@ -1362,6 +1371,9 @@ func (s *Entry) printLoggerName(pc *PrintCtx) {
 		// 	}
 		// 	pc.pcAppendByte(' ')
 		// }
+	} else {
+		lnw := int(atomic.LoadInt32(&longestNameWidth))
+		pc.pcAppendRunes(' ', lnw+1)
 	}
 }
 
