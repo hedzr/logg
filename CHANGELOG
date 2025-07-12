@@ -1,5 +1,10 @@
 # HISTORY / CHANGELOG
 
+- v0.8.45
+  - security patch
+  - upgrade deps
+    - is - link states mode & level, eg, set quiet level to 0 and quiet mode will also be set to false
+
 - v0.8.43
   - upgrade deps
     - is - fix sigusr1 in windows
