@@ -351,6 +351,12 @@ var mLevelIsEnabledAs = map[Level]Level{
 	FailLevel:    ErrorLevel,
 }
 
+func GetUseErrorDeviceByLevel(level Level) (useErrorDeviceAsOutput bool) {
+	state, ok := mLevelUseErrorDevice[level]
+	useErrorDeviceAsOutput = ok && state
+	return
+}
+
 // mLevelUseErrorDevice maps Level to boolean flag which decides
 // if the contents of that level will be written to error device
 // or not.
@@ -360,6 +366,13 @@ var mLevelUseErrorDevice = map[Level]bool{
 	ErrorLevel: true,
 	WarnLevel:  true,
 	FailLevel:  true,
+}
+
+func GetColorTableByLevel(level Level) (colors []color.Color) {
+	if c, ok := mLevelColors[level]; ok {
+		colors = c
+	}
+	return
 }
 
 var mLevelColors = map[Level][]color.Color{
