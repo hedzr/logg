@@ -88,7 +88,7 @@ func fillBytes(t *testing.T, testname string, buf *PrintCtx, s string, n int, fu
 }
 
 func TestNewBuffer(t *testing.T) {
-	buf := NewPrintCtx(testBytes)
+	buf := NewPrintCtxBytes(testBytes)
 	check(t, "NewBuffer", buf, testString)
 }
 
@@ -229,7 +229,7 @@ func TestMixedReadsAndWrites(t *testing.T) {
 }
 
 func TestCapWithPreallocatedSlice(t *testing.T) {
-	buf := NewPrintCtx(make([]byte, 10))
+	buf := NewPrintCtxBytes(make([]byte, 10))
 	n := buf.Cap()
 	if n != 10 {
 		t.Errorf("expected 10, got %d", n)
@@ -237,7 +237,7 @@ func TestCapWithPreallocatedSlice(t *testing.T) {
 }
 
 func TestCapWithSliceAndWrittenData(t *testing.T) {
-	buf := NewPrintCtx(make([]byte, 0, 10))
+	buf := NewPrintCtxBytes(make([]byte, 0, 10))
 	buf.Write([]byte("test"))
 	n := buf.Cap()
 	if n != 10 {
@@ -434,7 +434,7 @@ func TestNext(t *testing.T) {
 				// Check that if we start with a buffer
 				// of length j at offset i and ask for
 				// Next(k), we get the right bytes.
-				buf := NewPrintCtx(b[0:j])
+				buf := NewPrintCtxBytes(b[0:j])
 				n, _ := buf.Read(tmp[0:i])
 				if n != i {
 					t.Fatalf("Read %d returned %d", i, n)
@@ -519,7 +519,7 @@ func BenchmarkReadString(b *testing.B) {
 	data[n-1] = 'x'
 	b.SetBytes(int64(n))
 	for i := 0; i < b.N; i++ {
-		buf := NewPrintCtx(data)
+		buf := NewPrintCtxBytes(data)
 		_, err := buf.ReadString('x')
 		if err != nil {
 			b.Fatal(err)
@@ -535,7 +535,7 @@ func TestGrow(t *testing.T) {
 		for _, startLen := range []int{0, 100, 1000, 10000, 100000} {
 			xBytes := bytes.Repeat(x, startLen)
 
-			buf := NewPrintCtx(xBytes)
+			buf := NewPrintCtxBytes(xBytes)
 			// If we read, this affects buf.off, which is good to test.
 			readBytes, _ := buf.Read(tmp)
 			yBytes := bytes.Repeat(y, growLen)
@@ -565,7 +565,7 @@ func TestGrowOverflow(t *testing.T) {
 		}
 	}()
 
-	buf := NewPrintCtx(make([]byte, 1))
+	buf := NewPrintCtxBytes(make([]byte, 1))
 	const maxInt = int(^uint(0) >> 1)
 	buf.Grow(maxInt)
 }
@@ -648,7 +648,7 @@ func TestBufferGrowth(t *testing.T) {
 func BenchmarkWriteByte(b *testing.B) {
 	const n = 4 << 10
 	b.SetBytes(n)
-	buf := NewPrintCtx(make([]byte, n))
+	buf := NewPrintCtxBytes(make([]byte, n))
 	for i := 0; i < b.N; i++ {
 		buf.Reset()
 		for i := 0; i < n; i++ {
@@ -661,7 +661,7 @@ func BenchmarkWriteRune(b *testing.B) {
 	const n = 4 << 10
 	const r = '☺'
 	b.SetBytes(int64(n * utf8.RuneLen(r)))
-	buf := NewPrintCtx(make([]byte, n*utf8.UTFMax))
+	buf := NewPrintCtxBytes(make([]byte, n*utf8.UTFMax))
 	for i := 0; i < b.N; i++ {
 		buf.Reset()
 		for i := 0; i < n; i++ {

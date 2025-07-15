@@ -24,8 +24,8 @@ func (s *kvp) Value() any     { return s.val }
 func (s *kvp) SetValue(v any) { s.val = v }
 
 func (s *kvp) SerializeValueTo(pc *PrintCtx) {
-	pc.pcAppendStringKey(s.key)
-	pc.pcAppendByte('=')
+	pc.AppendStringKey(s.key)
+	pc.AppendByte('=')
 
 	pc.prefix = ""
 	pc.inGroupedMode = false
@@ -67,20 +67,21 @@ func (s *gkvp) Add(as ...Attr) {
 // }
 
 func (s *gkvp) SerializeValueTo(pc *PrintCtx) {
-	switch pc.mode {
+	switch pc.mode1 {
 	case ModeJSON:
-		pc.pcAppendStringKey(s.key)
-		pc.pcAppendByte(':')
+		pc.AppendStringKey(s.key)
+		pc.AppendByte(':')
 	case ModeLogFmt:
-		if pc.colorful {
-			pc.pcAppendStringKey(s.key)
-			pc.pcAppendByte(':')
+		if pc.Colorful() {
+			pc.AppendStringKey(s.key)
+			pc.AppendByte(':')
 		} else {
 			ct.wrapDimColorTo(pc, s.key)
-			pc.pcAppendByte(':')
+			pc.AppendByte(':')
 			ct.echoColorAndBg(pc, pc.clr, pc.bg)
 		}
 	}
+
 	// if pc.jsonMode {
 	// 	if pc.noColor {
 	// 		pc.pcAppendStringKey(s.key)
@@ -139,7 +140,7 @@ func dedupeSlice[S ~[]E, E any](x S, cmp func(a, b E) bool) S {
 // The caller can do something with the object, For instance, printImpl
 // will dump the error's stack trace if necessary.
 func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
-	prefix := pc.prefix
+	prefixSave := pc.prefix
 	inGroupedMode := pc.inGroupedMode
 
 	if pc.dedupeAttrs {
@@ -175,6 +176,14 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 		})
 	}
 
+	// DONE: extract value from context by key
+	//     ctx.Value(key)
+	// By:
+	//     logger.SetContextKeys("ctx-key").InfoContext(ctx, ...)
+
+	// TODO: extract from grpc context
+	// TODO: extract from openTraceID
+
 	for _, v := range kvps {
 		if v == nil {
 			continue
@@ -182,7 +191,7 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 
 		if pc.IsColorfulStyle() {
 			pc.pcAppendByte(' ')
-			if pc.colorful {
+			if pc.Colorful() {
 				ct.echoColorAndBg(pc, pc.clr, pc.bg)
 			}
 		} else {
@@ -194,26 +203,19 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 		}
 
 		key := v.Key()
-		if inGroupedMode && pc.mode != ModeJSON && pc.valueStringer == nil {
-			key = strings.DotPrefix(key, prefix)
+		if inGroupedMode && pc.mode1 != ModeJSON && pc.valueStringer == nil {
+			key = strings.DotPrefix(key, prefixSave)
 		} else {
-			if inGroupedMode && pc.mode != ModeJSON && pc.valueStringer == nil {
+			if inGroupedMode && pc.mode1 != ModeJSON && pc.valueStringer == nil {
 				panic("impossible condition matched: inGroupedMode && !pc.jsonMode")
 				// if inGroupedMode && !pc.jsonMode {
 				// 	key = DotPrefix(key, prefix)
 				// }
 			}
-			if pc.mode != ModeJSON {
-				key = strings.DotPrefix(key, prefix)
+			if pc.mode1 != ModeJSON {
+				key = strings.DotPrefix(key, prefixSave)
 			}
-			if pc.IsColorfulStyle() {
-				ct.echoColorAndBg(pc, clrAttrKey, clrAttrKeyBg)
-				pc.pcAppendStringKey(key)
-				ct.echoColorAndBg(pc, pc.clr, pc.bg)
-			} else {
-				pc.pcAppendStringKey(key)
-			}
-			pc.pcAppendColon()
+			pc.AppendKey(key)
 		}
 
 		if key == timestampFieldName {
@@ -226,7 +228,7 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 				// } else {
 				// 	pc.appendTimestamp(z)
 				// }
-				pc.appendTimestamp(z)
+				pc.AppendTimestamp(z)
 				continue
 			}
 		}
@@ -241,10 +243,10 @@ func serializeAttrs(pc *PrintCtx, kvps Attrs) (err error) {
 				err = e // just a error value
 			}
 		}
-		pc.prefix = prefix
+		pc.prefix = prefixSave
 	}
 
-	if pc.colorful {
+	if pc.IsColorfulStyle() {
 		ct.echoResetColor(pc)
 	}
 	return

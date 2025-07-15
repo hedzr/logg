@@ -18,7 +18,7 @@ func TestNewGroupedAttr(t *testing.T) {
 var testBytes []byte // test data; same as testString but as a slice.
 
 func TestKvp_SerializeValueTo(t *testing.T) {
-	pc := NewPrintCtx(testBytes)
+	pc := NewPrintCtxBytes(testBytes)
 	k := &kvp{"k1", 1}
 
 	k.SerializeValueTo(pc)
@@ -27,7 +27,7 @@ func TestKvp_SerializeValueTo(t *testing.T) {
 }
 
 func TestGkvp_SetValue(t *testing.T) {
-	pc := NewPrintCtx(testBytes)
+	pc := NewPrintCtxBytes(testBytes)
 
 	g := gkvp{
 		key:   "g1",
@@ -41,13 +41,13 @@ func TestGkvp_SetValue(t *testing.T) {
 	g.Add(String("s1", "hello"))
 	t.Logf("%v", pc.String())
 	testBytes = testBytes[:0]
-	pc = NewPrintCtx(testBytes)
+	pc = NewPrintCtxBytes(testBytes)
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 
 	g.SetValue(String("s1", "hello"))
 	testBytes = testBytes[:0]
-	pc = NewPrintCtx(testBytes)
+	pc = NewPrintCtxBytes(testBytes)
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 
@@ -55,7 +55,7 @@ func TestGkvp_SetValue(t *testing.T) {
 		String("s1", "world"),
 	})
 	testBytes = testBytes[:0]
-	pc = NewPrintCtx(testBytes)
+	pc = NewPrintCtxBytes(testBytes)
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 
@@ -64,25 +64,23 @@ func TestGkvp_SetValue(t *testing.T) {
 		Time("time", time.Now()),
 	))
 	testBytes = testBytes[:0]
-	pc = NewPrintCtx(testBytes)
+	pc = NewPrintCtxBytes(testBytes)
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 
 	// json mode
 	testBytes = testBytes[:0]
-	pc = NewPrintCtx(testBytes)
-	// pc.jsonMode = true
-	pc.mode = ModeJSON
+	pc = NewPrintCtxBytes(testBytes)
+	pc.SetMode(ModeJSON)
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 
 	// and no color
 	testBytes = testBytes[:0]
-	pc = NewPrintCtx(testBytes)
+	pc = NewPrintCtxBytes(testBytes)
 	// pc.jsonMode = true
 	// pc.noColor = true
-	pc.mode = ModeLogFmt
-	pc.colorful = false
+	pc.SetMode(ModePlain)
 	g.SerializeValueTo(pc)
 	t.Logf("%v", pc.String())
 }

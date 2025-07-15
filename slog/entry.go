@@ -287,6 +287,7 @@ func (s *Entry) SetJSONMode(b ...bool) *Entry {
 	} else {
 		s.mode = ModeColorful
 	}
+	s.SetMode(s.mode)
 	return s
 }
 

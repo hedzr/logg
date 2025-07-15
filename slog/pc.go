@@ -2,7 +2,6 @@ package slog
 
 import (
 	"bytes"
-	"encoding"
 	"errors"
 	"fmt"
 	"io"
@@ -36,9 +35,55 @@ func newPrintCtx() *PrintCtx {
 		dedupeAttrs: true,
 		clr:         clrBasic,
 		bg:          clrNone,
-		mode:        ModeColorful,
+		mode1:       ModeColorful,
+		ip:          &colorfulPainter{},
 		// colorful:     is.NoColorMode(),
 	}
+}
+
+func NewPrintCtx(opts ...PCOpt) *PrintCtx {
+	s := &PrintCtx{
+		buf:         make([]byte, 0, 1024),
+		noQuoted:    true,
+		dedupeAttrs: true,
+		clr:         clrBasic,
+		bg:          clrNone,
+		mode1:       ModeColorful,
+		ip:          &colorfulPainter{},
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+func WithPCMode(mode Mode) PCOpt {
+	return func(pc *PrintCtx) {
+		pc.SetMode(mode)
+	}
+}
+
+type PCOpt func(*PrintCtx)
+
+// NewPrintCtxBytes creates and initializes a new Buffer using buf as its
+// initial contents. The new Buffer takes ownership of buf, and the
+// caller should not use buf after this call. NewBuffer is intended to
+// prepare a Buffer to read existing data. It can also be used to set
+// the initial size of the internal buffer for writing. To do that,
+// buf should have the desired capacity but a length of zero.
+//
+// In most cases, new(Buffer) (or just declaring a Buffer variable) is
+// sufficient to initialize a Buffer.
+func NewPrintCtxBytes(buf []byte) *PrintCtx { return &PrintCtx{buf: buf, ip: &colorfulPainter{}} }
+
+// NewPrintCtxString creates and initializes a new Buffer using string s as its
+// initial contents. It is intended to prepare a buffer to read an existing
+// string.
+//
+// In most cases, new(Buffer) (or just declaring a Buffer variable) is
+// sufficient to initialize a Buffer.
+func NewPrintCtxString(s string) *PrintCtx {
+	return &PrintCtx{buf: []byte(s), ip: &colorfulPainter{}}
 }
 
 // PrintCtx when formatting logging line in text logger
@@ -47,50 +92,58 @@ type PrintCtx struct {
 	off      int    // read at &buf[off], write at &buf[len(buf)]
 	lastRead readOp // last read operation, so that Unread* can work correctly.
 
-	mode     Mode
-	colorful bool // cache is.NoColorMode() for each printImpl()
-	noQuoted bool // should quote the string values? default is YES
+	// colorful bool // cache is.NoColorMode() for each printImpl()
 	// jsonMode    bool   // should print out the logging with JSON format? default is NO.
 	// noColor     bool   // use ansi escape sequences in console/terminal? default is ON.
+
+	mode1       Mode
+	noQuoted    bool   // should quote the string values? default is YES
 	layout      string // time layout for formatting
 	utcTime     int    // non-set(0), local(1) or utc(2) time? default is local time mode.
 	dedupeAttrs bool   // remove dup attrs when printing
 
-	lvl          Level
-	msg          string
+	lvl        Level
+	now        time.Time
+	stackFrame uintptr // the caller's stack frames
+	msg        string
+	kvps       Attrs
+
 	firstLine    string
 	restLines    string
 	eol          bool
-	kvps         Attrs
 	clr, bg      color.Color
-	now          time.Time
-	stackFrame   uintptr // the caller's stack frames
 	cachedSource Source
 
-	prefix string
-
-	inGroupedMode bool
+	prefix        string // for serializeAttrs
+	inGroupedMode bool   // for serializeAttrs
 
 	// curdir string
 
 	valueStringer ValueStringer
+
+	ip Painter
 }
 
-func (s *PrintCtx) IsColorStyle() bool    { return s.mode == ModeColorful || s.mode == ModePlain }
-func (s *PrintCtx) IsColorfulStyle() bool { return s.colorful && s.IsColorStyle() }
-func (s *PrintCtx) IsJSONStyle() bool     { return s.mode == ModeJSON || s.mode == ModeLogFmt }
+func (s *PrintCtx) set(e *Entry, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
+	s.internalsetentry(e)
 
-func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame) }
+	s.lvl = lvl
+	s.now = timestamp
+	s.stackFrame = stackFrame
+	s.msg = msg
+	s.kvps = kvps
+}
 
-func (s *PrintCtx) setentry(e *Entry) {
+func (s *PrintCtx) internalsetentry(e *Entry) {
 	s.buf = s.buf[:0]
 
-	s.colorful = !is.NoColorMode()
+	// s.colorful = !is.NoColorMode()
 
-	s.mode = e.mode
-	if s.mode == ModePlain {
-		s.colorful = false
-	}
+	s.SetMode(e.mode)
+
+	// if s.mode == ModePlain {
+	// 	s.colorful = false
+	// }
 	// s.jsonMode = e.useJSON
 	// useColor := e.useColor
 	// if e.useJSON /* && useColor */ {
@@ -104,16 +157,60 @@ func (s *PrintCtx) setentry(e *Entry) {
 
 	s.lvl = e.level
 	s.kvps = e.attrs
+
+	if e.painter != nil {
+		s.ip = e.painter
+	}
 }
 
-func (s *PrintCtx) set(e *Entry, lvl Level, timestamp time.Time, stackFrame uintptr, msg string, kvps Attrs) {
-	s.setentry(e)
+func (s *PrintCtx) putBack() {
+	s.ip = &colorfulPainter{}
+	poolPrintCtx.Put(s)
+}
 
-	s.lvl = lvl
-	s.now = timestamp
-	s.stackFrame = stackFrame
-	s.msg = msg
-	s.kvps = kvps
+//
+//
+//
+
+func (s *PrintCtx) source() *Source { return s.cachedSource.Extract(s.stackFrame) }
+
+//
+//
+//
+
+func (s *PrintCtx) IsColorStyle() bool    { return s.mode1 == ModeColorful || s.mode1 == ModePlain }
+func (s *PrintCtx) IsColorfulStyle() bool { return s.ip.Colorful() && s.IsColorStyle() }
+func (s *PrintCtx) IsJSONStyle() bool     { return s.mode1 == ModeJSON || s.mode1 == ModeLogFmt }
+func (s *PrintCtx) Colorful() bool        { return s.ip.Colorful() }
+
+func (s *PrintCtx) SetMode(mode Mode) {
+	s.mode1 = mode
+	switch mode {
+	case ModeColorful:
+		s.ip = &colorfulPainter{!is.NoColorMode()}
+	case ModePlain:
+		s.ip = &colorfulPainter{false}
+	case ModeLogFmt:
+		s.ip = &logfmtPainter{}
+	case ModeJSON:
+		s.ip = &jsonPainter{}
+	}
+}
+
+func (s *PrintCtx) GetColorTableByLevel() (colors []color.Color) {
+	colors = GetColorTableByLevel(s.lvl)
+	return
+}
+
+func (s *PrintCtx) SetupColors() {
+	if s.Colorful() {
+		if colors := s.GetColorTableByLevel(); len(colors) > 0 {
+			s.clr = colors[0]
+			if len(colors) > 1 {
+				s.bg = colors[1]
+			}
+		}
+	}
 }
 
 //
@@ -608,27 +705,6 @@ func (s *PrintCtx) ReadString(delim byte) (line string, err error) {
 	return string(slice), err
 }
 
-// NewPrintCtx creates and initializes a new Buffer using buf as its
-// initial contents. The new Buffer takes ownership of buf, and the
-// caller should not use buf after this call. NewBuffer is intended to
-// prepare a Buffer to read existing data. It can also be used to set
-// the initial size of the internal buffer for writing. To do that,
-// buf should have the desired capacity but a length of zero.
-//
-// In most cases, new(Buffer) (or just declaring a Buffer variable) is
-// sufficient to initialize a Buffer.
-func NewPrintCtx(buf []byte) *PrintCtx { return &PrintCtx{buf: buf} }
-
-// NewPrintCtxString creates and initializes a new Buffer using string s as its
-// initial contents. It is intended to prepare a buffer to read an existing
-// string.
-//
-// In most cases, new(Buffer) (or just declaring a Buffer variable) is
-// sufficient to initialize a Buffer.
-func NewPrintCtxString(s string) *PrintCtx {
-	return &PrintCtx{buf: []byte(s)}
-}
-
 //
 //
 //
@@ -648,7 +724,7 @@ func (s *PrintCtx) AddRune(r rune) {
 
 func (s *PrintCtx) AddInt64(name string, value int64) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	itoaS(s, value)
@@ -656,7 +732,7 @@ func (s *PrintCtx) AddInt64(name string, value int64) {
 
 func (s *PrintCtx) AddInt32(name string, value int32) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	itoaS(s, value)
@@ -664,7 +740,7 @@ func (s *PrintCtx) AddInt32(name string, value int32) {
 
 func (s *PrintCtx) AddInt16(name string, value int16) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	itoaS(s, value)
@@ -672,7 +748,7 @@ func (s *PrintCtx) AddInt16(name string, value int16) {
 
 func (s *PrintCtx) AddInt8(name string, value int8) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	itoaS(s, value)
@@ -680,7 +756,7 @@ func (s *PrintCtx) AddInt8(name string, value int8) {
 
 func (s *PrintCtx) AddInt(name string, value int) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	itoaS(s, value)
@@ -688,15 +764,15 @@ func (s *PrintCtx) AddInt(name string, value int) {
 
 func (s *PrintCtx) AddPrefixedInt(prefix, name string, value int) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKeyPrefixed(name, prefix)
-	s.pcAppendColon()
+	s.AppendStringKeyPrefixed(name, prefix)
+	s.ip.AppendColon(s)
 	// s.pcAppendStringValue(intToString(value))
 	itoaS(s, value)
 }
 
 func (s *PrintCtx) AddUint64(name string, value uint64) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(uintToString(value))
 	utoaS(s, value)
@@ -704,7 +780,7 @@ func (s *PrintCtx) AddUint64(name string, value uint64) {
 
 func (s *PrintCtx) AddUint32(name string, value uint32) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(uintToString(value))
 	utoaS(s, value)
@@ -712,7 +788,7 @@ func (s *PrintCtx) AddUint32(name string, value uint32) {
 
 func (s *PrintCtx) AddUint16(name string, value uint16) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(uintToString(value))
 	utoaS(s, value)
@@ -720,7 +796,7 @@ func (s *PrintCtx) AddUint16(name string, value uint16) {
 
 func (s *PrintCtx) AddUint8(name string, value uint8) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(uintToString(value))
 	utoaS(s, value)
@@ -728,7 +804,7 @@ func (s *PrintCtx) AddUint8(name string, value uint8) {
 
 func (s *PrintCtx) AddUint(name string, value uint) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(uintToString(value))
 	utoaS(s, value)
@@ -736,7 +812,7 @@ func (s *PrintCtx) AddUint(name string, value uint) {
 
 func (s *PrintCtx) AddFloat64(name string, value float64) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(floatToString(value))
 	ftoaS(s, value)
@@ -744,7 +820,7 @@ func (s *PrintCtx) AddFloat64(name string, value float64) {
 
 func (s *PrintCtx) AddFloat32(name string, value float32) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(floatToString(value))
 	ftoaS(s, value)
@@ -752,7 +828,7 @@ func (s *PrintCtx) AddFloat32(name string, value float32) {
 
 func (s *PrintCtx) AddComplex128(name string, value complex128) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(complexToString(value))
 	ctoaS(s, value)
@@ -760,7 +836,7 @@ func (s *PrintCtx) AddComplex128(name string, value complex128) {
 
 func (s *PrintCtx) AddComplex64(name string, value complex64) {
 	// s.Grow(len(name)*3 + 1 + 32)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(complexToString(value))
 	ctoaS(s, value)
@@ -768,11 +844,11 @@ func (s *PrintCtx) AddComplex64(name string, value complex64) {
 
 func (s *PrintCtx) AddDuration(name string, value time.Duration) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	// if s.noColor {
-	s.appendDuration(value)
+	s.AppendDuration(value)
 	// } else {
 	// 	s.pcAppendString(value)
 	// }
@@ -780,23 +856,27 @@ func (s *PrintCtx) AddDuration(name string, value time.Duration) {
 
 func (s *PrintCtx) AddTime(name string, value time.Time) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	// if s.noColor {
-	s.appendTime(value)
+	s.AppendTime(value)
 	// } else {
 	// 	s.pcAppendString(value)
 	// }
 }
 
+func (s *PrintCtx) AddTimestampField() {
+	s.ip.AddTimestampField(s, s.now)
+}
+
 func (s *PrintCtx) AddTimestamp(name string, value time.Time) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	// if s.noColor {
-	s.appendTimestamp(value)
+	s.AppendTimestamp(value)
 	// } else {
 	// 	s.pcAppendString(value)
 	// }
@@ -804,7 +884,7 @@ func (s *PrintCtx) AddTimestamp(name string, value time.Time) {
 
 func (s *PrintCtx) AddBool(name string, value bool) {
 	// s.Grow(len(name)*3 + 1 + 5)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(boolToString(value))
 	btoaS(s, value)
@@ -812,32 +892,18 @@ func (s *PrintCtx) AddBool(name string, value bool) {
 
 func (s *PrintCtx) AddString(name string, value string) {
 	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKey(name)
+	s.AppendStringKey(name)
 	s.pcAppendColon()
 	// s.pcAppendStringValue(intToString(value))
 	// if s.noColor {
-	s.pcAppendQuotedStringValue(value)
+	s.AppendQuotedStringValue(value)
 	// } else {
 	// 	s.pcAppendString(value)
 	// }
 }
 
 func (s *PrintCtx) AddPrefixedString(prefix, name string, value string) {
-	// s.Grow(len(name)*3 + 1 + 10)
-	s.pcAppendStringKeyPrefixed(name, prefix)
-	s.pcAppendColon()
-	// s.pcAppendStringValue(intToString(value))
-	switch s.mode {
-	case ModeJSON, ModeLogFmt:
-		s.pcAppendQuotedStringValue(value)
-	default:
-		s.pcAppendString(value)
-	}
-	// if s.noColor {
-	// 	s.pcAppendQuotedStringValue(value)
-	// } else {
-	// 	s.pcAppendString(value)
-	// }
+	s.ip.AddPrefixedString(s, prefix, name, value)
 }
 
 func (s *PrintCtx) AppendRune(value rune) {
@@ -870,6 +936,28 @@ func (s *PrintCtx) AppendInt(val int) {
 	// s.WriteString(intToStringEx(val, 10))
 }
 
+func (s *PrintCtx) AppendString(str string) {
+	s.preCheck()
+	_, err := s.WriteString(str)
+	if err != nil {
+		hintInternal(err, "PrintCtx.pcAppendString failed")
+	}
+}
+
+func (s *PrintCtx) AppendRuneTimes(r rune, times int) {
+	s.preCheck()
+	_, err := s.WriteRunes(r, times)
+	if err != nil {
+		hintInternal(err, "PrintCtx.pcAppendString failed")
+	}
+}
+
+// pcAppendStringValue append string without quotes, the string represents a value
+func (s *PrintCtx) AppendStringValue(str string) {
+	s.preCheck()
+	_, _ = s.WriteString(str)
+}
+
 //
 
 func (s *PrintCtx) preCheck() {
@@ -900,16 +988,18 @@ func (s *PrintCtx) pcAppendRune(r rune) {
 
 func (s *PrintCtx) pcTryQuoteValue(val string) {
 	s.preCheck()
-	switch s.mode {
-	case ModeJSON, ModeLogFmt:
-		// return strconv.Quote(val)
-		s.appendQuotedString(val)
-		// s.pcAppendByte('"')
-		// s.appendEscapedJSONString(val)
-		// s.pcAppendByte('"')
-	default:
-		s.pcAppendStringValue(val)
-	}
+	s.ip.TryQuoteValue(s, val)
+
+	// switch s.mode {
+	// case ModeJSON, ModeLogFmt:
+	// 	// return strconv.Quote(val)
+	// 	s.appendQuotedString(val)
+	// 	// s.pcAppendByte('"')
+	// 	// s.appendEscapedJSONString(val)
+	// 	// s.pcAppendByte('"')
+	// default:
+	// 	s.pcAppendStringValue(val)
+	// }
 
 	// if s.noColor {
 	// 	// return strconv.Quote(val)
@@ -926,36 +1016,17 @@ func (s *PrintCtx) pcQuoteValue(val string) {
 	// s.pcAppendByte('"')
 	// s.appendEscapedJSONString(val)
 	// s.pcAppendByte('"')
-	s.appendQuotedString(val)
+	s.AppendQuotedString(val)
 }
 
 func (s *PrintCtx) pcAppendColon() {
 	s.preCheck()
-	switch s.mode {
-	case ModeJSON:
-		s.pcAppendByte(':')
-	default:
-		s.pcAppendByte('=')
-	}
-	// if s.jsonMode {
-	// 	s.pcAppendByte(':')
-	// } else {
-	// 	s.pcAppendByte('=')
-	// }
+	s.ip.AppendColon(s)
 }
 
 func (s *PrintCtx) pcAppendComma() {
-	switch s.mode {
-	case ModeJSON:
-		s.pcAppendByte(',')
-	case ModeLogFmt:
-		s.pcAppendByte(' ')
-	}
-	// if s.jsonMode {
-	// 	s.pcAppendByte(',')
-	// } else {
-	// 	s.pcAppendByte(' ')
-	// }
+	s.preCheck()
+	s.ip.AppendComma(s)
 }
 
 // AddComma shall be inserted at middle of two fields.
@@ -963,6 +1034,10 @@ func (s *PrintCtx) pcAppendComma() {
 // See Begin and End, BeginArray and EndArray.
 func (s *PrintCtx) AddComma() {
 	s.pcAppendComma()
+}
+
+func (s *PrintCtx) AddColon() {
+	s.pcAppendColon()
 }
 
 // Begin begins dumping an object and End ends it.
@@ -983,14 +1058,7 @@ func (s *PrintCtx) AddComma() {
 //		return nil
 //	}
 func (s *PrintCtx) Begin() {
-	switch s.mode {
-	case ModeJSON:
-		s.pcAppendByte('{')
-	default:
-	}
-	// if s.jsonMode {
-	// 	s.pcAppendByte('{')
-	// }
+	s.ip.Begin(s)
 }
 
 // End ends dumping an object and Begin begins it.
@@ -998,17 +1066,7 @@ func (s *PrintCtx) Begin() {
 // Inserting AddComma between two fields.
 // Using BeginArray and EndArray to dump a slice.
 func (s *PrintCtx) End(newline bool) {
-	switch s.mode {
-	case ModeJSON:
-		s.pcAppendByte('}')
-	default:
-	}
-	// if s.jsonMode {
-	// 	s.pcAppendByte('}')
-	// }
-	if newline {
-		s.pcAppendByte('\n')
-	}
+	s.ip.End(s, newline)
 }
 
 // BeginArray starts dumping a slice and EndArray ends it.
@@ -1030,63 +1088,28 @@ func (s *PrintCtx) End(newline bool) {
 //		return err
 //	}
 func (s *PrintCtx) BeginArray() {
-	switch s.mode {
-	case ModeJSON:
-		s.pcAppendByte('[')
-	default:
-	}
-	// if s.jsonMode {
-	// 	s.pcAppendByte('[')
-	// }
+	s.ip.BeginArray(s)
 }
 
 // EndArray ends dumping a slice and BeginArray begins it.
 func (s *PrintCtx) EndArray(newline bool) {
-	switch s.mode {
-	case ModeJSON:
-		s.pcAppendByte(']')
-	default:
-	}
-	// if s.jsonMode {
-	// 	s.pcAppendByte(']')
-	// }
-	if newline {
-		s.pcAppendByte('\n')
-	}
+	s.ip.EndArray(s, newline)
 }
 
-func (s *PrintCtx) pcAppendString(str string) {
-	s.preCheck()
-	_, err := s.WriteString(str)
-	if err != nil {
-		hintInternal(err, "PrintCtx.pcAppendString failed")
-	}
-}
-
-func (s *PrintCtx) pcAppendRunes(r rune, times int) {
-	s.preCheck()
-	_, err := s.WriteRunes(r, times)
-	if err != nil {
-		hintInternal(err, "PrintCtx.pcAppendString failed")
-	}
-}
-
-// pcAppendStringValue append string without quotes, the string represents a value
-func (s *PrintCtx) pcAppendStringValue(str string) {
-	s.preCheck()
-	_, _ = s.WriteString(str)
-}
-
-// pcAppendQuotedStringValue append string with quotes always, the string represents a value
-func (s *PrintCtx) pcAppendQuotedStringValue(str string) {
+// AppendQuotedStringValue append string with quotes always, the string represents a value
+func (s *PrintCtx) AppendQuotedStringValue(str string) {
 	s.preCheck()
 	// _, _ = s.WriteRune('"')
 	// s.appendEscapedJSONString(str)
 	// _, _ = s.WriteRune('"')
-	s.appendQuotedString(str)
+	s.AppendQuotedString(str)
 }
 
-func (s *PrintCtx) appendQuotedString(str string) {
+func (s *PrintCtx) AppendKey(key string) {
+	s.ip.AppendKey(s, key, s.clr, s.bg)
+}
+
+func (s *PrintCtx) AppendQuotedString(str string) {
 	s.PreAlloc(len(str)*2 + 2)
 	s.buf = appendQuotedWith(s.buf, str, '"', false, false)
 }
@@ -1244,23 +1267,24 @@ func bsearch32(a []uint32, x uint32) int {
 	return i
 }
 
-// pcAppendStringKey appends string with quotes (in json mode), the string represents a key.
+// AppendStringKey appends string with quotes (in json mode), the string represents a key.
 //
 // If a PrintCtx is in non json mode, the key shouldn't wrapped with quotes.
-func (s *PrintCtx) pcAppendStringKey(str string) {
+func (s *PrintCtx) AppendStringKey(str string) {
 	s.preCheck()
+	s.ip.AppendStringKey(s, str)
 
-	switch s.mode {
-	case ModeJSON:
-		// s.WriteString(strconv.Quote(str))
-		// s.Grow(2 + len([]byte(str)))
-		s.checkerr(s.WriteByte('"'))
-		_, _ = s.WriteString(str)
-		s.checkerr(s.WriteByte('"'))
-	// case ModeLogFmt:
-	default:
-		_, _ = s.WriteString(str)
-	}
+	// switch s.mode {
+	// case ModeJSON:
+	// 	// s.WriteString(strconv.Quote(str))
+	// 	// s.Grow(2 + len([]byte(str)))
+	// 	s.checkerr(s.WriteByte('"'))
+	// 	_, _ = s.WriteString(str)
+	// 	s.checkerr(s.WriteByte('"'))
+	// // case ModeLogFmt:
+	// default:
+	// 	_, _ = s.WriteString(str)
+	// }
 
 	// if s.jsonMode {
 	// 	// s.WriteString(strconv.Quote(str))
@@ -1273,24 +1297,25 @@ func (s *PrintCtx) pcAppendStringKey(str string) {
 	// }
 }
 
-func (s *PrintCtx) pcAppendStringKeyPrefixed(str, prefix string) {
+func (s *PrintCtx) AppendStringKeyPrefixed(str, prefix string) {
 	s.preCheck()
+	s.ip.AppendStringKeyPrefixed(s, str, prefix)
 
-	switch s.mode {
-	case ModeJSON:
-		// s.WriteString(strconv.Quote(str))
-		// s.Grow(2 + len([]byte(str)))
-		s.checkerr(s.WriteByte('"'))
-		_, _ = s.WriteString(prefix)
-		s.checkerr(s.WriteByte('.'))
-		_, _ = s.WriteString(str)
-		s.checkerr(s.WriteByte('"'))
-	// case ModeLogFmt:
-	default:
-		_, _ = s.WriteString(prefix)
-		s.checkerr(s.WriteByte('.'))
-		_, _ = s.WriteString(str)
-	}
+	// switch s.mode {
+	// case ModeJSON:
+	// 	// s.WriteString(strconv.Quote(str))
+	// 	// s.Grow(2 + len([]byte(str)))
+	// 	s.checkerr(s.WriteByte('"'))
+	// 	_, _ = s.WriteString(prefix)
+	// 	s.checkerr(s.WriteByte('.'))
+	// 	_, _ = s.WriteString(str)
+	// 	s.checkerr(s.WriteByte('"'))
+	// // case ModeLogFmt:
+	// default:
+	// 	_, _ = s.WriteString(prefix)
+	// 	s.checkerr(s.WriteByte('.'))
+	// 	_, _ = s.WriteString(str)
+	// }
 
 	// if s.jsonMode {
 	// 	// s.WriteString(strconv.Quote(str))
@@ -1333,182 +1358,186 @@ func (s *PrintCtx) getStackTrace(err error) (f *errorsv3.WithStackInfo, st error
 }
 
 func (s *PrintCtx) appendErrorAfterPrinted(err error) {
-	if err != nil && (inTesting || isDebuggingOrBuild || isDebug()) {
-		switch s.mode {
-		case ModeJSON:
-			// the job has been done in appendValue() -> appendError, see the PrintCtx.
-			// tuning might be planned in the future.
-		default:
-			if !inBenching {
-				// the following job must follow the normal line, so it can't be committed
-				// at PrintCtx.appendValue.
-				// if inTesting {
+	s.ip.AppendErrorAfterPrinted(s, err)
 
-				// var e3 errorsv3.Error
-				// if errorsv3.As(holded, &e3) {
-				if f, st := s.getStackTrace(err); st != nil {
-					s.pcAppendByte('\n')
+	// if err != nil && (inTesting || isDebuggingOrBuild || isDebug()) {
+	// 	switch s.mode {
+	// 	case ModeJSON:
+	// 		// the job has been done in appendValue() -> appendError, see the PrintCtx.
+	// 		// tuning might be planned in the future.
+	// 	default:
+	// 		if !inBenching {
+	// 			// the following job must follow the normal line, so it can't be committed
+	// 			// at PrintCtx.appendValue.
+	// 			// if inTesting {
 
-					frame := st[0]
-					s.cachedSource.Extract(uintptr(frame))
-					s.pcAppendStringKey("       error: ")
-					if s.colorful && s.mode == ModeColorful {
-						ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
-					} else {
-						s.pcAppendString(f.Error())
-					}
-					s.pcAppendByte('\n')
-					s.pcAppendStringKey("   file/line: ")
-					s.pcAppendString(s.cachedSource.File)
-					s.pcAppendRune(':')
-					s.AppendInt(s.cachedSource.Line)
-					s.pcAppendByte('\n')
-					s.pcAppendStringKey("    function: ")
-					if s.colorful && s.mode == ModeColorful {
-						ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
-					} else {
-						s.pcAppendString(s.cachedSource.Function)
-					}
-					// s.pcAppendByte('\n')
-					// return
-				}
-				// }
+	// 			// var e3 errorsv3.Error
+	// 			// if errorsv3.As(holded, &e3) {
+	// 			if f, st := s.getStackTrace(err); st != nil {
+	// 				s.pcAppendByte('\n')
 
-				// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
+	// 				frame := st[0]
+	// 				s.cachedSource.Extract(uintptr(frame))
+	// 				s.pcAppendStringKey("       error: ")
+	// 				if s.colorful && s.mode == ModeColorful {
+	// 					ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
+	// 				} else {
+	// 					s.pcAppendString(f.Error())
+	// 				}
+	// 				s.pcAppendByte('\n')
+	// 				s.pcAppendStringKey("   file/line: ")
+	// 				s.pcAppendString(s.cachedSource.File)
+	// 				s.pcAppendRune(':')
+	// 				s.AppendInt(s.cachedSource.Line)
+	// 				s.pcAppendByte('\n')
+	// 				s.pcAppendStringKey("    function: ")
+	// 				if s.colorful && s.mode == ModeColorful {
+	// 					ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+	// 				} else {
+	// 					s.pcAppendString(s.cachedSource.Function)
+	// 				}
+	// 				// s.pcAppendByte('\n')
+	// 				// return
+	// 			}
+	// 			// }
 
-				var stackInfo string
-				stackInfo = fmt.Sprintf("%+v", err)
-				// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
-				// 	stackInfo = fmt.Sprintf("%+v", err)
-				// } else {
-				// 	var x Stringer
-				// 	if x, ok = err.(Stringer); ok {
-				// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
-				// 	} else {
-				// 		stackInfo = fmt.Sprintf("%v", err)
-				// 	}
-				// }
-				s.pcAppendByte('\n')
-				txt := ct.pad(stackInfo, "    ", 1)
-				if s.colorful && s.mode == ModeColorful {
-					ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
-				} else {
-					s.pcAppendString(txt)
-				}
-			}
-		}
+	// 			// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
 
-		// if s.jsonMode {
-		// 	// the job has been done in appendValue() -> appendError, see the PrintCtx.
-		// 	// tuning might be planned in the future.
-		// } else if !inBenching {
-		// 	// the following job must follow the normal line, so it can't be committed
-		// 	// at PrintCtx.appendValue.
-		// 	// if inTesting {
+	// 			var stackInfo string
+	// 			stackInfo = fmt.Sprintf("%+v", err)
+	// 			// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
+	// 			// 	stackInfo = fmt.Sprintf("%+v", err)
+	// 			// } else {
+	// 			// 	var x Stringer
+	// 			// 	if x, ok = err.(Stringer); ok {
+	// 			// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+	// 			// 	} else {
+	// 			// 		stackInfo = fmt.Sprintf("%v", err)
+	// 			// 	}
+	// 			// }
+	// 			s.pcAppendByte('\n')
+	// 			txt := ct.pad(stackInfo, "    ", 1)
+	// 			if s.colorful && s.mode == ModeColorful {
+	// 				ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
+	// 			} else {
+	// 				s.pcAppendString(txt)
+	// 			}
+	// 		}
+	// 	}
 
-		// 	// var e3 errorsv3.Error
-		// 	// if errorsv3.As(holded, &e3) {
-		// 	if f, st := s.getStackTrace(err); st != nil {
-		// 		s.pcAppendByte('\n')
+	// 	// if s.jsonMode {
+	// 	// 	// the job has been done in appendValue() -> appendError, see the PrintCtx.
+	// 	// 	// tuning might be planned in the future.
+	// 	// } else if !inBenching {
+	// 	// 	// the following job must follow the normal line, so it can't be committed
+	// 	// 	// at PrintCtx.appendValue.
+	// 	// 	// if inTesting {
 
-		// 		frame := st[0]
-		// 		s.cachedSource.Extract(uintptr(frame))
-		// 		s.pcAppendStringKey("       error: ")
-		// 		if s.noColor {
-		// 			s.pcAppendString(f.Error())
-		// 		} else {
-		// 			ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
-		// 		}
-		// 		s.pcAppendByte('\n')
-		// 		s.pcAppendStringKey("   file/line: ")
-		// 		s.pcAppendString(s.cachedSource.File)
-		// 		s.pcAppendRune(':')
-		// 		s.AppendInt(s.cachedSource.Line)
-		// 		s.pcAppendByte('\n')
-		// 		s.pcAppendStringKey("    function: ")
-		// 		if s.noColor {
-		// 			s.pcAppendString(s.cachedSource.Function)
-		// 		} else {
-		// 			ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
-		// 		}
-		// 		// s.pcAppendByte('\n')
-		// 		// return
-		// 	}
-		// 	// }
+	// 	// 	// var e3 errorsv3.Error
+	// 	// 	// if errorsv3.As(holded, &e3) {
+	// 	// 	if f, st := s.getStackTrace(err); st != nil {
+	// 	// 		s.pcAppendByte('\n')
 
-		// 	// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
+	// 	// 		frame := st[0]
+	// 	// 		s.cachedSource.Extract(uintptr(frame))
+	// 	// 		s.pcAppendStringKey("       error: ")
+	// 	// 		if s.noColor {
+	// 	// 			s.pcAppendString(f.Error())
+	// 	// 		} else {
+	// 	// 			ct.wrapColorAndBgTo(s, clrError, clrNone, f.Error())
+	// 	// 		}
+	// 	// 		s.pcAppendByte('\n')
+	// 	// 		s.pcAppendStringKey("   file/line: ")
+	// 	// 		s.pcAppendString(s.cachedSource.File)
+	// 	// 		s.pcAppendRune(':')
+	// 	// 		s.AppendInt(s.cachedSource.Line)
+	// 	// 		s.pcAppendByte('\n')
+	// 	// 		s.pcAppendStringKey("    function: ")
+	// 	// 		if s.noColor {
+	// 	// 			s.pcAppendString(s.cachedSource.Function)
+	// 	// 		} else {
+	// 	// 			ct.wrapColorAndBgTo(s, clrFuncName, clrNone, s.cachedSource.Function)
+	// 	// 		}
+	// 	// 		// s.pcAppendByte('\n')
+	// 	// 		// return
+	// 	// 	}
+	// 	// 	// }
 
-		// 	var stackInfo string
-		// 	stackInfo = fmt.Sprintf("%+v", err)
-		// 	// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
-		// 	// 	stackInfo = fmt.Sprintf("%+v", err)
-		// 	// } else {
-		// 	// 	var x Stringer
-		// 	// 	if x, ok = err.(Stringer); ok {
-		// 	// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
-		// 	// 	} else {
-		// 	// 		stackInfo = fmt.Sprintf("%v", err)
-		// 	// 	}
-		// 	// }
-		// 	s.pcAppendByte('\n')
-		// 	txt := ct.pad(stackInfo, "    ", 1)
-		// 	if s.noColor {
-		// 		s.pcAppendString(txt)
-		// 	} else {
-		// 		ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
-		// 	}
-		// }
-		// // }
-	}
+	// 	// 	// if st, ok:=err.(interface{StackTrace() pkgerrors.StackTrace})
+
+	// 	// 	var stackInfo string
+	// 	// 	stackInfo = fmt.Sprintf("%+v", err)
+	// 	// 	// if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
+	// 	// 	// 	stackInfo = fmt.Sprintf("%+v", err)
+	// 	// 	// } else {
+	// 	// 	// 	var x Stringer
+	// 	// 	// 	if x, ok = err.(Stringer); ok {
+	// 	// 	// 		stackInfo = x.String() // special for those illegal error impl like toml.DecodeError, which have no Format
+	// 	// 	// 	} else {
+	// 	// 	// 		stackInfo = fmt.Sprintf("%v", err)
+	// 	// 	// 	}
+	// 	// 	// }
+	// 	// 	s.pcAppendByte('\n')
+	// 	// 	txt := ct.pad(stackInfo, "    ", 1)
+	// 	// 	if s.noColor {
+	// 	// 		s.pcAppendString(txt)
+	// 	// 	} else {
+	// 	// 		ct.wrapColorAndBgTo(s, clrError, clrLoggerNameBg, txt)
+	// 	// 	}
+	// 	// }
+	// 	// // }
+	// }
 }
 
 func (s *PrintCtx) appendError(err error) {
 	if err == nil {
 		return
 	}
-	txt := err.Error()
-	switch s.mode {
-	case ModeJSON:
-		s.Begin()
-		s.pcAppendStringKey("message")
-		s.pcAppendColon()
-		s.pcQuoteValue(txt)
-		// ee := errorsv3.New("")
-		// var e3 errorsv3.Error
-		// if errors.As(err, &e3) {
-		if f, ok := err.(*errorsv3.WithStackInfo); ok {
-			if st := f.StackTrace(); st != nil {
-				s.pcAppendComma()
-				s.pcAppendStringKey("trace")
-				s.pcAppendColon()
+	s.ip.AppendError(s, err)
 
-				frame := st[0]
-				s.cachedSource.Extract(uintptr(frame))
-				s.Begin()
-				s.pcAppendStringKey("file")
-				s.pcAppendColon()
-				s.pcAppendQuotedStringValue(s.cachedSource.File)
-				s.pcAppendComma()
-				s.pcAppendStringKey("line")
-				s.pcAppendColon()
-				s.AppendInt(s.cachedSource.Line)
-				s.pcAppendComma()
-				s.pcAppendStringKey("func")
-				s.pcAppendColon()
-				s.pcAppendQuotedStringValue(s.cachedSource.Function)
-				s.End(false)
-			}
-		}
-		// }
-		s.End(false)
-	case ModeLogFmt:
-		s.pcQuoteValue(txt)
-	case ModeColorful, ModePlain:
-		ct.echoColor(s, clrError)
-		s.pcQuoteValue(txt)
-		ct.echoResetColor(s)
-	default:
-	}
+	// txt := err.Error()
+	// switch s.mode {
+	// case ModeJSON:
+	// 	s.Begin()
+	// 	s.pcAppendStringKey("message")
+	// 	s.pcAppendColon()
+	// 	s.pcQuoteValue(txt)
+	// 	// ee := errorsv3.New("")
+	// 	// var e3 errorsv3.Error
+	// 	// if errors.As(err, &e3) {
+	// 	if f, ok := err.(*errorsv3.WithStackInfo); ok {
+	// 		if st := f.StackTrace(); st != nil {
+	// 			s.pcAppendComma()
+	// 			s.pcAppendStringKey("trace")
+	// 			s.pcAppendColon()
+
+	// 			frame := st[0]
+	// 			s.cachedSource.Extract(uintptr(frame))
+	// 			s.Begin()
+	// 			s.pcAppendStringKey("file")
+	// 			s.pcAppendColon()
+	// 			s.pcAppendQuotedStringValue(s.cachedSource.File)
+	// 			s.pcAppendComma()
+	// 			s.pcAppendStringKey("line")
+	// 			s.pcAppendColon()
+	// 			s.AppendInt(s.cachedSource.Line)
+	// 			s.pcAppendComma()
+	// 			s.pcAppendStringKey("func")
+	// 			s.pcAppendColon()
+	// 			s.pcAppendQuotedStringValue(s.cachedSource.Function)
+	// 			s.End(false)
+	// 		}
+	// 	}
+	// 	// }
+	// 	s.End(false)
+	// case ModeLogFmt:
+	// 	s.pcQuoteValue(txt)
+	// case ModeColorful, ModePlain:
+	// 	ct.echoColor(s, clrError)
+	// 	s.pcQuoteValue(txt)
+	// 	ct.echoResetColor(s)
+	// default:
+	// }
 
 	// if s.jsonMode {
 	// 	s.Begin()
@@ -1555,7 +1584,7 @@ func (s *PrintCtx) appendError(err error) {
 func (s *PrintCtx) appendValue(val any) {
 	switch z := val.(type) {
 	case nil:
-		s.pcAppendStringValue("<nil>")
+		s.AppendStringValue("<nil>")
 
 	case ObjectSerializer:
 		// pc.useColor = !s.noColor
@@ -1577,13 +1606,13 @@ func (s *PrintCtx) appendValue(val any) {
 		}
 
 	case time.Duration:
-		s.appendDuration(z)
+		s.AppendDuration(z)
 	case time.Time:
-		s.appendTime(z)
+		s.AppendTime(z)
 	case []time.Duration:
-		s.appendDurationSlice(z)
+		s.AppendDurationSlice(z)
 	case []time.Time:
-		s.appendTimeSlice(z)
+		s.AppendTimeSlice(z)
 
 	case Level:
 		s.pcQuoteValue(z.String())
@@ -1604,13 +1633,13 @@ func (s *PrintCtx) appendValue(val any) {
 		btoaS(s, z)
 
 	case []byte:
-		s.appendBytes(z)
+		s.AppendBytes(z)
 
 	case []string:
-		s.appendStringSlice(z)
+		s.AppendStringSlice(z)
 
 	case []bool:
-		s.appendBoolSlice(z)
+		s.AppendBoolSlice(z)
 
 	case []int:
 		intSliceTo(s, z)
@@ -1676,30 +1705,35 @@ func (s *PrintCtx) appendValue(val any) {
 		ctoaS(s, z)
 
 	default:
-		switch s.mode {
-		case ModeJSON:
-			if m, ok := val.(interface{ MarshalJSON() ([]byte, error) }); ok {
-				data, err := m.MarshalJSON()
-				if err != nil {
-					hintInternal(err, "MarshalJSON failed")
-					break
-				}
-				s.pcAppendStringValue(string(data))
-				break
-			} else {
-				// json
-			}
-		default:
-			if m, ok := val.(encoding.TextMarshaler); ok {
-				data, err := m.MarshalText()
-				if err != nil {
-					hintInternal(err, "MarshalText failed")
-					break
-				}
-				s.pcAppendStringValue(string(data))
-				break
-			}
+		if handled, err := s.ip.MarshalValue(s, val); handled || err != nil {
+			return
 		}
+
+		// switch s.mode {
+		// case ModeJSON:
+		// 	if m, ok := val.(interface{ MarshalJSON() ([]byte, error) }); ok {
+		// 		data, err := m.MarshalJSON()
+		// 		if err != nil {
+		// 			hintInternal(err, "MarshalJSON failed")
+		// 			break
+		// 		}
+		// 		s.pcAppendStringValue(string(data))
+		// 		break
+		// 	} else {
+		// 		// json
+		// 	}
+		// default:
+		// 	if m, ok := val.(encoding.TextMarshaler); ok {
+		// 		data, err := m.MarshalText()
+		// 		if err != nil {
+		// 			hintInternal(err, "MarshalText failed")
+		// 			break
+		// 		}
+		// 		s.pcAppendStringValue(string(data))
+		// 		break
+		// 	}
+		// }
+
 		// if s.jsonMode {
 		// 	if m, ok := val.(interface{ MarshalJSON() ([]byte, error) }); ok {
 		// 		data, err := m.MarshalJSON()
@@ -1831,7 +1865,7 @@ func (s *PrintCtx) checkerr(err error) {
 // with escapeHTML set to false.
 func (s *PrintCtx) appendEscapedJSONString(val string) {
 	char := func(b byte) { s.pcAppendByte(b) /*buf = append(buf, b)*/ }
-	strz := func(str string) { s.pcAppendString(str) /*buf = append(buf, s...) */ }
+	strz := func(str string) { s.AppendString(str) /*buf = append(buf, s...) */ }
 
 	start := 0
 	for i := 0; i < len(val); {
@@ -2006,21 +2040,14 @@ var safeSet = [utf8.RuneSelf]bool{
 	'\u007f': true,
 }
 
-func (s *PrintCtx) appendBytes(z []byte) {
-	_, err := s.Write(z)
-	if err != nil {
-		hintInternal(err, "PrintCtx: appendBytes failed")
-	}
-}
-
-func (s *PrintCtx) appendStringSlice(val []string) {
+func (s *PrintCtx) AppendStringSlice(val []string) {
 	s.buf = append(s.buf, '[')
 	if l := len(val); l > 0 {
-		s.appendQuotedString(val[0])
+		s.AppendQuotedString(val[0])
 		for i := 1; i < len(val); i++ {
 			s.buf = append(s.buf, ',')
 			// s.buf = strconv.AppendQuote(s.buf, val[i])
-			s.appendQuotedString(val[i])
+			s.AppendQuotedString(val[i])
 			// s.buf = append(s.buf, '"')
 			// s.appendEscapedJSONString(val[i])
 			// s.buf = append(s.buf, '"')
@@ -2029,7 +2056,7 @@ func (s *PrintCtx) appendStringSlice(val []string) {
 	s.buf = append(s.buf, ']')
 }
 
-func (s *PrintCtx) appendBoolSlice(val []bool) {
+func (s *PrintCtx) AppendBoolSlice(val []bool) {
 	s.buf = append(s.buf, '[')
 	if l := len(val); l > 0 {
 		s.buf = strconv.AppendBool(s.buf, val[0])
@@ -2089,53 +2116,31 @@ func complexSliceTo[T Complexes](s *PrintCtx, val ComplexSlice[T]) {
 	s.buf = append(s.buf, ']')
 }
 
-func (s *PrintCtx) appendDuration(z time.Duration) {
+func (s *PrintCtx) Buf(cb func(buf []byte) []byte) {
+	s.buf = cb(s.buf)
+}
+
+func (s *PrintCtx) AppendDuration(z time.Duration) {
 	// s.pcAppendByte('"')
 	// s.appendEscapedJSONString(z.String())
 	// s.pcAppendByte('"')
-	s.appendQuotedString(z.String())
+	s.ip.AppendDuration(s, z)
 }
 
-func (s *PrintCtx) appendDurationSlice(z []time.Duration) {
-	s.pcAppendByte('[')
-	if l := len(z); l > 0 {
-		s.appendDuration(z[0])
-		for i := 1; i < len(z); i++ {
-			dur := z[i]
-			s.pcAppendByte(',')
-			s.appendDuration(dur)
-		}
-	}
-	s.pcAppendByte(']')
+func (s *PrintCtx) AppendDurationSlice(z []time.Duration) {
+	s.ip.AppendDurationSlice(s, z)
 }
 
-func (s *PrintCtx) appendTime(z time.Time) {
-	const layout = time.RFC3339Nano
-	if s.mode != ModeColorful {
-		// if s.jsonMode || s.noColor {
-		s.pcAppendByte('"')
-		s.buf = z.AppendFormat(s.buf, layout)
-		s.pcAppendByte('"')
-	} else {
-		s.buf = z.AppendFormat(s.buf, layout)
-	}
+func (s *PrintCtx) AppendTime(z time.Time) {
+	s.ip.AppendTime(s, z)
 }
 
-func (s *PrintCtx) appendTimeSlice(z []time.Time) {
-	s.pcAppendByte('[')
-	if l := len(z); l > 0 {
-		s.appendTime(z[0])
-		for i := 1; i < len(z); i++ {
-			dur := z[i]
-			s.pcAppendByte(',')
-			s.appendTime(dur)
-		}
-	}
-	s.pcAppendByte(']')
+func (s *PrintCtx) AppendTimeSlice(z []time.Time) {
+	s.ip.AppendTimeSlice(s, z)
 }
 
 // appendTimestamp is specially for printing logging timestamp
-func (s *PrintCtx) appendTimestamp(z time.Time) {
+func (s *PrintCtx) AppendTimestamp(z time.Time) {
 	var tm time.Time
 
 	if s.utcTime == 2 || (s.utcTime == 0 && flags&LlocalTime == 0) {
@@ -2155,21 +2160,7 @@ func (s *PrintCtx) appendTimestamp(z time.Time) {
 	}
 
 	// return tm.Format(layout)
-
-	if s.IsJSONStyle() {
-		// if s.jsonMode || s.noColor {
-		s.pcAppendByte('"')
-		s.buf = tm.AppendFormat(s.buf, layout)
-		// t := tm.Format(layout)
-		// s.pcAppendString(t)
-		s.pcAppendByte('"')
-		// s.pcAppendByte(' ')
-	} else {
-		s.buf = tm.AppendFormat(s.buf, layout)
-		s.pcAppendByte('|')
-		// t := tm.Format(layout)
-		// s.pcAppendString(t)
-	}
+	s.ip.AppendTimestamp(s, tm, layout)
 }
 
 func itoaS[T Integers](s *PrintCtx, val T) {
@@ -2177,14 +2168,16 @@ func itoaS[T Integers](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.mode == ModeJSON {
-		// if s.jsonMode {
-		// s.checkerr(s.WriteByte('"'))
-		itoasimple(s, val, 10)
-		// s.checkerr(s.WriteByte('"'))
-	} else {
-		itoasimple(s, val, 10)
-	}
+	// if s.mode1 == ModeJSON {
+	// 	// if s.jsonMode {
+	// 	// s.checkerr(s.WriteByte('"'))
+	// 	itoasimple(s, val, 10)
+	// 	// s.checkerr(s.WriteByte('"'))
+	// } else {
+	// 	itoasimple(s, val, 10)
+	// }
+
+	itoasimple(s, val, 10)
 }
 
 func itoasimple[T Integers](s *PrintCtx, val T, base int) {
@@ -2196,7 +2189,7 @@ func utoaS[T Uintegers](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.mode == ModeJSON {
+	if s.mode1 == ModeJSON {
 		// if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
 		utoasimple(s, val, 10)
@@ -2215,7 +2208,7 @@ func ftoaS[T Floats](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.mode == ModeJSON {
+	if s.mode1 == ModeJSON {
 		// if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
 		ftoasimple(s, val, 'f', -1, 64)
@@ -2234,7 +2227,7 @@ func ctoaS[T Complexes](s *PrintCtx, val T) {
 
 	// s.pcAppendStringValue(intToString(value))
 
-	if s.mode == ModeJSON {
+	if s.mode1 == ModeJSON {
 		// if s.jsonMode {
 		s.checkerr(s.WriteByte('"'))
 		ctoasimple(s, val, 'f', -1, 64)
