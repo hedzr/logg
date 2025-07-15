@@ -92,6 +92,7 @@ type Entry struct {
 	handlerOpt    logslog.Handler
 	extraFrames   int
 	contextKeys   []any
+	painter       Painter
 
 	muWrite writeLock
 }
