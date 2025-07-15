@@ -272,7 +272,7 @@ func (s *Entry) SetJSONMode(b ...bool) *Entry {
 	return s
 }
 
-func (s *Entry) WithJSONMode(b ...bool) *Entry {
+func (s *Entry) WithJSONMode(b ...bool) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetJSONMode(b...)
 	return child
@@ -309,10 +309,11 @@ func (s *Entry) SetColorMode(b ...bool) *Entry {
 	} else {
 		s.mode = ModePlain
 	}
+	s.SetMode(s.mode)
 	return s
 }
 
-func (s *Entry) WithColorMode(b ...bool) *Entry {
+func (s *Entry) WithColorMode(b ...bool) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetColorMode(b...)
 	return child
@@ -337,7 +338,7 @@ func (s *Entry) SetUTCMode(b ...bool) *Entry {
 	return s
 }
 
-func (s *Entry) WithUTCMode(b ...bool) *Entry {
+func (s *Entry) WithUTCMode(b ...bool) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetUTCMode(b...)
 	return child
@@ -360,7 +361,7 @@ func (s *Entry) SetTimeFormat(layout ...string) *Entry {
 	return s
 }
 
-func (s *Entry) WithTimeFormat(layout ...string) *Entry {
+func (s *Entry) WithTimeFormat(layout ...string) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetTimeFormat(layout...)
 	return child
@@ -388,7 +389,7 @@ func (s *Entry) SetLevel(lvl Level) *Entry {
 	return s
 }
 
-func (s *Entry) WithLevel(lvl Level) *Entry {
+func (s *Entry) WithLevel(lvl Level) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetLevel(lvl)
 	return child
@@ -449,7 +450,7 @@ func (s *Entry) SetAttrs(attrs ...Attr) *Entry {
 	return s
 }
 
-func (s *Entry) WithAttrs(attrs ...Attr) *Entry {
+func (s *Entry) WithAttrs(attrs ...Attr) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetAttrs(attrs...)
 	return child
@@ -484,7 +485,7 @@ func (s *Entry) SetAttrs1(attrs Attrs) *Entry {
 	return s
 }
 
-func (s *Entry) WithAttrs1(attrs Attrs) *Entry {
+func (s *Entry) WithAttrs1(attrs Attrs) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetAttrs1(attrs)
 	return child
@@ -517,7 +518,7 @@ func (s *Entry) Set(args ...any) *Entry { // key1,val1,key2,val2,.... Of course,
 	return s
 }
 
-func (s *Entry) With(args ...any) *Entry { // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
+func (s *Entry) With(args ...any) (newLogger *Entry) { // key1,val1,key2,val2,.... Of course, Attr, Attrs in args will be recognized as is
 	child := s.newChildLogger()
 	child.Set(args...)
 	return child
@@ -533,7 +534,7 @@ func (s *Entry) SetValueStringer(vs ValueStringer) *Entry {
 	return s
 }
 
-func (s *Entry) WithValueStringer(vs ValueStringer) *Entry {
+func (s *Entry) WithValueStringer(vs ValueStringer) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetValueStringer(vs)
 	return child
@@ -572,7 +573,7 @@ func (s *Entry) SetWriter(wr io.Writer) *Entry {
 	return s
 }
 
-func (s *Entry) WithWriter(wr io.Writer) *Entry {
+func (s *Entry) WithWriter(wr io.Writer) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetWriter(wr)
 	return child
@@ -619,7 +620,7 @@ func (s *Entry) SetErrorWriter(wr io.Writer) *Entry {
 	return s
 }
 
-func (s *Entry) WithErrorWriter(wr io.Writer) *Entry {
+func (s *Entry) WithErrorWriter(wr io.Writer) (newLogger *Entry) {
 	child := s.newChildLogger()
 	child.SetErrorWriter(wr)
 	return child
@@ -762,7 +763,7 @@ func SetSkip(extraFrames int)         { defaultLog.SetSkip(extraFrames) } // set
 // make WithSkip a better behavior.
 //
 // If you dislike to make another one new child Logger instance, using SetSkip pls.
-func (s *Entry) WithSkip(extraFrames int) *Entry {
+func (s *Entry) WithSkip(extraFrames int) (newLogger *Entry) {
 	return s.newChildLogger(fmt.Sprintf("c/%s[%d]", s.name, extraFrames)).withSkip(extraFrames)
 }
 
