@@ -244,6 +244,24 @@ func (s *Entry) String() string {
 //
 //
 
+// WithPainter sets [Painter] to render the concrete pieces of a logging line.
+//
+// The pieces could be compaunded to the fields: timestamp, logger name, ....
+//
+// [SetMode] will modify painter field in an [Entry] with internal painter
+// implementations such as colorfulPainter, logfmtPaint or JSONpainter.
+//
+// So, SetMode, SetJSONMode, SetColorMode and WithPainter are in conflict.
+func WithPainter(p Painter) Opt {
+	return func(s *Entry) {
+		s.painter = p
+	}
+}
+
+func (s *Entry) WithPainter(p Painter) (newLogger *Entry) {
+	return s.newChildLogger(WithPainter(p))
+}
+
 func (s *Entry) Mode() Mode      { return s.mode }
 func (s *Entry) JSONMode() bool  { return s.mode == ModeJSON }
 func (s *Entry) ColorMode() bool { return s.mode == ModeColorful }
