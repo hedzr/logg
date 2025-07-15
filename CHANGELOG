@@ -1,5 +1,17 @@
 # HISTORY / CHANGELOG
 
+- v0.8.46
+  - improved `PrintCtx`
+  - added `Painter` interface (still unstable)
+    - remove obsezzing internal fields like colorful, nocolor,
+    - formalize `mode`
+    - added painters: colorfulPainter, logfmtPainter, jsonPainter
+    - allow user-defined painter
+    - split print funcs into print.go
+  - give a clear return name to `Entry.WithXXX()` to clearify it's returning a cloned sub0-logger
+  - upgrade deps
+    - is - added `dirs` for common folders; history supports in `makenewterm`
+
 - v0.8.45
   - security patch
   - upgrade deps
