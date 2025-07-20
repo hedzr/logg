@@ -212,7 +212,9 @@ type LogWriter interface {
 }
 
 // LogWriters for external adapters
-type LogWriters interface{} //nolint:revive
+type LogWriters interface {
+	//nolint:revive
+}
 
 type (
 	// Attr for external adapters
