@@ -156,8 +156,9 @@ func Reset() {
 	ResetFlags()
 }
 
-func SetDefault(l Logger) { defaultLog = l }    // sets user-defined logger as Default
-func Default() Logger     { return defaultLog } // return native default logger
+func SetDefault(l Logger) { defaultLog = l }                   // sets user-defined logger as Default
+func Default() Logger     { return defaultLog }                // return native default logger
+func ResetDefault()       { defaultLog = newDetachedLogger() } // reset Default() to default impl
 
 var (
 	defaultWriter *dualWriter
