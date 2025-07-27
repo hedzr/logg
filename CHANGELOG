@@ -1,5 +1,11 @@
 # HISTORY / CHANGELOG
 
+- v0.8.47
+  - added `ResetDefault()`
+  - improved LogWriters' handwriting
+  - upgrade deps
+    - is - added more os & arch detector such as `BSD()`
+
 - v0.8.46
   - improved `PrintCtx`
   - added `Painter` interface (still unstable)
