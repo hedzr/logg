@@ -11,7 +11,7 @@ import (
 func (s *Entry) VerboseContext(ctx context.Context, msg string, args ...any) {
 	// if s.EnabledContext(ctx, TraceLevel) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(ctx, TraceLevel, pc, msg, args...)
+	s.logContext(ctx, TraceLevel, false, pc, msg, args...)
 	// }
 }
 
@@ -19,7 +19,7 @@ func (s *Entry) VerboseContext(ctx context.Context, msg string, args ...any) {
 func (s *Entry) Verbose(msg string, args ...any) {
 	// if s.EnabledContext(ctx, TraceLevel) {
 	pc := getpc(2, s.extraFrames)
-	s.logContext(context.Background(), TraceLevel, pc, msg, args...)
+	s.logContext(context.Background(), TraceLevel, false, pc, msg, args...)
 	// }
 }
 
@@ -28,10 +28,10 @@ func vlogctx(ctx context.Context, msg string, args ...any) {
 	switch s := defaultLog.(type) {
 	case *logimp:
 		pc := getpc(3, s.extraFrames)
-		s.logContext(ctx, TraceLevel, pc, msg, args...)
+		s.logContext(ctx, TraceLevel, false, pc, msg, args...)
 	case *Entry:
 		pc := getpc(3, s.extraFrames)
-		s.logContext(ctx, TraceLevel, pc, msg, args...)
+		s.logContext(ctx, TraceLevel, false, pc, msg, args...)
 	}
 	// }
 }
