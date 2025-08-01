@@ -1,5 +1,9 @@
 # HISTORY / CHANGELOG
 
+- v0.8.48 (PATCH)
+  - fix new error in verbose mode
+    just coming at latest release because we changed logContext prototype but miss callings in verbose mode
+
 - v0.8.47
   - added `ResetDefault()`
   - improved LogWriters' handwriting
