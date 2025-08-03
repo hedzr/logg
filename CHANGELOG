@@ -1,5 +1,13 @@
 # HISTORY / CHANGELOG
 
+- v0.8.50
+  - improved INFO level color to `(57, 108, 229)`
+  - upgrade deps
+    - hedzr/is
+      - fix `NewColor16m`, `NewStyle`, `CSIAddCode` to return `Color` object
+      - add `Color.AddAndNew(colors...)` to combine multiple `Color` object as one (`Style`)
+        some of them can be compacted into `csiGroup`/`csiGroups`, such as `\x1b[33;2m`.
+
 - v0.8.48 (PATCH)
   - fix new error in verbose mode
     just coming at latest release because we changed logContext prototype but miss callings in verbose mode
