@@ -383,18 +383,18 @@ func GetColorTableByLevel(level Level) (colors []color.Color) {
 // )
 
 var mLevelColors = map[Level][]color.Color{
-	PanicLevel:   {hiRed, clrNone},                                        //
-	FatalLevel:   {hiRed, clrNone},                                        //
-	ErrorLevel:   {red, clrNone},                                          //
-	WarnLevel:    {color.NewStyle().Add(yellow).Add(color.Bold), clrNone}, //
-	InfoLevel:    {color.NewColor16m(57, 108, 229, false), clrNone},       //
-	DebugLevel:   {color.FgMagenta, clrNone},                              //
-	TraceLevel:   {yellow, color.BgDim},                                   //
-	OffLevel:     {color.FgBlack, color.BgDim},                            // never used.
-	AlwaysLevel:  {lightGray, color.BgBlink},                              // blink color relies on concrete terminal but it commonly takes no effect.
-	OKLevel:      {color.FgLightCyan, color.BgInverse},                    //
-	SuccessLevel: {color.FgGreen, color.BgBlink},                          //
-	FailLevel:    {color.FgRed, color.BgBoldOrBright},                     //
+	PanicLevel:   {hiRed, color.Bold},                                  //
+	FatalLevel:   {hiRed, color.Bold},                                  //
+	ErrorLevel:   {color.NewStyle().Add(red).Add(color.Bold), clrNone}, // error: red and bold
+	WarnLevel:    {yellow, clrNone},                                    // warning: yellow
+	InfoLevel:    {color.NewColor16m(57, 108, 229, false), clrNone},    // info: github info color
+	DebugLevel:   {color.FgMagenta, clrNone},                           //
+	TraceLevel:   {yellow, color.BgDim},                                //
+	OffLevel:     {color.FgBlack, color.BgDim},                         // never used.
+	AlwaysLevel:  {lightGray, color.BgBlink},                           // blink color relies on concrete terminal but it commonly takes no effect.
+	OKLevel:      {color.FgLightCyan, color.BgInverse},                 //
+	SuccessLevel: {color.FgGreen, color.BgBlink},                       //
+	FailLevel:    {color.FgRed, color.BgBoldOrBright},                  //
 }
 
 var shortTagMap = map[int]map[Level]string{
