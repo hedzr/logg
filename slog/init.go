@@ -43,6 +43,8 @@ func init() {
 		} else if is.DebuggerAttached() || inTesting || is.DebugBuild() || is.DebugMode() || strings.StringToBool(os.Getenv("DEBUG")) {
 			lvlCurrent = DebugLevel
 			RemoveFlags(Lprivacypathregexp) // disable tilde directory to make the logging msg clickable
+		} else {
+			RemoveFlags(LlocalTime)
 		}
 		is.Env().SetOnDevModeChanged(func(mod bool, level int) {
 			// if mod {
@@ -51,6 +53,7 @@ func init() {
 				Debug("[logz][onDevModeChanged] dev-mode changed, set to InfoLevel", "mode", mod, "level", level, "log-level", lvlCurrent)
 			} else {
 				Debug("[logz][onDevModeChanged] dev-mode changed, no action", "mode", mod, "level", level, "log-level", lvlCurrent)
+				AddFlags(LlocalTime)
 			}
 			// }
 		})
@@ -59,6 +62,7 @@ func init() {
 			if lvlCurrent < DebugLevel {
 				lvlCurrent = DebugLevel
 				Debug("[logz][onDebugChanged] debug mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+				AddFlags(LlocalTime)
 			}
 			// }
 		})
@@ -68,6 +72,7 @@ func init() {
 			if lvlCurrent < TraceLevel {
 				lvlCurrent = TraceLevel
 				Trace("[logz][onTraceChanged] trace mode changed", "mode", mod, "level", level, "log-level", lvlCurrent)
+				AddFlags(LlocalTime)
 			}
 			// }
 		})
