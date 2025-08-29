@@ -39,6 +39,12 @@ See also [CHANGELOG](CHANGELOG).
 > > NOTE: v0.7.x is pre-release version of v1.
 >
 > Since v0.5.7, `logg/slog` enables privacy hardening flags by default now.
+>
+> As to v0.8.53, `logg/slog` renders the text without truncating the leading spaces by default.
+> And we don't give a way to roll back this feature currently.
+>
+> As to v0.8.55, the top level f-functions (such as `Debugf`) can be used. In the earlier release we had added similar f-functions to `Entry`, now they are satisfactory.
+> In this release, we also upgraded golang toolchain to 1.24.5.
 
 ## Motivation
 
