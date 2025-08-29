@@ -113,7 +113,7 @@ func TestLogCtxCtx(t *testing.T) {
 
 	l := newentry(nil)
 	SetDefault(l)
-	logctxctx(context.TODO(), 0, WarnLevel,
+	logctxctx(context.TODO(), false, 0, WarnLevel,
 		"logctxctx",
 	)
 	t.Log("")

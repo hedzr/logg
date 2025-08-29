@@ -29,9 +29,9 @@ type (
 	// These are not efficient apis, we just have a simple
 	// implementations concretely.
 	ExtraPrintersI interface {
-		Infof(format string, a ...interface{}) error
-		Warnf(format string, a ...interface{}) error
-		Errorf(format string, a ...interface{}) error
+		Infof(format string, a ...any) error
+		Warnf(format string, a ...any) error
+		Errorf(format string, a ...any) error
 	}
 
 	// EntryI is a small and efficient tiny logger, which is the entity of real logger.

@@ -40,35 +40,50 @@ func GetTtySize() (cols, rows int) { return is.GetTtySize() }
 
 //
 
-func Panic(msg string, args ...any)   { logctx(PanicLevel, msg, args...) }   // Panic with Default Logger.
-func Fatal(msg string, args ...any)   { logctx(FatalLevel, msg, args...) }   // Fatal with Default Logger.
-func Error(msg string, args ...any)   { logctx(ErrorLevel, msg, args...) }   // Error with Default Logger.
-func Warn(msg string, args ...any)    { logctx(WarnLevel, msg, args...) }    // Warn with Default Logger.
-func Info(msg string, args ...any)    { logctx(InfoLevel, msg, args...) }    // Info with Default Logger.
-func Debug(msg string, args ...any)   { logctx(DebugLevel, msg, args...) }   // Debug with Default Logger.
-func Trace(msg string, args ...any)   { logctx(TraceLevel, msg, args...) }   // Trace with Default Logger.
-func Print(msg string, args ...any)   { logctx(AlwaysLevel, msg, args...) }  // Print with Default Logger.
-func OK(msg string, args ...any)      { logctx(OKLevel, msg, args...) }      // OK with Default Logger.
-func Success(msg string, args ...any) { logctx(SuccessLevel, msg, args...) } // Success with Default Logger.
-func Fail(msg string, args ...any)    { logctx(FailLevel, msg, args...) }    // Fail with Default Logger.
+func Panicf(msg string, args ...any)   { logctx(true, PanicLevel, msg, args...) }   // Panic with Default Logger.
+func Fatalf(msg string, args ...any)   { logctx(true, FatalLevel, msg, args...) }   // Fatal with Default Logger.
+func Errorf(msg string, args ...any)   { logctx(true, ErrorLevel, msg, args...) }   // Error with Default Logger.
+func Warnf(msg string, args ...any)    { logctx(true, WarnLevel, msg, args...) }    // Warn with Default Logger.
+func Infof(msg string, args ...any)    { logctx(true, InfoLevel, msg, args...) }    // Info with Default Logger.
+func Debugf(msg string, args ...any)   { logctx(true, DebugLevel, msg, args...) }   // Debug with Default Logger.
+func Tracef(msg string, args ...any)   { logctx(true, TraceLevel, msg, args...) }   // Trace with Default Logger.
+func Printf(msg string, args ...any)   { logctx(true, AlwaysLevel, msg, args...) }  // Print with Default Logger.
+func OKf(msg string, args ...any)      { logctx(true, OKLevel, msg, args...) }      // OK with Default Logger.
+func Successf(msg string, args ...any) { logctx(true, SuccessLevel, msg, args...) } // Success with Default Logger.
+func Failf(msg string, args ...any)    { logctx(true, FailLevel, msg, args...) }    // Fail with Default Logger.
 
-func Verbose(msg string, args ...any)                             { vlogctx(context.TODO(), msg, args...) } // Verbose with Default Logger.
-func VerboseContext(ctx context.Context, msg string, args ...any) { vlogctx(ctx, msg, args...) }            // Verbose with Default Logger.
+func Verbosef(msg string, args ...any)                             { vlogctx(context.TODO(), true, msg, args...) } // Verbose with Default Logger.
+func VerbosefContext(ctx context.Context, msg string, args ...any) { vlogctx(ctx, true, msg, args...) }            // Verbose with Default Logger.
+
+func Panic(msg string, args ...any)   { logctx(false, PanicLevel, msg, args...) }   // Panic with Default Logger.
+func Fatal(msg string, args ...any)   { logctx(false, FatalLevel, msg, args...) }   // Fatal with Default Logger.
+func Error(msg string, args ...any)   { logctx(false, ErrorLevel, msg, args...) }   // Error with Default Logger.
+func Warn(msg string, args ...any)    { logctx(false, WarnLevel, msg, args...) }    // Warn with Default Logger.
+func Info(msg string, args ...any)    { logctx(false, InfoLevel, msg, args...) }    // Info with Default Logger.
+func Debug(msg string, args ...any)   { logctx(false, DebugLevel, msg, args...) }   // Debug with Default Logger.
+func Trace(msg string, args ...any)   { logctx(false, TraceLevel, msg, args...) }   // Trace with Default Logger.
+func Print(msg string, args ...any)   { logctx(false, AlwaysLevel, msg, args...) }  // Print with Default Logger.
+func OK(msg string, args ...any)      { logctx(false, OKLevel, msg, args...) }      // OK with Default Logger.
+func Success(msg string, args ...any) { logctx(false, SuccessLevel, msg, args...) } // Success with Default Logger.
+func Fail(msg string, args ...any)    { logctx(false, FailLevel, msg, args...) }    // Fail with Default Logger.
+
+func Verbose(msg string, args ...any)                             { vlogctx(context.TODO(), false, msg, args...) } // Verbose with Default Logger.
+func VerboseContext(ctx context.Context, msg string, args ...any) { vlogctx(ctx, false, msg, args...) }            // Verbose with Default Logger.
 
 // Println with Default Logger.
 func Println(args ...any) {
 	if len(args) == 0 {
-		logctx(AlwaysLevel, "")
+		logctx(false, AlwaysLevel, "")
 		return
 	}
 	var msg string
 	msg, args = args[0].(string), args[1:] //nolint:errcheck,revive
-	logctx(AlwaysLevel, msg, args...)
+	logctx(false, AlwaysLevel, msg, args...)
 }
 
-func logctx(lvl Level, msg string, args ...any) {
+func logctx(isformat bool, lvl Level, msg string, args ...any) {
 	ctx := context.Background()
-	logctxctx(ctx, 1, lvl, msg, args...)
+	logctxctx(ctx, isformat, 1, lvl, msg, args...)
 	// switch s := defaultLog.(type) {
 	// case *logimp:
 	// 	if s.EnabledContext(ctx, lvl) {
@@ -83,17 +98,17 @@ func logctx(lvl Level, msg string, args ...any) {
 	// }
 }
 
-func logctxctx(ctx context.Context, inc int, lvl Level, msg string, args ...any) {
+func logctxctx(ctx context.Context, isformat bool, inc int, lvl Level, msg string, args ...any) {
 	switch s := defaultLog.(type) {
 	case *logimp:
 		if s.EnabledContext(ctx, lvl) {
 			pc := getpc(3+inc, s.extraFrames) // caller -> slog.Info -> logctx (this func)
-			s.logContext(ctx, lvl, false, pc, msg, args...)
+			s.logContext(ctx, lvl, isformat, pc, msg, args...)
 		}
 	case *Entry:
 		if s.EnabledContext(ctx, lvl) {
 			pc := getpc(3+inc, s.extraFrames) // caller -> slog.Info -> logctx (this func)
-			s.logContext(ctx, lvl, false, pc, msg, args...)
+			s.logContext(ctx, lvl, isformat, pc, msg, args...)
 		}
 	}
 }
@@ -102,62 +117,62 @@ func logctxctx(ctx context.Context, inc int, lvl Level, msg string, args ...any)
 
 // PanicContext with Default Logger.
 func PanicContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, PanicLevel, msg, args...)
+	logctxctx(ctx, false, 0, PanicLevel, msg, args...)
 }
 
 // FatalContext with Default Logger.
 func FatalContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, FatalLevel, msg, args...)
+	logctxctx(ctx, false, 0, FatalLevel, msg, args...)
 }
 
 // ErrorContext with Default Logger.
 func ErrorContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, ErrorLevel, msg, args...)
+	logctxctx(ctx, false, 0, ErrorLevel, msg, args...)
 }
 
 // WarnContext with Default Logger.
 func WarnContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, WarnLevel, msg, args...)
+	logctxctx(ctx, false, 0, WarnLevel, msg, args...)
 }
 
 // InfoContext with Default Logger.
 func InfoContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, InfoLevel, msg, args...)
+	logctxctx(ctx, false, 0, InfoLevel, msg, args...)
 }
 
 // DebugContext with Default Logger.
 func DebugContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, DebugLevel, msg, args...)
+	logctxctx(ctx, false, 0, DebugLevel, msg, args...)
 }
 
 // TraceContext with Default Logger.
 func TraceContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, TraceLevel, msg, args...)
+	logctxctx(ctx, false, 0, TraceLevel, msg, args...)
 }
 
 // PrintContext with Default Logger.
 func PrintContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, AlwaysLevel, msg, args...)
+	logctxctx(ctx, false, 0, AlwaysLevel, msg, args...)
 }
 
 // PrintlnContext with Default Logger.
 func PrintlnContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, AlwaysLevel, msg, args...)
+	logctxctx(ctx, false, 0, AlwaysLevel, msg, args...)
 }
 
 // OKContext with Default Logger.
 func OKContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, OKLevel, msg, args...)
+	logctxctx(ctx, false, 0, OKLevel, msg, args...)
 }
 
 // SuccessContext with Default Logger.
 func SuccessContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, SuccessLevel, msg, args...)
+	logctxctx(ctx, false, 0, SuccessLevel, msg, args...)
 }
 
 // FailContext with Default Logger.
 func FailContext(ctx context.Context, msg string, args ...any) {
-	logctxctx(ctx, 0, FailLevel, msg, args...)
+	logctxctx(ctx, false, 0, FailLevel, msg, args...)
 }
 
 //
