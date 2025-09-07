@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -1581,6 +1582,15 @@ func (s *PrintCtx) appendError(err error) {
 	// }
 }
 
+func (s *PrintCtx) stringerSer(val Stringer) {
+	defer func() {
+		if e := recover(); e != nil {
+			fmt.Fprintf(os.Stderr, "val.String() has error, val: %+v, err: %+v\n", val, e)
+		}
+	}()
+	s.pcQuoteValue(val.String())
+}
+
 func (s *PrintCtx) appendValue(val any) {
 	switch z := val.(type) {
 	case nil:
@@ -1624,7 +1634,7 @@ func (s *PrintCtx) appendValue(val any) {
 		s.pcQuoteValue(z.ToString())
 
 	case Stringer:
-		s.pcQuoteValue(z.String())
+		s.stringerSer(z) // pcQuoteValue(z.String())
 
 	case string:
 		s.pcQuoteValue(z)
