@@ -25,6 +25,7 @@ The abilities are:
 - privacy enough: hardening filepath(s), shortening package name(s) (by `Lprivacypath` and `Lprivacypathregexp`); and implementing `LogObjectMarshaller` or `LogArrayMarshaller` to safe guard the sensitive fields.
 - better multiline outputs.
 
+Since v0.8.60, we need go toolchain 1.24(.5) and above.
 Since v0.8.0, we need go toolchain 1.23 and above.
 
 Since v0.7.3, a locking version of printOut added. It would give more safeties to splitted writer (if your writer had implemented `LevelSettable` interface to compliant with logg/slog's log level).
