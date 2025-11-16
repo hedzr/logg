@@ -186,7 +186,7 @@ jobs:
           # name: ${{ env.TAG_NAME }}
           # # overwrite: true
           # overwrite_files: true
-          file_glob: true
+          # file_glob: true
           append_body: true
           draft: false
           prerelease: false
