@@ -9,7 +9,7 @@ replace github.com/hedzr/logg => ../
 require github.com/hedzr/logg v0.8.68
 
 require (
-	github.com/hedzr/is v0.8.67 // indirect
+	github.com/hedzr/is v0.8.68 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/term v0.40.0 // indirect
