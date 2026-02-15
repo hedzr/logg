@@ -1,5 +1,5 @@
-github.com/hedzr/is v0.8.68 h1:qLAUlw0gLc4ltGSqbX5vSDyefApSrM02oOrDW7GxNdc=
-github.com/hedzr/is v0.8.68/go.mod h1:LMySwbdY0j1/5G39cnJ/WED/E9WM0ncAgXgyIJ6GDLk=
+github.com/hedzr/is v0.9.0 h1:i31NOErtMrbxgfPAyD5fxnIX30PREb8hGH595WBk5W4=
+github.com/hedzr/is v0.9.0/go.mod h1:Dc1Zzd/FZcqlAQMJqrLVT78Viu/FpgbgPOVUoUbqNeA=
 golang.org/x/net v0.50.0 h1:ucWh9eiCGyDR3vtzso0WMQinm2Dnt8cFMuQa9K33J60=
 golang.org/x/net v0.50.0/go.mod h1:UgoSli3F/pBgdJBHCTc+tp3gmrU4XswgGRgtnwWTfyM=
 golang.org/x/sys v0.41.0 h1:Ivj+2Cp/ylzLiEU89QhWblYnOE9zerudt9Ftecq2C6k=

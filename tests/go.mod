@@ -1,15 +1,13 @@
 module github.com/hedzr/logg/tests
 
-go 1.24.0
-
-toolchain go1.24.5
+go 1.25.0
 
 replace github.com/hedzr/logg => ../
 
-require github.com/hedzr/logg v0.8.68
+require github.com/hedzr/logg v0.9.0
 
 require (
-	github.com/hedzr/is v0.8.68 // indirect
+	github.com/hedzr/is v0.9.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/term v0.40.0 // indirect
