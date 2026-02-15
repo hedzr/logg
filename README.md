@@ -25,6 +25,7 @@ The abilities are:
 - privacy enough: hardening filepath(s), shortening package name(s) (by `Lprivacypath` and `Lprivacypathregexp`); and implementing `LogObjectMarshaller` or `LogArrayMarshaller` to safe guard the sensitive fields.
 - better multiline outputs.
 
+Since v0.9.0, we need go toolchain go1.25.0 and above.
 Since v0.8.60, we need go toolchain 1.24(.5) and above.
 Since v0.8.0, we need go toolchain 1.23 and above.
 
