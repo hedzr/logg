@@ -1,5 +1,12 @@
 # HISTORY / CHANGELOG
 
+- v0.9.9
+  - upgrade deps & security patch
+  - UPGRADE GO TOOLCHAIN TO 1.26.x
+
+- v0.9.7
+  - upgrade deps & security patch
+
 - v0.9.6
   - upgrade deps & security patch
 
