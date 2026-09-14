@@ -5,8 +5,8 @@ go 1.26.0
 replace github.com/hedzr/logg => ../../
 
 require (
-	github.com/hedzr/is v0.9.6
-	github.com/hedzr/logg v0.9.7
+	github.com/hedzr/is v0.9.9
+	github.com/hedzr/logg v0.9.9
 )
 
 require (
