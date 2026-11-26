@@ -19,10 +19,7 @@ jobs:
       matrix:
         go-version: [ 1.26.x ]
         #os: [ubuntu-latest, macos-latest, windows-latest]
-        os:
-          - ubuntu-latest
-          # - macos-latest
-          # - windows-latest
+        os: [ ubuntu-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -40,10 +37,14 @@ jobs:
             ${{ runner.os }}-go-
       - name: Test
         run: |
+          #for GOOS in $(go tool dist list|awk -F'/' '{print $1}'|sort -u); do
+          #  echo -e "\n\nTESTING FOR $GOOS ...\n"
+          #  go test ./...
+          #done
           go test -v ./...
 
   coverage:
-    needs: test
+    #needs: test
     env:
       COVERALLS_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
     runs-on: ubuntu-latest
@@ -186,7 +187,7 @@ jobs:
           # name: ${{ env.TAG_NAME }}
           # # overwrite: true
           # overwrite_files: true
-          # file_glob: true
+          file_glob: true
           append_body: true
           draft: false
           prerelease: false
